@@ -29,6 +29,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -263,7 +264,8 @@ private fun PurchaseActionsSection(
                 text =
                     when (val cta = purchaseCtaFor(uiState.selectedPlan)) {
                         PurchaseCta.SelectPlan -> stringResource(R.string.premium_select_plan)
-                        is PurchaseCta.StartTrial -> stringResource(R.string.premium_start_trial, cta.days)
+                        is PurchaseCta.StartTrial ->
+                            pluralStringResource(R.plurals.premium_start_trial, cta.days, cta.days)
                         is PurchaseCta.GetPlan ->
                             stringResource(R.string.premium_get_plan, stringResource(cta.plan.titleRes), cta.plan.price)
                     },
@@ -499,7 +501,7 @@ private fun PremiumAutoTrialCard(daysRemaining: Int) {
                 color = Color.White,
             )
             Text(
-                text = stringResource(R.string.premium_auto_trial_body, daysRemaining),
+                text = pluralStringResource(R.plurals.premium_auto_trial_body, daysRemaining, daysRemaining),
                 style = MaterialTheme.typography.bodyMedium.copy(shadow = textShadow),
                 color = Color.White.copy(alpha = 0.95f),
                 textAlign = TextAlign.Center,

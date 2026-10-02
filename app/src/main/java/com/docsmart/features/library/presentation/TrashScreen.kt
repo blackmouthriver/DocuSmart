@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -305,7 +306,7 @@ private fun TrashDeleteAllDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.trash_delete_all_confirm_title)) },
-        text = { Text(stringResource(R.string.trash_delete_all_confirm_body, count)) },
+        text = { Text(pluralStringResource(R.plurals.trash_delete_all_confirm_body, count, count)) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text(

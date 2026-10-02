@@ -651,7 +651,10 @@
 
     <!-- ── Converter: conversión por lotes (RF-CONV-08) ── -->
     <string name="converter_batch_hint">Es conservarà el nom original de cada arxiu</string>
-    <string name="converter_convert_batch_button">Convertir %1$d arxius</string>
+    <plurals name="converter_convert_batch_button">
+        <item quantity="one">Convertir %1$d arxiu</item>
+        <item quantity="other">Convertir %1$d arxius</item>
+    </plurals>
     <string name="converter_batch_success_title">%1$d de %2$d arxius convertits</string>
     <string name="converter_batch_save_all">Desar-los tots a Baixades</string>
     <string name="converter_batch_convert_another">Convertir un altre lot</string>
@@ -701,14 +704,23 @@
     <!-- HU-54 (prueba gratuita): solo aparecen si Play Console tiene
          configurada una fase de prueba real para el producto, nunca se
          muestran como texto fijo sin que Play Billing la confirme. -->
-    <string name="premium_trial_badge">%1$d dies gratis</string>
-    <string name="premium_start_trial">Començar %1$d dies gratis</string>
+    <plurals name="premium_trial_badge">
+        <item quantity="one">%1$d dia gratis</item>
+        <item quantity="other">%1$d dies gratis</item>
+    </plurals>
+    <plurals name="premium_start_trial">
+        <item quantity="one">Començar %1$d dia gratis</item>
+        <item quantity="other">Començar %1$d dies gratis</item>
+    </plurals>
     <string name="premium_trial_active_message">Prova gratuïta activa — es cobrarà el %1$s</string>
     <!-- Trial automático sin tarjeta (pedido explícito del usuario
          2026-09-12): todo el que instala la app tiene unos días de Premium
          completo gratis sin suscribirse a nada. -->
     <string name="premium_auto_trial_title">Prova Premium gratis</string>
-    <string name="premium_auto_trial_body">Et queden %1$d dies amb accés complet, sense anuncis. Tria un pla abans que s\'acabi per no perdre\'l.</string>
+    <plurals name="premium_auto_trial_body">
+        <item quantity="one">Et queda %1$d dia amb accés complet, sense anuncis. Tria un pla abans que s\'acabi per no perdre\'l.</item>
+        <item quantity="other">Et queden %1$d dies amb accés complet, sense anuncis. Tria un pla abans que s\'acabi per no perdre\'l.</item>
+    </plurals>
     <string name="premium_feature_no_ads_title">Sense anuncis</string>
     <string name="premium_feature_no_ads_desc">Gaudeix de DocuSmart sense interrupcions</string>
     <string name="premium_feature_pdf_word_title">PDF a Word</string>
@@ -990,7 +1002,10 @@
     <string name="qr_history_empty_body">Els QR que creïs o llegeixis apareixeran aquí</string>
     <string name="qr_history_clear_all">Buida l\'historial</string>
     <string name="qr_history_clear_all_confirm_title">Vols buidar tot l\'historial?</string>
-    <string name="qr_history_clear_all_confirm_body">S\'eliminaran les %1$d entrades. Aquesta acció no es pot desfer.</string>
+    <plurals name="qr_history_clear_all_confirm_body">
+        <item quantity="one">S\'eliminarà %1$d entrada. Aquesta acció no es pot desfer.</item>
+        <item quantity="other">S\'eliminaran %1$d entrades. Aquesta acció no es pot desfer.</item>
+    </plurals>
     <string name="qr_history_delete_confirm_title">Vols eliminar aquesta entrada?</string>
     <string name="qr_history_delete_confirm_body">Aquesta acció no es pot desfer.</string>
     <string name="qr_history_source_created">Creat</string>
@@ -1030,7 +1045,10 @@
     <string name="study_loading_document">Carregant el teu document… pot trigar uns moments</string>
     <string name="study_summary_local_note">Generat al teu dispositiu, sense connexió a internet</string>
     <string name="study_summary_share_title">Compartir resum</string>
-    <string name="study_summary_sentences_count">%1$d punts clau</string>
+    <plurals name="study_summary_sentences_count">
+        <item quantity="one">%1$d punt clau</item>
+        <item quantity="other">%1$d punts clau</item>
+    </plurals>
     <string name="study_reading_page">Llegint… pàgina %1$d de %2$d</string>
     <string name="study_extracting_more">Processant la resta del document… (%1$d pàgines llestes)</string>
     <string name="study_continue_reading">Continuar llegint</string>
@@ -1132,7 +1150,10 @@
     <string name="trash_delete_forever_confirm_body">"%1$s s\'eliminarà per sempre i ja no es podrà recuperar."</string>
     <string name="trash_delete_all">Esborrar-ho tot</string>
     <string name="trash_delete_all_confirm_title">Vols buidar la paperera?</string>
-    <string name="trash_delete_all_confirm_body">"S\'eliminaran %1$d arxius per sempre i ja no es podran recuperar."</string>
+    <plurals name="trash_delete_all_confirm_body">
+        <item quantity="one">"S\'eliminarà %1$d arxiu per sempre i ja no es podrà recuperar."</item>
+        <item quantity="other">"S\'eliminaran %1$d arxius per sempre i ja no es podran recuperar."</item>
+    </plurals>
     <string name="trash_total_size">%1$s a la paperera</string>
     <string name="trash_delete_forever_permission_note">Android pot demanar-te que confirmis l\'esborrat de fotos que no ha creat aquesta aplicació.</string>
     <string name="trash_bulk_delete_partial_error">Alguns arxius s\'han d\'eliminar d\'un en un</string>

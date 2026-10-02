@@ -81,7 +81,7 @@ class PremiumScreenTrialTest {
 
         val context = localizedContext()
         composeRule.onNodeWithText(context.getString(R.string.premium_auto_trial_title)).assertExists()
-        composeRule.onNodeWithText(context.getString(R.string.premium_auto_trial_body, 2)).assertExists()
+        composeRule.onNodeWithText(context.resources.getQuantityString(R.plurals.premium_auto_trial_body, 2, 2)).assertExists()
         // Todavía no es cliente pagador: la pantalla sigue ofreciendo suscribirse.
         val choosePlan = context.getString(R.string.premium_choose_plan)
         composeRule.onNode(hasScrollAction()).performScrollToNode(hasText(choosePlan))

@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -182,7 +183,7 @@ private fun PlanCard(
                                 color = MaterialTheme.colorScheme.tertiaryContainer,
                             ) {
                                 Text(
-                                    text = stringResource(R.string.premium_trial_badge, days),
+                                    text = pluralStringResource(R.plurals.premium_trial_badge, days, days),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.tertiary,
                                     modifier =

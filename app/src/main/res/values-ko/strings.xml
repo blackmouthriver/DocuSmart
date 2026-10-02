@@ -628,7 +628,9 @@
 
     <!-- ── 변환기: 일괄 변환 (RF-CONV-08) ── -->
     <string name="converter_batch_hint">각 파일의 원래 이름이 유지됩니다</string>
-    <string name="converter_convert_batch_button">파일 %1$d개 변환</string>
+    <plurals name="converter_convert_batch_button">
+        <item quantity="other">파일 %1$d개 변환</item>
+    </plurals>
     <string name="converter_batch_success_title">%2$d개 중 %1$d개 파일 변환됨</string>
     <string name="converter_batch_save_all">모두 다운로드에 저장</string>
     <string name="converter_batch_convert_another">다른 배치 변환</string>
@@ -675,11 +677,17 @@
     <string name="pdf_tools_section_extract">추출 및 최적화</string>
     <string name="premium_feature_state_unlocked">잠금 해제됨</string>
     <string name="premium_feature_state_locked">잠김</string>
-    <string name="premium_trial_badge">%1$d일 무료</string>
-    <string name="premium_start_trial">%1$d일 무료로 시작</string>
+    <plurals name="premium_trial_badge">
+        <item quantity="other">%1$d일 무료</item>
+    </plurals>
+    <plurals name="premium_start_trial">
+        <item quantity="other">%1$d일 무료로 시작</item>
+    </plurals>
     <string name="premium_trial_active_message">무료 체험 중 — %1$s에 결제됩니다</string>
     <string name="premium_auto_trial_title">무료 프리미엄 체험</string>
-    <string name="premium_auto_trial_body">광고 없이 모든 기능을 %1$d일 더 이용할 수 있어요. 끝나기 전에 요금제를 선택하세요.</string>
+    <plurals name="premium_auto_trial_body">
+        <item quantity="other">광고 없이 모든 기능을 %1$d일 더 이용할 수 있어요. 끝나기 전에 요금제를 선택하세요.</item>
+    </plurals>
     <string name="premium_feature_no_ads_title">광고 없음</string>
     <string name="premium_feature_no_ads_desc">방해 없이 DocuSmart를 이용하세요</string>
     <string name="premium_feature_pdf_word_title">PDF를 Word로</string>
@@ -961,7 +969,9 @@
     <string name="qr_history_empty_body">생성하거나 읽은 QR 코드가 여기에 표시됩니다</string>
     <string name="qr_history_clear_all">기록 지우기</string>
     <string name="qr_history_clear_all_confirm_title">전체 기록을 지울까요?</string>
-    <string name="qr_history_clear_all_confirm_body">%1$d개 항목이 삭제됩니다. 이 작업은 되돌릴 수 없습니다.</string>
+    <plurals name="qr_history_clear_all_confirm_body">
+        <item quantity="other">%1$d개 항목이 삭제됩니다. 이 작업은 되돌릴 수 없습니다.</item>
+    </plurals>
     <string name="qr_history_delete_confirm_title">이 항목을 삭제할까요?</string>
     <string name="qr_history_delete_confirm_body">이 작업은 되돌릴 수 없습니다.</string>
     <string name="qr_history_source_created">생성됨</string>
@@ -999,7 +1009,9 @@
     <string name="study_loading_document">문서를 불러오는 중입니다… 잠시 시간이 걸릴 수 있어요</string>
     <string name="study_summary_local_note">인터넷 연결 없이 기기에서 생성됨</string>
     <string name="study_summary_share_title">요약 공유</string>
-    <string name="study_summary_sentences_count">핵심 포인트 %1$d개</string>
+    <plurals name="study_summary_sentences_count">
+        <item quantity="other">핵심 포인트 %1$d개</item>
+    </plurals>
     <string name="study_reading_page">읽는 중… %1$d / %2$d페이지</string>
     <string name="study_extracting_more">나머지 문서를 처리하는 중… (%1$d페이지 준비됨)</string>
     <string name="study_continue_reading">이어서 읽기</string>
@@ -1101,7 +1113,9 @@
     <string name="trash_delete_forever_confirm_body">"%1$s이(가) 영구적으로 삭제되며 복구할 수 없습니다."</string>
     <string name="trash_delete_all">모두 삭제</string>
     <string name="trash_delete_all_confirm_title">휴지통을 비우시겠어요?</string>
-    <string name="trash_delete_all_confirm_body">"%1$d개 파일이 영구적으로 삭제되며 복구할 수 없습니다."</string>
+    <plurals name="trash_delete_all_confirm_body">
+        <item quantity="other">"%1$d개 파일이 영구적으로 삭제되며 복구할 수 없습니다."</item>
+    </plurals>
     <string name="trash_total_size">휴지통에 %1$s</string>
     <string name="trash_delete_forever_permission_note">Android가 이 앱에서 생성하지 않은 사진의 삭제를 확인하도록 요청할 수 있습니다.</string>
     <string name="trash_bulk_delete_partial_error">일부 파일은 하나씩 삭제해야 합니다</string>

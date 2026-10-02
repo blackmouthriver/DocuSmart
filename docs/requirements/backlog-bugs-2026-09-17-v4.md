@@ -106,17 +106,26 @@ caché" de Ajustes (borrado directo, nunca vía Papelera -- es una copia
 efímera sin cifrar, no un documento real).
 
 ### S4 — Defensa en profundidad: Convertir/QR/OCR/Firmar/Mover no tienen guard a nivel de ViewModel (no explotable hoy)
-**Estado: ⚠️ Evaluado, no corregido** · **Severidad: Baja** ·
-`ViewerTopBar.kt:210-249`, `ViewerScreen.kt:505-510`
+**Estado: ✅ Corregido (2026-09-26)** · **Severidad: Baja** ·
+`DocuSmartNavGraph.kt`
 
-Solo están protegidos por estar ocultos en el menú -- a diferencia de
+Solo estaban protegidos por estar ocultos en el menú -- a diferencia de
 Favorito/Compartir/Renombrar/Eliminar, que además verifican
-`isReadOnlyPreview` dentro del propio ViewModel. No corregido: son
-lambdas de navegación puras hacia el NavGraph (Convertidor/Creador de
-QR/Herramientas PDF), sin ningún método de ViewModel propio donde
-agregar hoy el mismo guard -- haría falta tocar el destino de cada
-pantalla, un cambio de mayor alcance para un riesgo no explotable
-actualmente (el único punto de entrada real ya está cubierto).
+`isReadOnlyPreview` dentro del propio ViewModel. Confirmado que SÍ es
+un riesgo real (no solo teórico): Navigation-Compose no tiene ningún
+debounce nativo contra `navigate()` llamado dos veces seguidas (a
+diferencia de lo que se podría asumir), y estas 5 acciones son
+lambdas de navegación puras compartidas por Home/Biblioteca/Visor/
+Escáner (`navigateToConvert`/`navigateToQrCreator`/`navigateToOcr`/
+`navigateToSign`/`navigateToSecureFolder` en `DocuSmartNavGraph.kt`),
+sin ViewModel propio donde poner el guard habitual. `launchSingleTop`
+ya se había probado (ronda 8) y se revirtió por reutilizar argumentos
+viejos cuando el documento cambia entre llamadas (ver comentario de
+`navigateToConvert()`). **Fix aplicado:** debounce por tiempo
+(`SystemClock.elapsedRealtime()`, 500ms), compartido entre las 5
+funciones -- ignora un segundo toque sin tocar argumentos ni el back
+stack. Cubierto por `QuickActionNavigateDebounceTest.kt` (JVM, MockK
+sobre `NavHostController`/`Uri`/`SystemClock`).
 
 ## Agenda / Papelera
 
@@ -254,3 +263,48 @@ emulador `DocuSmart_Test` (arrancado en frío, sin snapshot):
   de esta ronda (ver arriba).
 
 Pendiente: aprobación explícita del usuario para fusionar.
+
+---
+
+## Seguimiento 2026-10-01 — revisión de "ajustes en funcionalidades" tras la ronda 23 de cobertura
+
+### Auditoría de `<plurals>` (H1, backlog-bugs-2026-09-18-v10.md)
+Revisados ~60 strings con marcador numérico (`%1$d`) en `values/strings.xml`
+para encontrar casos del mismo patrón ya corregido puntualmente en
+`library_document_count` ("1 documentos" en vez de "1 documento"). La
+mayoría son números de página/posición/porcentaje/tamaño (no tienen
+problema real de pluralización) o ya esquivaban el problema en ruso con
+abreviaturas ("дн.", "стр.") o reformulando como "Archivos: N" (orden
+genitivo-primero, invariante). **6 strings confirmados con declinación
+rusa incorrecta** (forma fija de 5+, gramaticalmente mal para 1 y 2-4):
+`premium_trial_badge`, `premium_start_trial`, `premium_auto_trial_body`,
+`converter_convert_batch_button`, `qr_history_clear_all_confirm_body`,
+`trash_delete_all_confirm_body`, `study_summary_sentences_count` (7 en
+total, la primera bala agrupa 2). Corregidos convirtiendo los 7 a
+`<plurals>` reales en los 12 idiomas: `one`/`other` para es/ca/de/en/eu/
+fr/it/pt, `other` únicamente para ja/ko/zh (sin distinción de plural), y
+`one`/`few`/`many`/`other` para ru (las 4 formas reales). Actualizados los
+7 call sites de `stringResource()` a `pluralStringResource()` (código de
+producción) y los 4 tests instrumentados que referenciaban estos strings
+(`ConverterScreenFlowsTest`, `PremiumComponentsTest`, `PremiumScreenTest`,
+`PremiumScreenTrialTest`) a `getQuantityString()`. Gauntlet completo en
+verde.
+
+### S4 — ver sección actualizada arriba (ya corregida con debounce de doble-toque).
+
+### Revisión de banners de anuncios (2026-10-02)
+Barrido de todas las rutas de `NavRoutes` contra `DocuSmartBannerAd`
+(excluyendo Seguridad, pedido del usuario). La única pantalla de contenido
+sin banner y sin decisión documentada era el **Historial de QR**
+(`QrHistoryScreen`, HU-44; quedó fuera de la lista de HU-UX-07). Agregado
+con el mismo patrón que Creador/Lector de QR (anuncio antes del banner de
+título, gating `!isPremium` vía `QrViewModel.adManager`; la pantalla recibe
+el ViewModel por parámetro con default `hiltViewModel()`, y
+`QrHistoryScreenTest` le pasa uno armado a mano con premium = true).
+El usuario creó el bloque propio en AdMob el mismo día y
+`AdConstants.BANNER_QR_HISTORY_ID` ya usa su ID real
+(`ca-app-pub-1109506701099935/6287925297`), con métricas separadas del
+creador/lector. Siguen sin banner por
+decisión documentada: Premium, splash, Contraseña PDF, Carpeta Segura,
+Papelera, Escáner (pantalla de paso) y la cámara en vivo del Lector de QR;
+Onboarding nunca se mencionó y se deja sin banner (primer contacto).

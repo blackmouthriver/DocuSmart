@@ -76,6 +76,11 @@ class ConverterScreenFlowsTest {
         vararg args: Any,
     ): String = strings.getString(id, *args)
 
+    private fun plural(
+        id: Int,
+        count: Int,
+    ): String = strings.resources.getQuantityString(id, count, count)
+
     // Ronda 23: parametros nuevos (con default identico al comportamiento previo)
     // para ejercitar el indicador de limite diario (antes siempre en count=0, la
     // rama con contenido real nunca se ejecutaba) y el modo lote con un caso de
@@ -437,7 +442,7 @@ class ConverterScreenFlowsTest {
             viewModel,
             ConversionType.WORD_TO_TXT,
             listOf(uriA, uriB),
-            text(R.string.converter_convert_batch_button, 2),
+            plural(R.plurals.converter_convert_batch_button, 2),
         )
 
         waitForText(text(R.string.converter_batch_success_title, 2, 2))

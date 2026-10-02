@@ -490,6 +490,35 @@ ya se justifica.
   Detalle completo, incluidos los pasos de configuración manual
   pendientes del lado del usuario (cuenta de servicio, secret de
   GitHub), en `backlog-mejoras-ux-2026-08-30.md` §22.
+- **Seguimiento 2026-09-26 — el bug dejó de reproducirse (causa raíz
+  todavía sin confirmar).** Auditando el backlog general se revisó si
+  este problema seguía vivo: se inspeccionó el paso real
+  `Pruebas instrumentadas (connectedDebugAndroidTest)` (no solo el
+  check verde del job, enmascarado por `continue-on-error`) en las 3
+  corridas más recientes de `ci.yml` en `main` (24 ejecuciones de shard
+  en total, rondas 21-23) -- **las 24 terminan con éxito real**, sin
+  necesitar el colchón de `continue-on-error`/`ignoreFailures` para
+  quedar en verde. Quedan 8 pruebas con `@Ignore` por motivos distintos
+  ya documentados (temporización en pantalla 320x640, geometría de
+  página, recompose sin Looper) -- no relacionados con el fallo de
+  inyección de touch original.
+
+  Hipótesis (no confirmada, nadie lo corrigió a propósito): entre las
+  rondas 18-23 se reescribieron con patrones más robustos
+  (`waitUntil` con polling, scroll defensivo, locale forzado por
+  código) varios de los archivos que antes fallaban de forma
+  consistente (`HomeScreenTest`, `ConverterScreenTest`, etc.), y el job
+  pasó de una sola corrida secuencial a 8 shards en paralelo -- alguno
+  de los dos (o ambos) pudo eliminar la condición de carrera real
+  detrás del fallo de inyección de touch, sin que fuera el objetivo
+  explícito de ese trabajo.
+
+  **Decisión (consultada con el usuario):** se mantienen
+  `continue-on-error: true` (`ci.yml`) e `ignoreFailures = true`
+  (`app/build.gradle.kts`, tarea de tests instrumentados) por ahora --
+  hoy no enmascaran ningún fallo real, y dan margen si el bug reaparece
+  de forma intermitente. Revisar de nuevo tras varias rondas más de
+  estabilidad confirmada antes de quitarlos.
 
 ---
 

@@ -61,6 +61,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -69,7 +70,11 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.docsmart.R
+import com.docsmart.core.ads.AdConstants
+import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.ui.components.DocuSmartEmptyState
 import com.docsmart.core.ui.components.DocuSmartTopBanner
 import com.docsmart.core.ui.theme.SuccessGreen
@@ -95,8 +100,10 @@ import java.util.Locale
 fun QrHistoryScreen(
     onBack: () -> Unit = {},
     onHome: (() -> Unit)? = null,
+    viewModel: QrViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val isPremium by viewModel.adManager.isPremium.collectAsStateWithLifecycle()
     var entries by remember { mutableStateOf(QrHistoryStorage.loadAll(context)) }
     var pendingDelete by remember { mutableStateOf<QrHistoryEntry?>(null) }
     var pendingClearAll by remember { mutableStateOf(false) }
@@ -132,6 +139,15 @@ fun QrHistoryScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
+        // Revisión de banners 2026-10-02: era la única pantalla de contenido
+        // sin anuncio -- mismo orden que el resto (anuncio ANTES del banner de
+        // título) y mismo gating free-only que Creador/Lector de QR.
+        if (!isPremium) {
+            DocuSmartBannerAd(
+                adUnitId = AdConstants.BANNER_QR_HISTORY_ID,
+                adManager = viewModel.adManager,
+            )
+        }
         DocuSmartTopBanner(
             // Fase 2 del plan de diseño: encabezado compacto en pantallas de trabajo.
             compact = true,
@@ -363,7 +379,7 @@ private fun QrHistoryClearAllDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.qr_history_clear_all_confirm_title)) },
-        text = { Text(stringResource(R.string.qr_history_clear_all_confirm_body, count)) },
+        text = { Text(pluralStringResource(R.plurals.qr_history_clear_all_confirm_body, count, count)) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text(stringResource(R.string.general_delete), color = MaterialTheme.colorScheme.error)

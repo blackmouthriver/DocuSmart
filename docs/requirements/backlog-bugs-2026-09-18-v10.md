@@ -14,7 +14,7 @@ Ronda 13: 4 agentes de investigación en paralelo sobre áreas no auditadas a fo
 
 ## Hallazgos — i18n y Onboarding
 
-- **H1 (Media)** Sin sistema `<plurals>` en toda la app — "1 documentos" en vez de "1 documento", peor en ruso (3-4 formas plurales). **Estado: ✅ Corregido (caso puntual `library_document_count`)** — el patrón es sistemático en más lugares, queda documentado como pendiente de una auditoría de i18n dedicada para el resto de casos.
+- **H1 (Media)** Sin sistema `<plurals>` en toda la app — "1 documentos" en vez de "1 documento", peor en ruso (3-4 formas plurales). **Estado: ✅ Corregido por completo (2026-10-01)** — caso puntual `library_document_count` corregido primero; auditoría dedicada posterior (ver `backlog-bugs-2026-09-17-v4.md` nueva sección "Auditoría de `<plurals>`") revisó ~60 strings con marcador numérico en toda la app y confirmó 6 adicionales con declinación rusa incorrecta (el resto ya esquivaba el problema con abreviaturas tipo "дн."/"стр." o reformulando como "Archivos: N"), todos convertidos a `<plurals>` reales en los 12 idiomas.
 - **H2 (Alta)** `DownloadsAccessManager.kt`/`OnboardingScreen.kt`: excepción no capturada al mostrar el nombre de carpeta vinculada, puede crashear la última slide del Onboarding. **Estado: ✅ Corregido**
 - **H3 (Media, accesibilidad)** `OnboardingScreen.kt`: TalkBack no anuncia progreso en el carrusel ("página X de Y"). **Estado: ✅ Corregido**
 - **H4 (Baja)** Persistencia del flag "onboarding completado" vía `apply()` asíncrono — edge case de baja frecuencia genérico de SharedPreferences. **Estado: no corregido, documentado** (no urgente per el propio agente de investigación).

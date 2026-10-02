@@ -17,8 +17,8 @@ Ronda 12: 4 agentes de investigación en paralelo sobre áreas no auditadas a fo
 - **H2 (Media)** `BillingManager.kt`: sin manejador de excepciones en el `scope` — una excepción real de Play Billing (no solo un `BillingResponseCode` de error) puede tumbar la app entera, incluso en `onCreate()`. **Estado: ✅ Corregido**
 - **H3 (Media)** Una compra `PENDING` se trata igual que "nunca compró nada" en revalidaciones posteriores — relevante para métodos de pago que tardan en confirmar. **Estado: ✅ Corregido**
 - **H4 (Media)** El trial automático de 3 días no degrada `isPremium` a `false` si la app queda en primer plano sin interrupción durante todo el trial. **Estado: ✅ Corregido**
-- **H5 (Baja)** `acknowledgePurchase()` fallido no se reintenta. **Estado: ver resumen del agente**
-- **H6 (Baja)** Posible doble evento de analítica en una carrera estrecha entre el listener de compras y una revalidación simultánea. **Estado: ver resumen del agente**
+- **H5 (Baja)** `acknowledgePurchase()` fallido no se reintenta. **Estado: ✅ Corregido** (`BillingManager.acknowledgePurchaseWithRetry()`: un reintento inmediato tras un delay corto; además, `queryAndApplyRestore()` corre en cada `ON_START` y vuelve a intentarlo para cualquier compra que siga `!isAcknowledged`, autorreparándose en cada apertura de la app hasta el revert automático de Play Billing a los 3 días). Confirmado vigente 2026-10-01, revisión de backlog pendiente.
+- **H6 (Baja)** Posible doble evento de analítica en una carrera estrecha entre el listener de compras y una revalidación simultánea. **Estado: ✅ Corregido** (`shouldLogConversion(isRestore, purchase.isAcknowledged)` + `loggedPurchaseTokens` deduplican por `purchaseToken`; una reentrega de la misma compra ya confirmada no vuelve a contar). Confirmado vigente 2026-10-01.
 
 ## Hallazgos — Agenda en profundidad
 

@@ -628,7 +628,9 @@
 
     <!-- ── コンバーター: 一括変換(RF-CONV-08) ── -->
     <string name="converter_batch_hint">各ファイルの元の名前が保持されます</string>
-    <string name="converter_convert_batch_button">%1$d個のファイルを変換</string>
+    <plurals name="converter_convert_batch_button">
+        <item quantity="other">%1$d個のファイルを変換</item>
+    </plurals>
     <string name="converter_batch_success_title">%2$d個中%1$d個のファイルを変換しました</string>
     <string name="converter_batch_save_all">すべてダウンロードに保存</string>
     <string name="converter_batch_convert_another">別のバッチを変換</string>
@@ -675,11 +677,17 @@
     <string name="pdf_tools_section_extract">抽出と最適化</string>
     <string name="premium_feature_state_unlocked">利用可能</string>
     <string name="premium_feature_state_locked">ロック中</string>
-    <string name="premium_trial_badge">%1$d日間無料</string>
-    <string name="premium_start_trial">%1$d日間無料で始める</string>
+    <plurals name="premium_trial_badge">
+        <item quantity="other">%1$d日間無料</item>
+    </plurals>
+    <plurals name="premium_start_trial">
+        <item quantity="other">%1$d日間無料で始める</item>
+    </plurals>
     <string name="premium_trial_active_message">無料トライアル中 — %1$sに課金されます</string>
     <string name="premium_auto_trial_title">無料Premiumお試し</string>
-    <string name="premium_auto_trial_body">フルアクセス・広告なしがあと%1$d日間使えます。終了する前にプランを選んで継続しましょう。</string>
+    <plurals name="premium_auto_trial_body">
+        <item quantity="other">フルアクセス・広告なしがあと%1$d日間使えます。終了する前にプランを選んで継続しましょう。</item>
+    </plurals>
     <string name="premium_feature_no_ads_title">広告なし</string>
     <string name="premium_feature_no_ads_desc">広告に邪魔されずDocuSmartをお楽しみいただけます</string>
     <string name="premium_feature_pdf_word_title">PDFからWordへ</string>
@@ -961,7 +969,9 @@
     <string name="qr_history_empty_body">作成または読み取ったQRコードがここに表示されます</string>
     <string name="qr_history_clear_all">履歴を削除</string>
     <string name="qr_history_clear_all_confirm_title">履歴をすべて削除しますか？</string>
-    <string name="qr_history_clear_all_confirm_body">%1$d件の履歴が削除されます。この操作は元に戻せません。</string>
+    <plurals name="qr_history_clear_all_confirm_body">
+        <item quantity="other">%1$d件の履歴が削除されます。この操作は元に戻せません。</item>
+    </plurals>
     <string name="qr_history_delete_confirm_title">この履歴を削除しますか？</string>
     <string name="qr_history_delete_confirm_body">この操作は元に戻せません。</string>
     <string name="qr_history_source_created">作成</string>
@@ -999,7 +1009,9 @@
     <string name="study_loading_document">文書を読み込んでいます…少し時間がかかる場合があります</string>
     <string name="study_summary_local_note">インターネット接続不要、端末内で生成</string>
     <string name="study_summary_share_title">要約を共有</string>
-    <string name="study_summary_sentences_count">%1$d件の要点</string>
+    <plurals name="study_summary_sentences_count">
+        <item quantity="other">%1$d件の要点</item>
+    </plurals>
     <string name="study_reading_page">読み上げ中…%1$d / %2$d ページ</string>
     <string name="study_extracting_more">残りのドキュメントを処理中…(%1$d ページ準備完了)</string>
     <string name="study_continue_reading">続きを読む</string>
@@ -1101,7 +1113,9 @@
     <string name="trash_delete_forever_confirm_body">"%1$sは完全に削除され、復元できなくなります。"</string>
     <string name="trash_delete_all">すべて削除</string>
     <string name="trash_delete_all_confirm_title">ゴミ箱を空にしますか?</string>
-    <string name="trash_delete_all_confirm_body">"%1$d個のファイルが完全に削除され、復元できなくなります。"</string>
+    <plurals name="trash_delete_all_confirm_body">
+        <item quantity="other">"%1$d個のファイルが完全に削除され、復元できなくなります。"</item>
+    </plurals>
     <string name="trash_total_size">ゴミ箱内: %1$s</string>
     <string name="trash_delete_forever_permission_note">このアプリで作成されていない写真を削除する場合、Androidが確認を求めることがあります。</string>
     <string name="trash_bulk_delete_partial_error">一部のファイルは1つずつ削除する必要があります</string>

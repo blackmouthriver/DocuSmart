@@ -15,12 +15,16 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.R
+import com.docsmart.core.ads.AdManager
 import com.docsmart.core.ui.test.forceLocale
 import com.docsmart.core.ui.test.waitUntilOrDump
 import com.docsmart.features.scanner.domain.QrCrypto
 import com.docsmart.features.scanner.domain.QrHistoryEntry
 import com.docsmart.features.scanner.domain.QrHistorySource
 import com.docsmart.features.scanner.domain.QrHistoryStorage
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -44,6 +48,17 @@ class QrHistoryScreenTest {
 
     private lateinit var ctx: Context
     private val startMillis = System.currentTimeMillis()
+
+    // La pantalla ahora recibe QrViewModel (para el banner de anuncios): se arma
+    // a mano con premium = true, así no se carga ningún anuncio real en el test.
+    private val qrViewModel: QrViewModel by lazy { buildViewModel() }
+
+    private fun buildViewModel(): QrViewModel {
+        val adManager = mockk<AdManager>(relaxed = true)
+        every { adManager.isPremium } returns MutableStateFlow(true)
+        every { adManager.isInitialized } returns MutableStateFlow(false)
+        return QrViewModel(adManager = adManager)
+    }
 
     // Limpia los PNG temporales de "Guardar"/"Compartir" del diálogo de
     // regenerar (mismo criterio de limpieza que QrCreatorFlowsTest): solo
@@ -100,7 +115,7 @@ class QrHistoryScreenTest {
     ) = QrHistoryEntry(id, content, type, source, createdAtMillis = 1_700_000_000_000L)
 
     private fun render(onBack: () -> Unit = {}) {
-        composeRule.setContentEs(overrideContext = { ctx }) { QrHistoryScreen(onBack = onBack) }
+        composeRule.setContentEs(overrideContext = { ctx }) { QrHistoryScreen(onBack = onBack, viewModel = qrViewModel) }
         composeRule.waitForIdle()
     }
 
@@ -318,7 +333,7 @@ class QrHistoryScreenTest {
         seed(created)
         var recording: RecordingContext? = null
         composeRule.setContentEs(overrideContext = { RecordingContext(ctx).also { recording = it } }) {
-            QrHistoryScreen(onBack = {})
+            QrHistoryScreen(onBack = {}, viewModel = qrViewModel)
         }
         composeRule.waitForIdle()
 
@@ -348,7 +363,7 @@ class QrHistoryScreenTest {
     @Test
     fun banner_conOnHome_invocaSuCallback() {
         var homeCount = 0
-        composeRule.setContentEs(overrideContext = { ctx }) { QrHistoryScreen(onHome = { homeCount++ }) }
+        composeRule.setContentEs(overrideContext = { ctx }) { QrHistoryScreen(onHome = { homeCount++ }, viewModel = qrViewModel) }
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText(str(R.string.nav_home)).performClick()

@@ -28,6 +28,11 @@ object AdConstants {
     // 2026-09-18.
     const val BANNER_AGENDA_ID = "ca-app-pub-1109506701099935/9228781384"
 
+    // Historial de QR (HU-44), revisión de banners 2026-10-02: era la única
+    // pantalla de contenido sin banner. Bloque propio creado por el usuario
+    // en AdMob el 2026-10-02.
+    const val BANNER_QR_HISTORY_ID = "ca-app-pub-1109506701099935/6287925297"
+
     // ── Interstitial ──────────────────────────────────────────────────────────
     const val INTERSTITIAL_CONVERSION_ID = "ca-app-pub-1109506701099935/7653688296"
 
