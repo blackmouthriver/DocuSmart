@@ -308,3 +308,31 @@ creador/lector. Siguen sin banner por
 decisión documentada: Premium, splash, Contraseña PDF, Carpeta Segura,
 Papelera, Escáner (pantalla de paso) y la cámara en vivo del Lector de QR;
 Onboarding nunca se mencionó y se deja sin banner (primer contacto).
+
+### Creador de QR: logo que nunca cargaba y botones poco claros (2026-10-03)
+Pedido del usuario tras probar la app: "agregar logo no sirve", icono de
+historial dentro del banner sin explicación, icono de vaciar historial sin
+texto, y botones Guardar/Compartir "feos".
+- **Bug real (Media) -- logo imposible de agregar:** `decodeSampledBitmap()`
+  (`QrScreen.kt`) leía las dimensiones con `inJustDecodeBounds = true`, que
+  hace que `BitmapFactory.decodeStream()` devuelva SIEMPRE null; el
+  `?: return null` posterior abortaba con cualquier imagen. El aviso de error
+  salía al final del formulario (fuera de pantalla bajo el botón) y el botón
+  "parecía no hacer nada". Verificado en emulador y teléfono real: ahora el
+  logo se agrega y se dibuja en el centro del QR. El test instrumentado
+  `logo_agregarGenerarYQuitar` llevaba `@Ignore("inestable en CI")` -- en
+  realidad fallaba por este bug; se quitó el `@Ignore`. El error ahora
+  también sale como Toast.
+- Logo rectangular: ya no se estira a cuadrado (se escala conservando la
+  proporción y se centra).
+- Texto de ayuda bajo "Agregar logo" (PNG/JPG/WEBP, cuadrada, mínimo
+  200x200 px) y aviso "Toca Generar QR para ver el logo en el código".
+- Historial: botón con texto "Ver historial de QR" bajo el banner (antes era
+  un icono dentro del banner); en el Historial, "Vaciar historial" es un botón
+  rojo con texto sobre la lista (antes un icono en el banner).
+- Guardar/Compartir del QR generado: misma altura (52 dp) que "Generar QR" y
+  sin el borde doble de `OutlinedButton` + `accentBorder` (el mismo borde doble
+  se corrigió en "Ver historial de QR" y "Agregar logo").
+- Strings nuevos en los 12 idiomas (`qr_history_open`, `qr_design_logo_hint`,
+  `qr_design_logo_generate_hint`).
+- Pendiente: el icono de historial del Lector de QR sigue dentro del banner.

@@ -967,6 +967,8 @@
     <string name="qr_color_yellow">Horia</string>
     <string name="qr_design_add_logo">Gehitu logoa</string>
     <string name="qr_design_logo_added">Logoa gehituta</string>
+    <string name="qr_design_logo_hint">Aukerakoa. Erabili irudi karratu bat (PNG, JPG edo WEBP), gutxienez 200 × 200 px-koa; QRaren erdian jarriko da.</string>
+    <string name="qr_design_logo_generate_hint">Sakatu \"Sortu QRa\" logoa kodean ikusteko.</string>
     <string name="qr_design_remove_logo">Kendu logoa</string>
     <string name="qr_error_logo_load">Ezin izan da irudi hori logo gisa kargatu</string>
     <string name="qr_error_low_contrast">Aukeratu kontraste handiagoko kolore bat sortu aurretik</string>
@@ -985,6 +987,7 @@
     <string name="qr_protected_badge">Babestuta</string>
     <string name="qr_share_chooser_title">Partekatu QRa</string>
     <string name="qr_history_title">Historia</string>
+    <string name="qr_history_open">Ikusi QR historia</string>
     <string name="qr_history_subtitle">Sortu eta irakurri dituzun azken QR kodeak</string>
     <string name="qr_history_empty_title">Oraindik ez dago historiarik</string>
     <string name="qr_history_empty_body">Sortzen edo irakurtzen dituzun QRak hemen agertuko dira</string>

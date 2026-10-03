@@ -946,6 +946,8 @@
     <string name="qr_color_yellow">黄色</string>
     <string name="qr_design_add_logo">添加标志</string>
     <string name="qr_design_logo_added">已添加标志</string>
+    <string name="qr_design_logo_hint">可选。请使用至少 200 × 200 像素的正方形图片（PNG、JPG 或 WEBP），它会放在二维码中央。</string>
+    <string name="qr_design_logo_generate_hint">点按“生成二维码”即可在二维码中看到logo。</string>
     <string name="qr_design_remove_logo">移除标志</string>
     <string name="qr_error_logo_load">无法将该图片加载为标志</string>
     <string name="qr_error_low_contrast">生成前请选择对比度更高的颜色</string>
@@ -964,6 +966,7 @@
     <string name="qr_protected_badge">已保护</string>
     <string name="qr_share_chooser_title">分享二维码</string>
     <string name="qr_history_title">历史记录</string>
+    <string name="qr_history_open">查看二维码历史记录</string>
     <string name="qr_history_subtitle">你最近创建和扫描的二维码</string>
     <string name="qr_history_empty_title">暂无历史记录</string>
     <string name="qr_history_empty_body">你创建或扫描的二维码会显示在这里</string>

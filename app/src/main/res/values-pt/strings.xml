@@ -947,6 +947,8 @@
     <string name="qr_color_yellow">Amarelo</string>
     <string name="qr_design_add_logo">Adicionar logo</string>
     <string name="qr_design_logo_added">Logo adicionado</string>
+    <string name="qr_design_logo_hint">Opcional. Use uma imagem quadrada (PNG, JPG ou WEBP) de pelo menos 200 × 200 px; ela será colocada no centro do QR.</string>
+    <string name="qr_design_logo_generate_hint">Toque em \"Gerar QR\" para ver o logo no código.</string>
     <string name="qr_design_remove_logo">Remover logo</string>
     <string name="qr_error_logo_load">Não foi possível carregar essa imagem como logo</string>
     <string name="qr_error_low_contrast">Escolha uma cor com mais contraste antes de gerar</string>
@@ -965,6 +967,7 @@
     <string name="qr_protected_badge">Protegido</string>
     <string name="qr_share_chooser_title">Compartilhar QR</string>
     <string name="qr_history_title">Histórico</string>
+    <string name="qr_history_open">Ver histórico de QR</string>
     <string name="qr_history_subtitle">Seus últimos códigos QR criados e lidos</string>
     <string name="qr_history_empty_title">Ainda não há histórico</string>
     <string name="qr_history_empty_body">Os QR que você criar ou ler vão aparecer aqui</string>

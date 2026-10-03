@@ -9,7 +9,6 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -137,7 +136,7 @@ class QrHistoryScreenTest {
         composeRule.onNodeWithText(str(R.string.qr_history_empty_body)).assertExists()
         assertTrue(
             composeRule
-                .onAllNodesWithContentDescription(str(R.string.qr_history_clear_all))
+                .onAllNodesWithText(str(R.string.qr_history_clear_all))
                 .fetchSemanticsNodes()
                 .isEmpty(),
         )
@@ -198,13 +197,13 @@ class QrHistoryScreenTest {
         val clearAll = str(R.string.qr_history_clear_all)
 
         // Cancelar primero: no borra nada.
-        composeRule.onNodeWithContentDescription(clearAll).performClick()
+        composeRule.onNodeWithText(clearAll).performClick()
         composeRule.onNodeWithText(str(R.string.qr_history_clear_all_confirm_title)).assertExists()
         composeRule.onNodeWithText(str(R.string.general_cancel)).performClick()
         composeRule.waitForIdle()
         assertEquals(3, QrHistoryStorage.loadAll(ctx).size)
 
-        composeRule.onNodeWithContentDescription(clearAll).performClick()
+        composeRule.onNodeWithText(clearAll).performClick()
         composeRule.onNodeWithText(str(R.string.general_delete)).performClick()
         composeRule.waitForIdle()
 

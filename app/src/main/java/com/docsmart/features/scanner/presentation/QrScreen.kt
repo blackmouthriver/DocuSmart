@@ -1070,7 +1070,10 @@ fun QrCreatorScreen(
                         // soportado) dejaba `logoBitmap` en null sin ningún
                         // aviso -- la opción de logo simplemente desaparecía
                         // sin explicación.
+                        // Además del texto al final del formulario (errorMsg, que queda
+                        // fuera de pantalla bajo el botón de logo), un aviso visible ya.
                         errorMsg = errorLogoLoad
+                        Toast.makeText(context, errorLogoLoad, Toast.LENGTH_LONG).show()
                     }
                 }
             }
@@ -1125,16 +1128,21 @@ fun QrCreatorScreen(
                 screenSubtitle = stringResource(R.string.qr_creator_subtitle),
                 onBack = onBack,
                 onHome = onHome,
-                actions = {
-                    IconButton(onClick = onHistoryClick) {
-                        Icon(
-                            Icons.Rounded.History,
-                            contentDescription = stringResource(R.string.qr_history_title),
-                            tint = Color.White,
-                        )
-                    }
-                },
             )
+
+            // Acceso al historial como botón con texto (antes era solo un icono
+            // dentro del banner y no se entendía qué hacía).
+            OutlinedButton(
+                onClick = onHistoryClick,
+                // border = null: accentBorder ya dibuja el contorno (sin esto se veía doble).
+                shape = MaterialTheme.shapes.medium,
+                border = null,
+                modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
+            ) {
+                Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.qr_history_open))
+            }
 
             // ── Selector de tipo ──────────────────────────────────────────────
             // Pedido explícito del usuario 2026-09-08: los chips sin
@@ -1888,13 +1896,16 @@ fun QrCreatorScreen(
                                         }
                                     }
                                 },
+                                // Misma altura (52 dp) que "Generar QR" y sin el borde propio de
+                                // OutlinedButton (accentBorder ya dibuja el contorno: se veía doble).
                                 modifier =
-                                    Modifier.weight(1f)
+                                    Modifier.weight(1f).height(52.dp)
                                         .accentBorder(MaterialTheme.shapes.medium),
                                 shape = MaterialTheme.shapes.medium,
+                                border = null,
                             ) {
-                                Icon(Icons.Rounded.Download, null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(6.dp))
+                                Icon(Icons.Rounded.Download, null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
                                 Text(stringResource(R.string.general_save))
                             }
                             Button(
@@ -1905,12 +1916,12 @@ fun QrCreatorScreen(
                                     }
                                 },
                                 modifier =
-                                    Modifier.weight(1f)
+                                    Modifier.weight(1f).height(52.dp)
                                         .accentBorder(MaterialTheme.shapes.medium),
                                 shape = MaterialTheme.shapes.medium,
                             ) {
-                                Icon(Icons.Rounded.Share, null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(6.dp))
+                                Icon(Icons.Rounded.Share, null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
                                 Text(stringResource(R.string.general_share))
                             }
                         }
@@ -2009,7 +2020,12 @@ private fun overlayQrLogo(
 ) {
     val canvas = Canvas(bitmap)
     val logoSize = (bitmap.width * 0.22f).toInt()
-    val scaledLogo = Bitmap.createScaledBitmap(logo, logoSize, logoSize, true)
+    // Se escala conservando la proporción (antes se estiraba a un cuadrado y un
+    // logo rectangular salía deformado) y se centra dentro del cuadrado blanco.
+    val fit = logoSize.toFloat() / maxOf(logo.width, logo.height)
+    val drawWidth = (logo.width * fit).toInt().coerceAtLeast(1)
+    val drawHeight = (logo.height * fit).toInt().coerceAtLeast(1)
+    val scaledLogo = Bitmap.createScaledBitmap(logo, drawWidth, drawHeight, true)
     val left = (bitmap.width - logoSize) / 2f
     val top = (bitmap.height - logoSize) / 2f
     val padding = logoSize * 0.1f
@@ -2027,7 +2043,12 @@ private fun overlayQrLogo(
         16f,
         backgroundPaint,
     )
-    canvas.drawBitmap(scaledLogo, left, top, Paint().apply { isAntiAlias = true })
+    canvas.drawBitmap(
+        scaledLogo,
+        left + (logoSize - drawWidth) / 2f,
+        top + (logoSize - drawHeight) / 2f,
+        Paint().apply { isAntiAlias = true },
+    )
     if (scaledLogo !== logo) scaledLogo.recycle()
 }
 
@@ -2046,8 +2067,17 @@ private fun decodeSampledBitmap(
     targetSize: Int,
 ): Bitmap? {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
-        ?: return null
+    // Bug real (2026-10-03): con inJustDecodeBounds = true decodeStream() devuelve
+    // SIEMPRE null (solo rellena `bounds`), así que el `?: return null` de antes
+    // abortaba en toda imagen y el logo NUNCA se podía agregar -- el aviso de error
+    // salía al final de la pantalla, fuera de vista, y el botón "parecía no servir".
+    // Se ignora el retorno y se valida con las dimensiones leídas.
+    val boundsRead =
+        context.contentResolver.openInputStream(uri)?.use {
+            BitmapFactory.decodeStream(it, null, bounds)
+            bounds.outWidth > 0 && bounds.outHeight > 0
+        } ?: false
+    if (!boundsRead) return null
 
     val sampleSize = computeSampleSize(bounds.outWidth, bounds.outHeight, targetSize)
 
