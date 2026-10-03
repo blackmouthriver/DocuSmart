@@ -29,13 +29,22 @@ jobs:
       # siguiendo una redirección a http:// si el servidor alguna vez
       # respondiera con una -- hallazgo real de SonarCloud ("Not enforcing
       # HTTPS here might allow for redirections to insecure websites").
+      #
+      # Versión FIJA (2026-10-03): antes se resolvía "la última" consultando la API
+      # de GitHub sin autenticar en cada corrida -- esa consulta falló una vez
+      # (error pasajero, el escaneo ni llegó a correr y el check quedó en rojo en
+      # main) y además una versión nueva podía cambiar reglas sin aviso. El
+      # SHA-256 es el oficial de gitleaks_8.30.1_checksums.txt del release; para
+      # actualizar: cambiar VERSION y el hash juntos desde ese archivo.
       - name: Descargar gitleaks
         run: |
           set -euo pipefail
-          VERSION=$(curl --proto '=https' --tlsv1.2 -sSL https://api.github.com/repos/gitleaks/gitleaks/releases/latest \
-            | grep -Po '"tag_name":\s*"v\K[^"]*')
-          curl --proto '=https' --tlsv1.2 -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" \
+          VERSION=8.30.1
+          SHA256=551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+          curl --proto '=https' --tlsv1.2 -fsSL --retry 3 --retry-delay 2 \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" \
             -o gitleaks.tar.gz
+          echo "${SHA256}  gitleaks.tar.gz" | sha256sum -c -
           tar -xzf gitleaks.tar.gz gitleaks
           chmod +x gitleaks
           ./gitleaks version
