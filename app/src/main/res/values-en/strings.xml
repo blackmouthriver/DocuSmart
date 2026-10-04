@@ -956,6 +956,8 @@
     <string name="qr_color_yellow">Yellow</string>
     <string name="qr_design_add_logo">Add logo</string>
     <string name="qr_design_logo_added">Logo added</string>
+    <string name="qr_design_logo_hint">Optional. Use a square image (PNG, JPG or WEBP) of at least 200 × 200 px; it is placed in the center of the QR.</string>
+    <string name="qr_design_logo_generate_hint">Tap \"Generate QR\" to see the logo in the code.</string>
     <string name="qr_design_remove_logo">Remove logo</string>
     <string name="qr_error_logo_load">Couldn\'t load that image as a logo</string>
     <string name="qr_error_low_contrast">Pick a color with more contrast before generating</string>
@@ -974,6 +976,7 @@
     <string name="qr_protected_badge">Protected</string>
     <string name="qr_share_chooser_title">Share QR</string>
     <string name="qr_history_title">History</string>
+    <string name="qr_history_open">View QR history</string>
     <string name="qr_history_subtitle">Your latest created and scanned QR codes</string>
     <string name="qr_history_empty_title">No history yet</string>
     <string name="qr_history_empty_body">QR codes you create or scan will appear here</string>

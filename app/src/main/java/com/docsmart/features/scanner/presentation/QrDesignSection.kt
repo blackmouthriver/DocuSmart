@@ -188,15 +188,30 @@ fun QrDesignSection(
                     )
                 }
             }
+            // El logo solo se ve en el QR al generarlo de nuevo (agregarlo borra el
+            // QR anterior): sin este aviso parecía que el botón no hacía nada.
+            Text(
+                text = stringResource(R.string.qr_design_logo_generate_hint),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
         } else {
             OutlinedButton(
                 onClick = onPickLogo,
+                shape = MaterialTheme.shapes.medium,
+                border = null,
                 modifier = Modifier.accentBorder(MaterialTheme.shapes.medium),
             ) {
                 Icon(Icons.Rounded.AddPhotoAlternate, null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.qr_design_add_logo))
             }
+            // Formato y tamaño recomendados: antes el usuario no sabía qué imagen elegir.
+            Text(
+                text = stringResource(R.string.qr_design_logo_hint),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

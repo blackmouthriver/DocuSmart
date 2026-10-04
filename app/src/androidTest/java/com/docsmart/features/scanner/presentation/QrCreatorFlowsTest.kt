@@ -11,7 +11,6 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -35,7 +34,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
@@ -391,7 +389,8 @@ class QrCreatorFlowsTest {
         generateAndWaitResult()
     }
 
-    @Ignore("inestable en el emulador de CI 320x640 (temporización); pendiente, ver backlog v17")
+    // Estaba @Ignore ("inestable en CI") pero fallaba por un bug real: decodeSampledBitmap()
+    // devolvía null SIEMPRE (inJustDecodeBounds), así que el logo nunca se agregaba.
     @Test
     fun logo_agregarGenerarYQuitar() {
         val file = testImage()
@@ -499,13 +498,13 @@ class QrCreatorFlowsTest {
     fun banner_historialYVolverInvocanSusCallbacks() {
         val shown = show()
 
-        composeRule.onNodeWithContentDescription(str(R.string.qr_history_title)).performClick()
+        composeRule.onNodeWithText(str(R.string.qr_history_open)).performClick()
         composeRule.onNodeWithText(str(R.string.general_back)).performClick()
         composeRule.waitForIdle()
 
         assertEquals(1, shown.history.get())
         assertEquals(1, shown.back.get())
-        composeRule.onAllNodesWithContentDescription(str(R.string.qr_history_title)).assertCountEquals(1)
+        composeRule.onAllNodesWithText(str(R.string.qr_history_open)).assertCountEquals(1)
     }
 
     // Hallazgo de cobertura (ronda 23): ningún test existente pasaba `onHome`

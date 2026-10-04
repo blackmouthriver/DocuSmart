@@ -946,6 +946,8 @@
     <string name="qr_color_yellow">黄色</string>
     <string name="qr_design_add_logo">ロゴを追加</string>
     <string name="qr_design_logo_added">ロゴを追加しました</string>
+    <string name="qr_design_logo_hint">任意。PNG・JPG・WEBP形式の正方形の画像（200 × 200 px以上）を使用してください。QRコードの中央に配置されます。</string>
+    <string name="qr_design_logo_generate_hint">「QRを生成」をタップすると、コードにロゴが表示されます。</string>
     <string name="qr_design_remove_logo">ロゴを削除</string>
     <string name="qr_error_logo_load">この画像をロゴとして読み込めませんでした</string>
     <string name="qr_error_low_contrast">生成する前にコントラストの高い色を選んでください</string>
@@ -964,6 +966,7 @@
     <string name="qr_protected_badge">保護済み</string>
     <string name="qr_share_chooser_title">QRを共有</string>
     <string name="qr_history_title">履歴</string>
+    <string name="qr_history_open">QRの履歴を見る</string>
     <string name="qr_history_subtitle">最近作成・読み取ったQRコード</string>
     <string name="qr_history_empty_title">履歴はまだありません</string>
     <string name="qr_history_empty_body">作成または読み取ったQRコードがここに表示されます</string>

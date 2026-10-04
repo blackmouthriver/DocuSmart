@@ -979,6 +979,8 @@
     <string name="qr_color_yellow">Groc</string>
     <string name="qr_design_add_logo">Afegeix un logo</string>
     <string name="qr_design_logo_added">Logo afegit</string>
+    <string name="qr_design_logo_hint">Opcional. Fes servir una imatge quadrada (PNG, JPG o WEBP) d\'almenys 200 × 200 px; es col·locarà al centre del QR.</string>
+    <string name="qr_design_logo_generate_hint">Toca \"Generar QR\" per veure el logo al codi.</string>
     <string name="qr_design_remove_logo">Treu el logo</string>
     <string name="qr_error_logo_load">No s’ha pogut carregar aquesta imatge com a logo</string>
     <string name="qr_error_low_contrast">Tria un color amb més contrast abans de generar</string>
@@ -997,6 +999,7 @@
     <string name="qr_protected_badge">Protegit</string>
     <string name="qr_share_chooser_title">Compartir QR</string>
     <string name="qr_history_title">Historial</string>
+    <string name="qr_history_open">Veure l\'historial de QR</string>
     <string name="qr_history_subtitle">Els teus últims codis QR creats i llegits</string>
     <string name="qr_history_empty_title">Encara no hi ha historial</string>
     <string name="qr_history_empty_body">Els QR que creïs o llegeixis apareixeran aquí</string>

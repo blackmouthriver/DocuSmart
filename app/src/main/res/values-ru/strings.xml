@@ -957,6 +957,8 @@
     <string name="qr_color_yellow">Жёлтый</string>
     <string name="qr_design_add_logo">Добавить логотип</string>
     <string name="qr_design_logo_added">Логотип добавлен</string>
+    <string name="qr_design_logo_hint">Необязательно. Используйте квадратное изображение (PNG, JPG или WEBP) не менее 200 × 200 px; оно будет размещено по центру QR-кода.</string>
+    <string name="qr_design_logo_generate_hint">Нажмите «Создать QR», чтобы увидеть логотип в коде.</string>
     <string name="qr_design_remove_logo">Убрать логотип</string>
     <string name="qr_error_logo_load">Не удалось загрузить это изображение как логотип</string>
     <string name="qr_error_low_contrast">Выберите цвет с большим контрастом перед созданием</string>
@@ -975,6 +977,7 @@
     <string name="qr_protected_badge">Защищено</string>
     <string name="qr_share_chooser_title">Поделиться QR</string>
     <string name="qr_history_title">История</string>
+    <string name="qr_history_open">Открыть историю QR</string>
     <string name="qr_history_subtitle">Ваши последние созданные и считанные QR-коды</string>
     <string name="qr_history_empty_title">Истории пока нет</string>
     <string name="qr_history_empty_body">Созданные или считанные QR-коды появятся здесь</string>

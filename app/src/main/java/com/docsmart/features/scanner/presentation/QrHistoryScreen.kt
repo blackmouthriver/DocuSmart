@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,6 +39,7 @@ import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material.icons.rounded.Wifi
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -155,22 +157,26 @@ fun QrHistoryScreen(
             screenSubtitle = stringResource(R.string.qr_history_subtitle),
             onBack = onBack,
             onHome = onHome,
-            actions = {
-                if (entries.isNotEmpty()) {
-                    IconButton(onClick = { pendingClearAll = true }) {
-                        Icon(
-                            Icons.Rounded.DeleteSweep,
-                            contentDescription = stringResource(R.string.qr_history_clear_all),
-                            tint = Color.White,
-                        )
-                    }
-                }
-            },
         )
         Spacer(Modifier.height(16.dp))
         if (entries.isEmpty()) {
             QrHistoryEmptyState()
         } else {
+            // "Vaciar historial" como botón de ancho completo, mismo estilo que "Ver
+            // historial de QR" del creador (antes un icono en el banner y luego un texto
+            // suelto); en rojo porque borra todo.
+            OutlinedButton(
+                onClick = { pendingClearAll = true },
+                shape = MaterialTheme.shapes.medium,
+                border = null,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                modifier = Modifier.fillMaxWidth().accentBorder(MaterialTheme.shapes.medium),
+            ) {
+                Icon(Icons.Rounded.DeleteSweep, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.qr_history_clear_all))
+            }
+            Spacer(Modifier.height(12.dp))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(entries, key = { it.id }) { entry ->
                     QrHistoryRow(
