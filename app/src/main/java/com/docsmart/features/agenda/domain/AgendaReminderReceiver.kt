@@ -11,6 +11,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.docsmart.MainActivity
 import com.docsmart.R
+import com.docsmart.core.ui.util.applyDocuSmartBranding
 
 // HU-65: dispara la notificación local en el instante exacto que programó
 // ReminderScheduler. Servicio "tonto" a propósito -- no consulta la base de
@@ -57,7 +58,7 @@ class AgendaReminderReceiver : BroadcastReceiver() {
         val notification =
             NotificationCompat
                 .Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notification_agenda)
+                .applyDocuSmartBranding(context)
                 .setContentTitle(title.ifBlank { context.getString(R.string.agenda_reminder_notification_fallback_title) })
                 .setContentText(context.getString(R.string.agenda_reminder_notification_text))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
