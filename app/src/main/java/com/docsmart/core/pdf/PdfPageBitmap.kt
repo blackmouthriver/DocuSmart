@@ -115,17 +115,41 @@ private fun renderCachedPdfPages(cacheFile: File): List<PdfPageBitmap> {
     }
 }
 
+// Crash real en producción (Crashlytics, v1.1.0, 2026-10-05): la escala fija 2x
+// sobre una página de gran formato (planos/pósters) daba un bitmap de ~156 MB y
+// Android aborta el dibujado de cualquier bitmap > 100 MB ("Canvas: trying to
+// draw too large bitmap") -- cierre de la app al abrir un PDF válido. Como el
+// Visor mantiene TODAS las páginas en memoria a la vez, el tope es bajo
+// (8 MP = 32 MB por página; una A4 a 2x son ~2 MP, así que los documentos
+// normales no cambian). Por encima del tope se reduce la escala.
+internal const val VIEWER_PAGE_MAX_PIXELS = 8_000_000L
+private const val VIEWER_PAGE_SCALE = 2
+
+internal data class PageBitmapSize(val width: Int, val height: Int)
+
+/** Tamaño del bitmap de una página de [pageWidth] x [pageHeight] pts: 2x, o menos si superaría el tope. */
+internal fun viewerPageBitmapSize(
+    pageWidth: Int,
+    pageHeight: Int,
+): PageBitmapSize {
+    val width = pageWidth.coerceAtLeast(1).toLong() * VIEWER_PAGE_SCALE
+    val height = pageHeight.coerceAtLeast(1).toLong() * VIEWER_PAGE_SCALE
+    val pixels = width * height
+    if (pixels <= VIEWER_PAGE_MAX_PIXELS) return PageBitmapSize(width.toInt(), height.toInt())
+    val factor = kotlin.math.sqrt(VIEWER_PAGE_MAX_PIXELS.toDouble() / pixels)
+    return PageBitmapSize(
+        width = (width * factor).toInt().coerceAtLeast(1),
+        height = (height * factor).toInt().coerceAtLeast(1),
+    )
+}
+
 private fun renderAllPages(pdfRenderer: PdfRenderer): List<PdfPageBitmap> {
     val pages = mutableListOf<PdfPageBitmap>()
     for (i in 0 until pdfRenderer.pageCount) {
         val page = pdfRenderer.openPage(i)
         try {
-            val bitmap =
-                Bitmap.createBitmap(
-                    page.width * 2,
-                    page.height * 2,
-                    Bitmap.Config.ARGB_8888,
-                )
+            val size = viewerPageBitmapSize(page.width, page.height)
+            val bitmap = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
             bitmap.eraseColor(android.graphics.Color.WHITE)
             page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
             pages.add(PdfPageBitmap(bitmap, page.width.toFloat(), page.height.toFloat()))
