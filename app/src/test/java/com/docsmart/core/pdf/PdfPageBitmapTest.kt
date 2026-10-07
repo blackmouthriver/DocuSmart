@@ -6,6 +6,7 @@ import android.net.Uri
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -101,5 +102,40 @@ class PdfPageBitmapTest {
         val pages = renderPdfPagesToBitmaps(uri, context)
 
         assertTrue(pages.isEmpty())
+    }
+
+    @Test
+    fun `una pagina A4 conserva la escala 2x`() {
+        val size = viewerPageBitmapSize(595, 842)
+
+        assertEquals(1190, size.width)
+        assertEquals(1684, size.height)
+    }
+
+    @Test
+    fun `la pagina del crash de Crashlytics (156 MB a 2x) queda bajo el limite de Android`() {
+        // 3118x3118 pts a 2x = 6236x6236 px = 155.6 MB en ARGB_8888 (el valor exacto del crash).
+        val size = viewerPageBitmapSize(3118, 3118)
+
+        val bytes = size.width.toLong() * size.height * 4
+        assertTrue(bytes <= VIEWER_PAGE_MAX_PIXELS * 4, "bytes=$bytes")
+        assertTrue(bytes < 100L * 1024 * 1024, "debe quedar bajo los 100 MB que Android permite dibujar")
+    }
+
+    @Test
+    fun `reducir la escala conserva la proporcion de la pagina`() {
+        val size = viewerPageBitmapSize(2384, 3370)
+
+        val original = 2384.0 / 3370.0
+        assertEquals(original, size.width.toDouble() / size.height, 0.001)
+        assertTrue(size.width < 2384 * 2)
+    }
+
+    @Test
+    fun `dimensiones invalidas no producen un bitmap de tamano cero`() {
+        val size = viewerPageBitmapSize(0, -5)
+
+        assertTrue(size.width >= 1)
+        assertTrue(size.height >= 1)
     }
 }

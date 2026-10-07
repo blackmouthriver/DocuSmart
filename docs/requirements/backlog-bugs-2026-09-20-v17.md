@@ -54,3 +54,11 @@ Ningún agente pudo compilar su código (regla del proceso); al correr todo junt
 - `StudyScreen.kt`: `SummaryTab` es código muerto (pestaña oculta desde 2026-09-10), la detección de voz/TTS no es alcanzable en el emulador de CI (sin motor TTS), y los diálogos `DatePicker`/`TimePicker` de recordatorio personalizado no se tocaron por riesgo de inestabilidad (sin precedente en el proyecto).
 - `PomodoroTimerService.kt`: el ciclo de vida del `Service` (`onCreate`/`onStartCommand`/`onDestroy`/notificaciones) no es testeable sin Robolectric (no se usa en este proyecto); la lógica pura ya tiene 100% vía `PomodoroTimerServiceTest`.
 - **Por verificar**: un sub-agente reportó `ComparePdfScreen.kt` en 0% de cobertura en SonarCloud pese a tests reales ya existentes — posible recurrencia del bug de atribución JaCoCo/bytecode ya documentado y corregido antes (ver nota de cobertura de SonarCloud); pendiente de confirmar con un run real.
+
+# Crash de producción (Crashlytics, v1.1.0 build 5, 2026-10-05): Visor con página de gran formato
+
+- **Síntoma:** `RuntimeException: Canvas: trying to draw too large(155679216bytes) bitmap` al pintar `PdfViewerContent` (`ViewerScreen.kt`) — cierre de la app al abrir un PDF válido.
+- **Causa raíz:** `renderAllPages()` (`core/pdf/PdfPageBitmap.kt`) rasterizaba cada página a 2x sin tope. Una página de ~3118x3118 pts (plano/póster) da 6236x6236 px = 156 MB en ARGB_8888, y Android no dibuja bitmaps > 100 MB. La misma función alimenta el Modo Estudio.
+- **Arreglo:** `viewerPageBitmapSize()` reduce la escala proporcionalmente por encima de 8 MP (32 MB por página; el Visor mantiene todas las páginas en memoria). Una A4 a 2x (~2 MP) no cambia. Mismo patrón que `pdfToImageRenderSize` (ronda 15) pero con tope más bajo.
+- **Tests:** `PdfPageBitmapTest` (A4 conserva 2x; el caso exacto del crash queda < 100 MB; proporción conservada; dimensiones inválidas).
+- **Pendiente relacionado:** el Visor sigue renderizando todas las páginas a la vez (ver comentario R11 en `ViewerScreen.kt`); un PDF de cientos de páginas puede dar OOM. Un render perezoso (página visible ± margen) sería el arreglo de fondo.
