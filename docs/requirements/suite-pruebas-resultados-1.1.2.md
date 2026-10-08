@@ -48,8 +48,14 @@ También se mejoró `waitUntilOrDump`: `printToLog` imprimía solo la raíz (`ma
 
 Arreglo: `pendingContext = localizedApplicationContext(context)`, que hace `context.applicationContext.createConfigurationContext(context.resources.configuration)`: sigue siendo un contexto de aplicación (sin retener la Activity, sin fuga) pero con la configuración/idioma del contexto de la pantalla. Cubierto por un test unitario nuevo (el mensaje sale del contexto derivado, no del de la aplicación). Verificado: `ViewerViewModelTest` 63/63 y las 93 pruebas instrumentadas del Visor en un emulador en inglés de 320x640 y en el Edge (español).
 
+## Reconfirmación tras los arreglos
+
+- **Teléfonos reales** (Edge 30 Neo 393 pruebas, Moto E22 387): 780 pruebas, **0 fallidas, 0 crashes** (las diferencias entre iniciadas y exitosas son pruebas `@Ignore`).
+- **CI de `main`** (`d7e28e3`, con el guardia activo): 8 shards, 780 pruebas, 0 fallidas. Gitleaks OK.
+- **SonarCloud, gate de `main`: OK** — cobertura del código nuevo 80.6% (umbral 80%), calificaciones de fiabilidad, seguridad y mantenibilidad en A, duplicación 1.0%, hotspots revisados 100%.
+
 ## Pendiente de la suite
 
-- Pruebas manuales M1–M15 (`suite-pruebas-release.md`): no ejecutadas.
-- Reconfirmar con una corrida completa de las 780 en los dos teléfonos tras los arreglos.
+- Pruebas manuales M1–M15 (`suite-pruebas-release.md`): las ejecuta el usuario en los teléfonos; este documento no registra su resultado.
 - El Moto E22 quedó sin la build de Play (se desinstaló para poder instalar el debug); reinstalarla desde el enlace de la prueba cerrada antes de M7/M8.
+- `QrCreatorFlowsTest.url_generaElCodigoYLoGuardaEnElHistorial`: intermitente solo en CI, causa sin confirmar; tolerada en `config/ci/instrumented-known-failures.txt`.
