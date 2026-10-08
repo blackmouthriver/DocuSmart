@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -395,8 +396,8 @@ class ConverterScreenFlowsTest {
         selectAndConvert(viewModel, ConversionType.IMAGE_TO_JPG, listOf(image), "Convertir a JPG")
         waitForText(text(R.string.daily_limit_watch_ad))
 
-        composeRule.onNodeWithText(text(R.string.daily_limit_get_premium)).performScrollTo().performClick()
-        composeRule.onNodeWithText(text(R.string.daily_limit_watch_ad)).performScrollTo().performClick()
+        composeRule.onNodeWithText(text(R.string.daily_limit_get_premium)).scrollToIfScrollable().performClick()
+        composeRule.onNodeWithText(text(R.string.daily_limit_watch_ad)).scrollToIfScrollable().performClick()
         composeRule.waitForIdle()
 
         assertTrue(viewModel.uiState.value.showLimitDialog)
@@ -412,7 +413,7 @@ class ConverterScreenFlowsTest {
         selectAndConvert(viewModel, ConversionType.IMAGE_TO_JPG, listOf(image), "Convertir a JPG")
         waitForText(text(R.string.general_cancel))
 
-        composeRule.onNodeWithText(text(R.string.general_cancel)).performScrollTo().performClick()
+        composeRule.onNodeWithText(text(R.string.general_cancel)).scrollToIfScrollable().performClick()
 
         composeRule.waitUntilOrDump("CI_HANG_ConverterScreenFlowsTest") { !viewModel.uiState.value.showLimitDialog }
     }
@@ -456,3 +457,14 @@ class ConverterScreenFlowsTest {
         waitForText(text(R.string.converter_select))
     }
 }
+
+/**
+ * Un botón de diálogo solo necesita scroll si el contenido no cabe: en pantallas grandes el diálogo no
+ * tiene contenedor desplazable y `performScrollTo()` falla con "no parent layout with a Scroll action".
+ */
+private fun SemanticsNodeInteraction.scrollToIfScrollable(): SemanticsNodeInteraction =
+    try {
+        performScrollTo()
+    } catch (_: AssertionError) {
+        this
+    }

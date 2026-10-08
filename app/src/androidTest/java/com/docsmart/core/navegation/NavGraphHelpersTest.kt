@@ -66,6 +66,9 @@ class NavGraphHelpersTest {
     }
 
     private fun navigateWith(block: NavHostController.() -> Unit) {
+        // Cada navegación del test es un toque independiente: sin esto, la segunda cae dentro de la
+        // ventana anti doble-toque (500 ms) de los accesos rápidos y se descarta en dispositivos rápidos.
+        resetQuickActionNavigateDebounceForTests()
         composeRule.runOnUiThread { controller.block() }
         composeRule.waitForIdle()
     }

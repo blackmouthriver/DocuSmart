@@ -1073,7 +1073,11 @@ fun QrCreatorScreen(
                         // Además del texto al final del formulario (errorMsg, que queda
                         // fuera de pantalla bajo el botón de logo), un aviso visible ya.
                         errorMsg = errorLogoLoad
-                        Toast.makeText(context, errorLogoLoad, Toast.LENGTH_LONG).show()
+                        // Un Toast exige el hilo principal; se garantiza explícitamente en vez de
+                        // depender del dispatcher del scope (en pruebas de Compose reanuda en IO).
+                        withContext(Dispatchers.Main.immediate) {
+                            Toast.makeText(context, errorLogoLoad, Toast.LENGTH_LONG).show()
+                        }
                     }
                 }
             }

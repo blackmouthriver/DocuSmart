@@ -30,11 +30,16 @@
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet('Static', 'Build', 'Instrumented', 'Bundle')]
+    # Etapas separadas por coma. Sin ValidateSet a propósito: con `powershell -File` la lista llega
+    # como UN solo texto ("Static,Build") y ValidateSet la rechazaría; se separa y valida abajo.
     [string[]]$Stages = @('Static', 'Build', 'Instrumented'),
 
     # Seriales de adb (ver `adb devices`). Obligatorio para la etapa Instrumented.
     [string[]]$Devices = @(),
+
+    # Permite DESINSTALAR la app de un dispositivo si trae otra firma (p. ej. la build de Play):
+    # se pierde su data y hay que reinstalarla desde Play. Sin este switch, ese dispositivo falla.
+    [switch]$UninstallConflicting,
 
     # Paquete de la app y de las pruebas instrumentadas.
     [string]$AppId = 'com.docsmart',
@@ -42,6 +47,12 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# Normaliza listas que llegan como un solo texto ("a,b") al usar `powershell -File`.
+$Stages = @($Stages | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
+$Devices = @($Devices | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
+foreach ($s in $Stages) {
+    if ('Static', 'Build', 'Instrumented', 'Bundle' -notcontains $s) { throw "Etapa desconocida: '$s'" }
+}
 $repo = Split-Path -Parent $PSScriptRoot
 Set-Location $repo
 
@@ -55,9 +66,18 @@ function Invoke-Gradle {
     param([string]$Name, [string[]]$GradleArgs)
     $log = Join-Path $outDir "$Name.log"
     Write-Host "==> gradle $($GradleArgs -join ' ')  (log: $log)"
-    & "$repo\gradlew.bat" @GradleArgs '--console=plain' *> $log
-    $ok = ($LASTEXITCODE -eq 0)
-    $results[$Name] = if ($ok) { 'OK' } else { "FALLÓ (exit $LASTEXITCODE)" }
+    # Vía cmd.exe a propósito: en Windows PowerShell 5.1, el stderr de un ejecutable nativo se vuelve
+    # ErrorRecord y, con $ErrorActionPreference='Stop', un simple aviso del daemon de Kotlin mataría
+    # el script a media suite. cmd redirige crudo (UTF-8/ANSI) y solo nos importa el código de salida.
+    $line = "`"`"$repo\gradlew.bat`" $($GradleArgs -join ' ') --console=plain > `"$log`" 2>&1`""
+    # Sin -Wait a propósito: Start-Process -Wait espera también a los procesos hijos que heredaron el
+    # handle, y el daemon de Gradle (que se queda vivo) lo haría colgarse para siempre. Se espera solo
+    # a cmd.exe; `$null = $proc.Handle` fuerza a cachear el handle para poder leer ExitCode después.
+    $proc = Start-Process -FilePath 'cmd.exe' -ArgumentList "/c $line" -NoNewWindow -PassThru
+    $null = $proc.Handle
+    $proc.WaitForExit()
+    $ok = ($proc.ExitCode -eq 0)
+    $results[$Name] = if ($ok) { 'OK' } else { "FALLÓ (exit $($proc.ExitCode))" }
     return $ok
 }
 
@@ -99,13 +119,22 @@ function Invoke-Instrumented {
         $serial = $Devices[$i]
         $log = Join-Path $outDir "instrumented-$serial.log"
         Write-Host "==> $serial : porción $i de $n  (log: $log)"
-        $jobs += Start-Job -Name $serial -ArgumentList $adb, $serial, $apk, $testApk, $Runner, $i, $n, $log -ScriptBlock {
-            param($adb, $serial, $apk, $testApk, $runner, $idx, $total, $log)
+        $jobs += Start-Job -Name $serial -ArgumentList $adb, $serial, $apk, $testApk, $Runner, $i, $n, $log, $UninstallConflicting.IsPresent, $AppId -ScriptBlock {
+            param($adb, $serial, $apk, $testApk, $runner, $idx, $total, $log, $uninstallConflicting, $appId)
             # Mismo ajuste que CI: sin animaciones (las pruebas de Compose se vuelven inestables con ellas).
             foreach ($s in 'window_animation_scale', 'transition_animation_scale', 'animator_duration_scale') {
                 & $adb -s $serial shell settings put global $s 0.0
             }
-            & $adb -s $serial install -r -t $apk | Out-File $log
+            # Pantalla encendida mientras haya USB: una pantalla que se apaga a mitad de corrida tumba pruebas de UI.
+            & $adb -s $serial shell svc power stayon true
+            $out = (& $adb -s $serial install -r -t $apk 2>&1 | Out-String)
+            # Una build de Play (otra firma) no se puede actualizar con el debug: solo se desinstala si se pidió.
+            if ($out -match 'INSTALL_FAILED_UPDATE_INCOMPATIBLE|signatures do not match' -and $uninstallConflicting) {
+                "Firma distinta en ${serial}: desinstalando $appId (pedido con -UninstallConflicting)" | Out-File $log
+                & $adb -s $serial uninstall $appId | Out-File $log -Append
+                $out = (& $adb -s $serial install -r -t $apk 2>&1 | Out-String)
+            }
+            $out | Out-File $log -Append
             & $adb -s $serial install -r -t $testApk | Out-File $log -Append
             & $adb -s $serial shell am instrument -w -r `
                 -e numShards $total -e shardIndex $idx `
@@ -113,6 +142,7 @@ function Invoke-Instrumented {
             foreach ($s in 'window_animation_scale', 'transition_animation_scale', 'animator_duration_scale') {
                 & $adb -s $serial shell settings put global $s 1.0
             }
+            & $adb -s $serial shell svc power stayon false
         }
     }
     $jobs | Wait-Job | Out-Null

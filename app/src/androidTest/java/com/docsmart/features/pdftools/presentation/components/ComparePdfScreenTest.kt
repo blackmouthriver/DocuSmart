@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.docsmart.R
@@ -47,7 +48,8 @@ class ComparePdfScreenTest {
             )
         }
 
-        composeRule.onNodeWithText(s(R.string.pdf_compare)).assertExists()
+        // "Comparar PDFs" es a la vez el título y el texto del botón de ejecutar: dos nodos.
+        composeRule.onAllNodesWithText(s(R.string.pdf_compare)).onFirst().assertExists()
         composeRule.onNodeWithText(s(R.string.pdf_compare_subtitle)).assertExists()
         composeRule.onNodeWithText(s(R.string.pdf_compare_document_a)).assertExists()
         composeRule.onNodeWithText(s(R.string.pdf_compare_document_b)).assertExists()
