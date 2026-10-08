@@ -134,6 +134,12 @@ class ViewerViewModelTest {
 
         context = mockk()
         every { context.applicationContext } returns context
+        // loadDocument() deriva un contexto con la configuración (idioma) del de la pantalla.
+        every { context.resources } returns
+            mockk<android.content.res.Resources> {
+                every { configuration } returns mockk<android.content.res.Configuration>()
+            }
+        every { context.createConfigurationContext(any()) } returns context
         every { context.cacheDir } returns cacheDir
         every { context.contentResolver } returns resolver
         every { context.getString(any<Int>()) } answers { str(firstArg()) }
@@ -897,6 +903,24 @@ class ViewerViewModelTest {
         assertFalse(state.isReadOnlyPreview)
         // Los archivos temporales de la deteccion no quedan en cacheDir.
         assertTrue(cacheDir.listFiles().orEmpty().isEmpty())
+    }
+
+    @Test
+    fun `los mensajes del desbloqueo usan el idioma del contexto de la pantalla, no el del dispositivo`() {
+        // Antes: pendingContext = context.applicationContext, que nunca lleva el idioma elegido en la
+        // app, así que el mensaje salía en el idioma del teléfono.
+        val localized = mockk<Context>()
+        every { localized.cacheDir } returns cacheDir
+        every { localized.contentResolver } returns resolver
+        every { localized.getString(any<Int>()) } answers { "loc:${firstArg<Int>()}" }
+        every { context.createConfigurationContext(any()) } returns localized
+        loadLockedAndAwait(LOCKED_DOC_ID)
+        stubLockedStream()
+
+        viewModel.unlockPdfWithPassword("clave-equivocada")
+        val state = awaitState { !it.isLoading }
+
+        assertEquals("loc:${R.string.pdf_pw_wrong_password_retry}", state.passwordError)
     }
 
     @Test

@@ -33,20 +33,19 @@ El reporte de los emuladores de CI del PR #98 (run `37685670958`) tiene **12 fal
 | Prueba | Causa | Estado |
 |---|---|---|
 | `AgendaEventEditorDialogTest.conTituloEnEdicion_guardarHabilitadoEInvocaOnSave` | El contenido del diálogo hace scroll y en 640 dp el botón **Guardar queda fuera de pantalla**; `performClick()` sin scroll cae fuera de la ventana y no llama a `onSave` (`expected:<1> but was:<0>`). Reproducido | **Corregida** (`performScrollTo()` antes del clic) |
-| `ViewerPasswordTest.pdfProtegido_contrasenaIncorrecta…` | El mensaje sí aparecía, pero **en inglés** (`Incorrect password. Check it and try again.`): `ViewerViewModel` lo arma con `context.applicationContext`, que usa el idioma del dispositivo, y la prueba lo buscaba en el español forzado. Pasaba en los teléfonos solo porque están en español. Visto en el volcado de semántica | **Corregida** (la prueba espera el texto tal como lo genera el ViewModel). **Hallazgo de producción abierto**, ver abajo |
+| `ViewerPasswordTest.pdfProtegido_contrasenaIncorrecta…` | El mensaje sí aparecía, pero **en inglés** (`Incorrect password. Check it and try again.`): `ViewerViewModel` lo arma con `context.applicationContext`, que usa el idioma del dispositivo, y la prueba lo buscaba en el español forzado. Pasaba en los teléfonos solo porque están en español. Visto en el volcado de semántica | **Corregida de raíz en la app** (ver abajo): la prueba vuelve a esperar el idioma de la pantalla |
 | `QrCreatorFlowsTest.url_generaElCodigoYLoGuardaEnElHistorial` | `entries.size == 0` justo tras mostrarse el resultado. **No se reproduce** (ni sola, ni con la clase completa de 23 pruebas, ni en teléfonos). Causa no confirmada; hipótesis: intermitencia del emulador lento de CI | **Mitigada, no confirmada** (la prueba espera a que el historial se escriba en vez de leerlo al instante) |
 
 También se mejoró `waitUntilOrDump`: `printToLog` imprimía solo la raíz (`maxDepth` por defecto = 0), inservible para diagnosticar; ahora imprime el árbol completo.
 
-### Hallazgo de producción abierto: mensajes del Visor en el idioma equivocado
+### Hallazgo de producción: mensajes del Visor en el idioma equivocado — CORREGIDO
 
-`ViewerViewModel.loadDocument()` guarda `context.applicationContext` y con él genera textos (`pdf_pw_wrong_password_retry`, `pdf_pw_read_error`, `viewer_error`…). El contexto de aplicación **nunca lleva el idioma elegido dentro de la app** (solo `MainActivity.attachBaseContext()` lo aplica; ver la nota H8 de `ScanSessionManager`). Un usuario cuyo idioma en la app difiere del del teléfono ve esos mensajes en el idioma del teléfono. No está corregido; pendiente de decisión (arreglo propuesto: construir los textos con un contexto localizado vía `LanguageManager.applyLanguage()`).
+`ViewerViewModel.loadDocument()` guardaba `context.applicationContext` y con él generaba textos (`pdf_pw_wrong_password_retry`, `pdf_pw_read_error`, `viewer_decrypt_failed`, `viewer_open_error_format`). El contexto de aplicación **nunca lleva el idioma elegido dentro de la app** (solo `MainActivity.attachBaseContext()` lo aplica; ver la nota H8 de `ScanSessionManager`): un usuario cuyo idioma en la app difiere del del teléfono veía esos mensajes en el idioma del teléfono.
 
-Implicación: "CI en verde" no garantiza que las instrumentadas pasen. Decisión pendiente: quitar las salvaguardas una vez que las pruebas estén en 0 fallas, o añadir un paso que lea los reportes y falle si hay fallas nuevas.
+Arreglo: `pendingContext = localizedApplicationContext(context)`, que hace `context.applicationContext.createConfigurationContext(context.resources.configuration)`: sigue siendo un contexto de aplicación (sin retener la Activity, sin fuga) pero con la configuración/idioma del contexto de la pantalla. Cubierto por un test unitario nuevo (el mensaje sale del contexto derivado, no del de la aplicación). Verificado: `ViewerViewModelTest` 63/63 y las 93 pruebas instrumentadas del Visor en un emulador en inglés de 320x640 y en el Edge (español).
 
 ## Pendiente de la suite
 
 - Pruebas manuales M1–M15 (`suite-pruebas-release.md`): no ejecutadas.
 - Reconfirmar con una corrida completa de las 780 en los dos teléfonos tras los arreglos.
-- Decidir si se corrige el idioma de los mensajes del Visor (hallazgo de producción de arriba).
 - El Moto E22 quedó sin la build de Play (se desinstaló para poder instalar el debug); reinstalarla desde el enlace de la prueba cerrada antes de M7/M8.

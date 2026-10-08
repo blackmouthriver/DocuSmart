@@ -269,17 +269,27 @@ class ViewerViewModel
             _uiState.update { it.copy(showLinkedNotesDialog = false) }
         }
 
-        // Se guarda applicationContext (no la Activity), por eso no hay fuga real
-        // pese a lo que reporta el detector StaticFieldLeak de lint.
+        // Se guarda un contexto DE APLICACIÓN (no la Activity), por eso no hay fuga real
+        // pese a lo que reporta el detector StaticFieldLeak de lint. Lleva la configuración
+        // (idioma) del contexto de la pantalla: ver localizedApplicationContext().
         @SuppressLint("StaticFieldLeak")
         private var pendingContext: Context? = null
+
+        // El Context de aplicación NUNCA lleva el idioma elegido dentro de la app (solo
+        // MainActivity.attachBaseContext() lo aplica; mismo problema que H8 en ScanSessionManager):
+        // los mensajes que este ViewModel genera sin recibir un Context (contraseña incorrecta,
+        // error al leer, etc.) salían en el idioma del teléfono aunque el usuario hubiera elegido
+        // otro. createConfigurationContext() sobre la aplicación conserva la ausencia de fuga y
+        // adopta la configuración (idioma) del contexto localizado que recibe la pantalla.
+        private fun localizedApplicationContext(screenContext: Context): Context =
+            screenContext.applicationContext.createConfigurationContext(screenContext.resources.configuration)
 
         fun loadDocument(
             documentId: String,
             context: Context,
         ) {
             pendingDocumentId = documentId
-            pendingContext = context.applicationContext
+            pendingContext = localizedApplicationContext(context)
             Timber.d("$TAG: loadDocument START → id=$documentId")
             loadJob?.cancel()
             unlockJob?.cancel()
