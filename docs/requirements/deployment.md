@@ -520,6 +520,29 @@ ya se justifica.
   de forma intermitente. Revisar de nuevo tras varias rondas más de
   estabilidad confirmada antes de quitarlos.
 
+- **CORRECCIÓN 2026-10-08 — el seguimiento del 2026-09-26 estaba equivocado.**
+  Decía que "las 24 terminan con éxito real". Se miró el éxito del *paso*
+  `Pruebas instrumentadas`, pero con `ignoreFailures = true` ese paso
+  termina siempre en éxito aunque haya pruebas rojas: no demuestra nada
+  sobre las pruebas. Al revisar el reporte de los emuladores del PR #98
+  había **12 fallas de 780** con los 20 checks en verde (9 eran defectos de
+  las propias pruebas que también fallaban en teléfonos reales; las otras 3,
+  Agenda/ViewerPassword/QR, dependían de la pantalla de 320x640 dp o del
+  idioma del emulador; detalle en `suite-pruebas-resultados-1.1.2.md`).
+  El bug original de inyección de touch sigue sin reproducirse, pero esa
+  conclusión se apoyó en evidencia inválida y no debe tomarse como confirmada.
+
+  **Resuelto:** se quitó `continue-on-error` del job y cada shard termina
+  con el paso "Verificar fallas de pruebas instrumentadas"
+  (`scripts/check_instrumented_results.py`), que lee los XML de AGP
+  (`app/build/outputs/androidTest-results`) y falla ante cualquier falla que
+  no esté en `config/ci/instrumented-known-failures.txt` o si no hay
+  resultados. `ignoreFailures = true` se mantiene (sin él JaCoCo/SonarCloud
+  no generan cobertura); `sonarcloud.yml` no cambia. Un job caído por red
+  (p. ej. descarga de `dl.google.com`) también sale rojo: se relanza con
+  `gh run rerun <id> --failed`. Primera corrida con el guardia en `main`
+  (`d7e28e3`): 8 shards, 780 pruebas, 0 fallas.
+
 ---
 
 ## 4. Camino a la primera publicación (checklist)
