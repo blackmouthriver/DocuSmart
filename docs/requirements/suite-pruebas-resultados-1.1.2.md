@@ -38,6 +38,10 @@ El reporte de los emuladores de CI del PR #98 (run `37685670958`) tiene **12 fal
 
 También se mejoró `waitUntilOrDump`: `printToLog` imprimía solo la raíz (`maxDepth` por defecto = 0), inservible para diagnosticar; ahora imprime el árbol completo.
 
+### Resuelto: el CI ahora falla si aparecen fallas instrumentadas nuevas
+
+"CI en verde" no garantizaba que las instrumentadas pasaran. `ci.yml` ya no tiene `continue-on-error` en el job de pruebas instrumentadas y cada shard termina con el paso "Verificar fallas de pruebas instrumentadas" (`scripts/check_instrumented_results.py`), que lee los XML de resultados y falla ante cualquier falla que no esté en `config/ci/instrumented-known-failures.txt`, o si no hay resultados. Hoy la lista solo tiene `QrCreatorFlowsTest.url_generaElCodigoYLoGuardaEnElHistorial` (intermitente, causa no confirmada). `ignoreFailures = true` de Gradle se mantiene a propósito: sin él JaCoCo/SonarCloud no generan cobertura. `sonarcloud.yml` no cambia. Para tolerar una falla nueva hay que agregarla a la lista con su motivo.
+
 ### Hallazgo de producción: mensajes del Visor en el idioma equivocado — CORREGIDO
 
 `ViewerViewModel.loadDocument()` guardaba `context.applicationContext` y con él generaba textos (`pdf_pw_wrong_password_retry`, `pdf_pw_read_error`, `viewer_decrypt_failed`, `viewer_open_error_format`). El contexto de aplicación **nunca lleva el idioma elegido dentro de la app** (solo `MainActivity.attachBaseContext()` lo aplica; ver la nota H8 de `ScanSessionManager`): un usuario cuyo idioma en la app difiere del del teléfono veía esos mensajes en el idioma del teléfono.

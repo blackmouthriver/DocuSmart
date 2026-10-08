@@ -1,0 +1,8 @@
+# Fallas de pruebas instrumentadas que el CI TOLERA (una por línea: Clase.metodo; `#` comenta).
+# Cualquier falla que NO esté aquí hace fallar el job (scripts/check_instrumented_results.py).
+# Agregar una entrada es una decisión deliberada y debe llevar su motivo; quitarla cuando se corrija.
+
+# Intermitente solo en el emulador lento de CI (entries.size == 0 justo tras mostrarse el resultado).
+# No se reproduce en teléfonos reales ni en un emulador local; causa no confirmada (2026-10-08,
+# ver docs/requirements/suite-pruebas-resultados-1.1.2.md). Mitigada con una espera en la prueba.
+QrCreatorFlowsTest.url_generaElCodigoYLoGuardaEnElHistorial
