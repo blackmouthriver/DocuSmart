@@ -61,4 +61,19 @@ Para los demás idiomas, traducir este texto (la ficha de Play pide una versión
 
 ## 6. Artefacto de release
 
-Ver la sección siguiente de este documento, agregada al generar el `.aab`.
+Generado el 2026-10-08 con `./gradlew bundleRelease` (11 min 52 s) desde `main` limpio, commit `d7e28e3`.
+
+| Dato | Valor |
+|---|---|
+| Archivo | `C:\Users\HP\Downloads\DocuSmart-release\DocuSmart-1.1.2-code7.aab` (copia fuera de `build/`; el original queda en `app/build/outputs/bundle/release/app-release.aab` y se sobrescribe en el siguiente build) |
+| Tamaño | 58 748 670 bytes (~56 MB) |
+| SHA-256 | `a76d344e43a3195fd122b9353a8fa3cef6a4b55fecde2cd787840ef1dcca7ff9` |
+| Versión | `versionCode 7`, `versionName 1.1.2`, paquete `com.docsmart` |
+| Firma | `jarsigner -verify`: *jar verified*; SHA256withRSA |
+| Huella SHA-256 del certificado | `E2:25:AB:EA:40:CD:C1:05:4C:72:07:FF:78:2A:E2:71:E7:08:B4:0C:5B:C5:AF:D2:A8:35:0A:E2:66:F0:AF:7D` |
+| Huella SHA-1 del certificado | `FC:9F:FE:4F:E9:49:58:4C:25:D4:A6:25:9F:09:15:D0:06:78:FB:39` |
+| R8 / símbolos | `proguard.map` incluido en `BUNDLE-METADATA`; `mapping.txt` de 177 MB en `app/build/outputs/mapping/release/`; símbolos nativos FULL (20 `.so`, 4 `dex`) |
+
+**Antes de subir a Play Console:** comparar la huella SHA-256 de arriba con la "clave de carga" de *Integridad de la app → Firma de apps*; debe coincidir con la del build anterior que Play ya aceptó.
+
+**Camino recomendado** (decisión del usuario pendiente): subir a la prueba cerrada, comprobar M7/M8 (compra y restauración) y un PDF de página grande con la build instalada desde Play, y promover esa misma versión a producción con despliegue gradual (10–20%), vigilando Crashlytics 24–48 h. Lo que **no** se verificó con este `.aab`: la compra de Premium con build de Play y el comportamiento bajo R8 (todas las pruebas automáticas corren sobre builds de debug).
