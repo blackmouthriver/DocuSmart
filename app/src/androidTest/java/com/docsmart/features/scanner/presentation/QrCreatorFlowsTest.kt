@@ -159,6 +159,10 @@ class QrCreatorFlowsTest {
         shown: Shown,
         typeName: String,
     ): QrHistoryEntry {
+        // Intermitente solo en el emulador lento de CI (entries.size == 0 justo tras mostrarse el
+        // resultado; no se reproduce en teléfonos ni en un emulador local): se espera a que el
+        // historial se escriba en vez de leerlo en el mismo instante. Causa no confirmada.
+        composeRule.waitUntil(timeoutMillis = 5_000) { history(shown).isNotEmpty() }
         val entries = history(shown)
         assertEquals(1, entries.size)
         assertEquals(typeName, entries[0].typeName)

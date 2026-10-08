@@ -27,7 +27,8 @@ fun ComposeTestRule.waitUntilOrDump(
         waitUntil(timeoutMillis = timeoutMillis, condition = condition)
     } catch (e: ComposeTimeoutException) {
         // Con un diálogo abierto hay más de una raíz: onRoot() lanzaría y taparía el fallo real.
-        onAllNodes(isRoot()).printToLog(tag)
+        // maxDepth por defecto es 0 (solo imprime la raíz, sin ningún hijo): inútil para diagnosticar.
+        onAllNodes(isRoot()).printToLog(tag, maxDepth = Int.MAX_VALUE)
         throw e
     }
 }

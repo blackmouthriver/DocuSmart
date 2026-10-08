@@ -121,7 +121,9 @@ class AgendaEventEditorDialogTest {
         setEditor(editDraft("Reunion"), onSave = { saves++ })
 
         composeRule.onNodeWithText(esString(R.string.agenda_editor_title_edit)).assertIsDisplayed()
-        composeRule.onNodeWithText(esString(R.string.general_save)).assertIsEnabled().performClick()
+        // El contenido del diálogo hace scroll y en pantallas bajas (emulador de CI, 320x640 dp)
+        // Guardar queda fuera de pantalla: sin scroll, el clic cae fuera de la ventana y se pierde.
+        composeRule.onNodeWithText(esString(R.string.general_save)).performScrollTo().assertIsEnabled().performClick()
 
         assertEquals(1, saves)
     }

@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.test.platform.app.InstrumentationRegistry
 import com.docsmart.R
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -89,7 +90,13 @@ class ViewerPasswordTest {
         composeRule.onNode(hasSetTextAction()).performTextInput("mala")
         openButton().performClick()
 
-        composeRule.waitForText(vs(R.string.pdf_pw_wrong_password_retry))
+        // ViewerViewModel arma este mensaje con context.applicationContext, que usa el idioma del
+        // DISPOSITIVO (no el español forzado que usa vs() para el resto de la UI): en un emulador en
+        // inglés el mensaje salía en inglés y la espera nunca lo encontraba. Se espera el texto tal
+        // como lo genera el ViewModel.
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
+        val retryMessage = appContext.getString(R.string.pdf_pw_wrong_password_retry)
+        composeRule.waitForText(retryMessage)
         assertEquals(true, harness.viewModel.uiState.value.requiresPassword)
         assertEquals(0, backCalls)
     }
