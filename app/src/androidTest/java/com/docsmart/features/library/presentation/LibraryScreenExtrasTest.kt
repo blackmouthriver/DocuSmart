@@ -298,6 +298,9 @@ class LibraryScreenExtrasTest {
             )
 
         setScreen { LibraryScreen(viewModel = viewModel) }
+        // "A.pdf" es un documento de la app (id sin content://): vive en "Mis archivos", no en la
+        // pestaña inicial "Dispositivo", que solo lista documentos externos (content://).
+        composeRule.runOnUiThread { viewModel.onTabSelected(LibraryTab.APP_FILES) }
         waitForText("A.pdf")
 
         composeRule.runOnUiThread { viewModel.removeDocument("/app/a.pdf") }
@@ -338,6 +341,9 @@ class LibraryScreenExtrasTest {
             )
 
         setScreen { LibraryScreen(viewModel = viewModel) }
+        // "A.pdf" es un documento de la app (id sin content://): vive en "Mis archivos", no en la
+        // pestaña inicial "Dispositivo", que solo lista documentos externos (content://).
+        composeRule.runOnUiThread { viewModel.onTabSelected(LibraryTab.APP_FILES) }
         waitForText("A.pdf")
 
         composeRule.runOnUiThread { viewModel.onDownloadsFolderPicked(folderUri) }

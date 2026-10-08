@@ -6,9 +6,7 @@ import android.speech.tts.UtteranceProgressListener
 import android.speech.tts.Voice
 import androidx.test.platform.app.InstrumentationRegistry
 import io.mockk.CapturingSlot
-import io.mockk.Runs
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.runBlocking
@@ -104,7 +102,9 @@ class VoiceGenderProbeInstrumentedTest {
         val listenerSlot = slot<UtteranceProgressListener>()
         // setOnUtteranceProgressListener() devuelve TextToSpeech.SUCCESS/ERROR (int), no Unit.
         every { tts.setOnUtteranceProgressListener(capture(listenerSlot)) } returns TextToSpeech.SUCCESS
-        every { tts.voice = any() } just Runs
+        // setVoice() devuelve Int (SUCCESS/ERROR): `just Runs` lo stubbea con Unit y la llamada real
+        // lanza ClassCastException (detectIsFeminineVoice la captura y devuelve null).
+        every { tts.setVoice(any()) } returns TextToSpeech.SUCCESS
         return tts to listenerSlot
     }
 
