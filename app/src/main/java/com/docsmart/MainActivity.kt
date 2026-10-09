@@ -30,7 +30,7 @@ import com.docsmart.core.navegation.NavRoutes
 import com.docsmart.core.ui.LanguageManager
 import com.docsmart.core.ui.components.DocuSmartAnimatedBackground
 import com.docsmart.core.ui.components.DocuSmartBottomBar
-import com.docsmart.core.ui.resolveLanguageCode
+import com.docsmart.core.ui.savedOrDeviceLanguageCode
 import com.docsmart.core.ui.theme.AppTheme
 import com.docsmart.core.ui.theme.DocuSmartTheme
 import com.docsmart.core.ui.theme.ThemeManager
@@ -91,12 +91,7 @@ class MainActivity : AppCompatActivity() {
         // Sin idioma guardado (instalación nueva) se usa el del dispositivo si
         // está soportado (RF-SET-06) -- antes caía siempre en "es" aquí mientras
         // LanguageManager mostraba otro en el selector.
-        val prefs = newBase.getSharedPreferences("docusmart_language", Context.MODE_PRIVATE)
-        val languageCode =
-            resolveLanguageCode(
-                saved = prefs.getString("language", null),
-                deviceLanguage = newBase.resources.configuration.locales[0]?.language,
-            )
+        val languageCode = savedOrDeviceLanguageCode(newBase, newBase.resources.configuration)
         val locale = Locale(languageCode)
         Locale.setDefault(locale)
         val config = Configuration(newBase.resources.configuration)

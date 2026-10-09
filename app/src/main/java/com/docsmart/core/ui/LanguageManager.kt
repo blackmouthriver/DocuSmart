@@ -58,6 +58,49 @@ internal fun resolveLanguageCode(
         ?: AppLanguage.entries.firstOrNull { it.code == deviceLanguage }?.code
         ?: AppLanguage.SPANISH.code
 
+/**
+ * Código de idioma de la app: el guardado si es soportado; si no, el del dispositivo (tomado de
+ * [deviceConfig]) si es soportado; si no, español. Misma regla que usa `MainActivity` para su
+ * propio contexto, para que la Activity y la Application nunca muestren idiomas distintos.
+ */
+internal fun savedOrDeviceLanguageCode(
+    context: Context,
+    deviceConfig: Configuration,
+): String {
+    val prefs = context.getSharedPreferences("docusmart_language", Context.MODE_PRIVATE)
+    return resolveLanguageCode(
+        saved = prefs.getString("language", null),
+        deviceLanguage = deviceConfig.locales[0]?.language,
+    )
+}
+
+/**
+ * Hace que los recursos de la `Application` usen [languageCode].
+ *
+ * El idioma elegido dentro de la app solo se aplicaba al contexto de la Activity
+ * (`MainActivity.attachBaseContext()`): todo lo que se inyecta con `@ApplicationContext`
+ * -- casos de uso del Convertidor, ViewModels de Inicio/Biblioteca/Papelera, receptores de
+ * notificaciones -- leía los recursos de la Application, que seguían en el idioma del
+ * TELÉFONO. Resultado: mensajes de error (y textos escritos dentro de archivos generados, como
+ * "Página N") en un idioma distinto al elegido (mismo defecto que H8 en ScanSessionManager y
+ * que el de ViewerViewModel). Se corrige en el origen en vez de parchear cada clase.
+ *
+ * `updateConfiguration` está deprecado pero sigue siendo la forma de cambiar el idioma de los
+ * recursos de la Application sin migrar a idiomas por app (AppCompatDelegate), un cambio mayor.
+ * El sistema vuelve a escribir su configuración en la Application en cada cambio (rotación,
+ * modo oscuro, idioma del sistema): por eso también se llama desde `onConfigurationChanged`.
+ */
+internal fun applyLanguageToApplicationResources(
+    appContext: Context,
+    languageCode: String,
+) {
+    val resources = appContext.resources
+    val config = Configuration(resources.configuration)
+    config.setLocale(Locale(languageCode))
+    @Suppress("DEPRECATION")
+    resources.updateConfiguration(config, resources.displayMetrics)
+}
+
 @Singleton
 class LanguageManager
     @Inject
@@ -82,6 +125,9 @@ class LanguageManager
         fun setLanguage(language: AppLanguage) {
             _currentLanguage.value = language
             prefs.edit().putString("language", language.code).apply()
+            // Sin esto los textos generados con @ApplicationContext seguirían en el idioma anterior
+            // hasta reiniciar el proceso.
+            applyLanguageToApplicationResources(context, language.code)
             Timber.d("LanguageManager: idioma cambiado a ${language.label}")
         }
 
