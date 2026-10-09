@@ -29,7 +29,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.Assert.assertEquals
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
@@ -309,7 +308,6 @@ class SecurityFolderFlowsTest {
         composeRule.waitForText(esText(R.string.security_file_protect_error))
     }
 
-    @Ignore("recompone en un hilo sin Looper; pendiente, ver backlog v17")
     @Test
     fun archivoPendienteContentInexistente_avisaElError() {
         stubBase()

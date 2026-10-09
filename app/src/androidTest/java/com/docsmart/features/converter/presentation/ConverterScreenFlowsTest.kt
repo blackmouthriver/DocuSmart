@@ -43,7 +43,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
@@ -211,7 +210,6 @@ class ConverterScreenFlowsTest {
         assertTrue(output!!.absolutePath.startsWith(files.root.absolutePath))
     }
 
-    @Ignore("inestable en el emulador de CI 320x640 (temporización); pendiente, ver backlog v17")
     @Test
     fun convertirVariasImagenesGeneraUnResultadoPorArchivo() {
         val first = uriOf(writeTestImage(files.inputFile("uno.png")))
@@ -220,7 +218,14 @@ class ConverterScreenFlowsTest {
         setScreen(viewModel)
         waitForText(text(R.string.converter_select))
 
-        selectAndConvert(viewModel, ConversionType.IMAGE_TO_PNG, listOf(first, second), "Convertir a PNG")
+        // Con 2 archivos el botón es el de lote ("Convertir 2 archivos"), no "Convertir a PNG": la prueba
+        // buscaba el texto de un solo archivo y se quedaba esperando (se atribuía a "temporización").
+        selectAndConvert(
+            viewModel,
+            ConversionType.IMAGE_TO_PNG,
+            listOf(first, second),
+            plural(R.plurals.converter_convert_batch_button, 2),
+        )
 
         composeRule.waitUntilOrDump("CI_HANG_ConverterScreenFlowsTest") {
             viewModel.uiState.value.batchResults.size == 2
