@@ -714,6 +714,8 @@
     <string name="premium_get_plan">Get %1$s — %2$s</string>
     <string name="premium_select_plan">Select a plan</string>
     <string name="premium_restore_purchases">Restore purchases</string>
+    <string name="premium_manage_subscription">Manage subscription</string>
+    <string name="premium_manage_subscription_error">Couldn\'t open Google Play.</string>
     <string name="premium_continue_free">Continue with free version</string>
     <string name="premium_terms">By subscribing you accept the Terms of Service and Privacy Policy. The subscription renews automatically. Cancel anytime.</string>
     <string name="premium_active_title">Your subscription is active</string>

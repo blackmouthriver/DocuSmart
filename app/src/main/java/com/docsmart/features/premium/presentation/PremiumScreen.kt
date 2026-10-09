@@ -40,6 +40,7 @@ import com.docsmart.R
 import com.docsmart.core.analytics.DocuSmartAnalytics
 import com.docsmart.core.ui.util.findActivity
 import com.docsmart.features.premium.presentation.components.*
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 // Extraído para no engordar el cuerpo de PremiumScreen (detekt: LongMethod).
@@ -63,6 +64,8 @@ fun PremiumScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val manageSubscriptionError = stringResource(R.string.premium_manage_subscription_error)
     // launchBillingFlow necesita el Activity real, no el Context envuelto
     // que entrega LocalContext.
     val activity = remember(context) { context.findActivity() }
@@ -128,7 +131,15 @@ fun PremiumScreen(
             // suscripción de HU-54) ───────────────────
             if (uiState.isPaidPremium) {
                 item {
-                    PremiumActiveCard(onClose = onClose, trialEndsAtMillis = uiState.trialEndsAtMillis)
+                    PremiumActiveCard(
+                        onClose = onClose,
+                        onManageSubscription = {
+                            if (!openSubscriptionCenter(context)) {
+                                scope.launch { snackbarHostState.showSnackbar(manageSubscriptionError) }
+                            }
+                        },
+                        trialEndsAtMillis = uiState.trialEndsAtMillis,
+                    )
                 }
             } else {
                 // Trial automático sin tarjeta: distinto de lo de arriba --
@@ -300,6 +311,7 @@ private fun PurchaseActionsSection(
 @Composable
 private fun PremiumActiveCard(
     onClose: () -> Unit,
+    onManageSubscription: () -> Unit,
     trialEndsAtMillis: Long? = null,
 ) {
     // HU-54, AC1: mientras la prueba siga vigente, se reemplaza el texto
@@ -358,6 +370,15 @@ private fun PremiumActiveCard(
                 Text(
                     text = stringResource(R.string.premium_continue),
                     style = MaterialTheme.typography.labelLarge,
+                )
+            }
+            // Sin esto un usuario Premium no tenía forma de cancelar ni ver su próximo cobro desde
+            // la app (Play recomienda ofrecerlo).
+            TextButton(onClick = onManageSubscription, modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = stringResource(R.string.premium_manage_subscription),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }

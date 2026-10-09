@@ -705,6 +705,8 @@
     <string name="premium_get_plan">%1$s holen — %2$s</string>
     <string name="premium_select_plan">Wähle einen Plan</string>
     <string name="premium_restore_purchases">Käufe wiederherstellen</string>
+    <string name="premium_manage_subscription">Abo verwalten</string>
+    <string name="premium_manage_subscription_error">Google Play konnte nicht geöffnet werden.</string>
     <string name="premium_continue_free">Mit kostenloser Version fortfahren</string>
     <string name="premium_terms">Mit dem Abonnement akzeptierst du die Nutzungsbedingungen und die Datenschutzrichtlinie. Das Abo verlängert sich automatisch. Jederzeit kündbar.</string>
     <string name="premium_active_title">Dein Abo ist aktiv</string>

@@ -704,6 +704,8 @@
     <string name="premium_get_plan">%1$sを入手 — %2$s</string>
     <string name="premium_select_plan">プランを選択してください</string>
     <string name="premium_restore_purchases">購入を復元</string>
+    <string name="premium_manage_subscription">定期購入を管理</string>
+    <string name="premium_manage_subscription_error">Google Play を開けませんでした。</string>
     <string name="premium_continue_free">無料版を続ける</string>
     <string name="premium_terms">登録すると利用規約とプライバシーポリシーに同意したものとみなされます。サブスクリプションは自動的に更新されます。いつでも解約できます。</string>
     <string name="premium_active_title">サブスクリプションは有効です</string>

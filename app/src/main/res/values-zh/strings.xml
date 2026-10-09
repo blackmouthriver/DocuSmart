@@ -704,6 +704,8 @@
     <string name="premium_get_plan">订阅 %1$s — %2$s</string>
     <string name="premium_select_plan">选择一个套餐</string>
     <string name="premium_restore_purchases">恢复购买</string>
+    <string name="premium_manage_subscription">管理订阅</string>
+    <string name="premium_manage_subscription_error">无法打开 Google Play。</string>
     <string name="premium_continue_free">继续使用免费版</string>
     <string name="premium_terms">订阅即表示你同意《服务条款》和《隐私政策》。订阅将自动续费，你可以随时取消。</string>
     <string name="premium_active_title">你的订阅已激活</string>

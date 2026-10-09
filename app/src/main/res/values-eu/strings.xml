@@ -725,6 +725,8 @@
     <string name="premium_get_plan">Eskuratu %1$s — %2$s</string>
     <string name="premium_select_plan">Hautatu plan bat</string>
     <string name="premium_restore_purchases">Berrezarri erosketak</string>
+    <string name="premium_manage_subscription">Kudeatu harpidetza</string>
+    <string name="premium_manage_subscription_error">Ezin izan da Google Play ireki.</string>
     <string name="premium_continue_free">Jarraitu bertsio dohainekoarekin</string>
     <string name="premium_terms">Harpidetzean Zerbitzu Baldintzak eta Pribatutasun Politika onartzen dituzu. Harpidetza automatikoki berritzen da. Utzi nahi duzunean.</string>
     <string name="premium_active_title">Zure harpidetza aktibo dago</string>

@@ -704,6 +704,8 @@
     <string name="premium_get_plan">%1$s 시작하기 — %2$s</string>
     <string name="premium_select_plan">요금제를 선택하세요</string>
     <string name="premium_restore_purchases">구매 복원</string>
+    <string name="premium_manage_subscription">구독 관리</string>
+    <string name="premium_manage_subscription_error">Google Play를 열 수 없습니다.</string>
     <string name="premium_continue_free">무료 버전으로 계속하기</string>
     <string name="premium_terms">구독하면 서비스 약관과 개인정보처리방침에 동의하는 것으로 간주됩니다. 구독은 자동으로 갱신되며 언제든지 취소할 수 있습니다.</string>
     <string name="premium_active_title">구독이 활성화되어 있습니다</string>

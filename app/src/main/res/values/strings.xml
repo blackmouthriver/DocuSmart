@@ -749,6 +749,8 @@
     <string name="premium_get_plan">Obtener %1$s — %2$s</string>
     <string name="premium_select_plan">Selecciona un plan</string>
     <string name="premium_restore_purchases">Restaurar compras</string>
+    <string name="premium_manage_subscription">Administrar suscripción</string>
+    <string name="premium_manage_subscription_error">No se pudo abrir Google Play.</string>
     <string name="premium_continue_free">Continuar con versión gratuita</string>
     <string name="premium_terms">Al suscribirte aceptas los Términos de Servicio y la Política de Privacidad. La suscripción se renueva automáticamente. Cancela cuando quieras.</string>
     <string name="premium_active_title">Tu suscripción está activa</string>
