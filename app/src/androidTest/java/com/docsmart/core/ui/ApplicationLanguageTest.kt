@@ -3,6 +3,7 @@ package com.docsmart.core.ui
 import android.app.Application
 import android.content.Context
 import android.content.res.Configuration
+import android.content.res.Resources
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.docsmart.R
@@ -42,7 +43,9 @@ class ApplicationLanguageTest {
         prefs.edit().apply {
             if (savedLanguage == null) remove("language") else putString("language", savedLanguage)
         }.commit()
-        applyLanguageToApplicationResources(app, savedOrDeviceLanguageCode(app, app.resources.configuration))
+        // La configuración REAL del sistema, no la de los recursos de la app: otra prueba pudo
+        // haberlos modificado y se contaminaría la siguiente.
+        applyLanguageToApplicationResources(app, savedOrDeviceLanguageCode(app, Resources.getSystem().configuration))
     }
 
     @Test
