@@ -77,3 +77,15 @@ Generado el 2026-10-08 con `./gradlew bundleRelease` (11 min 52 s) desde `main` 
 **Antes de subir a Play Console:** comparar la huella SHA-256 de arriba con la "clave de carga" de *Integridad de la app → Firma de apps*; debe coincidir con la del build anterior que Play ya aceptó.
 
 **Camino recomendado** (decisión del usuario pendiente): subir a la prueba cerrada, comprobar M7/M8 (compra y restauración) y un PDF de página grande con la build instalada desde Play, y promover esa misma versión a producción con despliegue gradual (10–20%), vigilando Crashlytics 24–48 h. Lo que **no** se verificó con este `.aab`: la compra de Premium con build de Play y el comportamiento bajo R8 (todas las pruebas automáticas corren sobre builds de debug).
+
+## 7. Seguimiento posterior a la 1.1.2 (backlog #6: auditoría de idioma)
+
+**No está en el `.aab` 1.1.2 ya subido a la prueba cerrada**: irá en la siguiente versión.
+
+**Hallazgo.** El idioma elegido dentro de la app solo se aplicaba al contexto de `MainActivity` (`attachBaseContext`). Todo lo inyectado con `@ApplicationContext` leía los recursos de la `Application`, que seguían en el idioma del **teléfono**: 14 casos de uso del Convertidor (mensajes de error y también textos escritos dentro de los archivos generados: "Página N" del TXT, "Diapositiva N" del PDF, título del HTML), `HomeViewModel`, `LibraryViewModel`, `TrashViewModel`, `WatermarkPdfUseCase` y los receptores de notificaciones de Agenda y Notas. De 25 archivos con `@ApplicationContext` + `getString(` marcados, 6 eran falsos positivos (leen `SharedPreferences`/`Cursor`).
+
+**Arreglo en el origen** (`core/ui/LanguageManager.kt`, `DocuSmartApplication.kt`, `MainActivity.kt`): `applyLanguageToApplicationResources()` sincroniza los recursos de la `Application` con el idioma elegido al arrancar, en `onConfigurationChanged` (el sistema los pisa en cada rotación, modo oscuro o cambio de idioma del sistema) y en `LanguageManager.setLanguage`. `MainActivity` y la `Application` comparten la regla (`savedOrDeviceLanguageCode`). Usa `Resources.updateConfiguration` (deprecado, pero evita migrar a idiomas por app con `AppCompatDelegate`, un cambio mayor). Cubre también el código futuro que use `@ApplicationContext`.
+
+**Pruebas.** `ApplicationLanguageTest` (4 pruebas instrumentadas). Verificado *rojo-verde*: sin las llamadas, las 2 pruebas de comportamiento fallan con el síntoma exacto (la app elegida en español devuelve el texto en el idioma del dispositivo; tras un cambio de configuración del sistema no se recupera el idioma elegido); con el arreglo pasan 4/4 en el Edge (español) y en un emulador en inglés de 320x640. Suite completa repartida Edge + emulador: 784 pruebas, 1 falla ajena (`SecurityFolderFlowsTest.vistaPreviaFallida…`, "current thread must have a looper", misma familia que el `@Ignore` de esa clase; pasa 6/6 repetida y la clase completa 18/18).
+
+**Sin verificar a mano:** el cambio de idioma en Ajustes en un teléfono real y ver un mensaje del Convertidor o de la Papelera en el idioma elegido. Las pruebas automáticas cubren el invariante, no esa pantalla.

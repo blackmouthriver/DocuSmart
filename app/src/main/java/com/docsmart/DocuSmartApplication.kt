@@ -1,6 +1,7 @@
 package com.docsmart
 
 import android.app.Application
+import android.content.res.Configuration
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import com.docsmart.core.analytics.CrashlyticsTree
@@ -9,6 +10,8 @@ import com.docsmart.core.media.PdfThumbnailFetcher
 import com.docsmart.core.premium.PremiumManager
 import com.docsmart.core.remoteconfig.RemoteConfigManager
 import com.docsmart.core.security.SecurityManager
+import com.docsmart.core.ui.applyLanguageToApplicationResources
+import com.docsmart.core.ui.savedOrDeviceLanguageCode
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 import javax.inject.Inject
@@ -47,6 +50,11 @@ class DocuSmartApplication :
     override fun onCreate() {
         super.onCreate()
 
+        // Antes que cualquier texto generado con @ApplicationContext (ver
+        // applyLanguageToApplicationResources): los recursos de la Application deben seguir el idioma
+        // elegido en la app, no el del teléfono.
+        applyLanguageToApplicationResources(this, savedOrDeviceLanguageCode(this, resources.configuration))
+
         // Hallazgo real de la auditoría general 2026-09-17 (sexta ronda,
         // Media -- S3): clearPreviewCache() solo se llamaba al crear la
         // siguiente copia de vista previa o al bloquear Carpeta Segura en
@@ -70,6 +78,14 @@ class DocuSmartApplication :
 
         Timber.d("DocuSmartApplication: estado Premium al arrancar = ${premiumManager.isPremium.value}")
         remoteConfigManager.refresh()
+    }
+
+    // El sistema escribe su configuración (idioma del teléfono incluido) en los recursos de la
+    // Application en cada cambio -- rotación, modo oscuro, idioma del sistema --, pisando el idioma
+    // elegido en la app: se vuelve a aplicar.
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        applyLanguageToApplicationResources(this, savedOrDeviceLanguageCode(this, newConfig))
     }
 
     // Miniaturas de PDF en las listas de documentos (backlog UX #25) --
