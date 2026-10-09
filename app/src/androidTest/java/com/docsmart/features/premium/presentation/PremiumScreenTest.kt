@@ -1,5 +1,9 @@
 package com.docsmart.features.premium.presentation
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
@@ -33,6 +37,8 @@ import io.mockk.verify
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import java.text.SimpleDateFormat
@@ -119,13 +125,17 @@ class PremiumScreenTest {
         viewModel: PremiumViewModel,
         localized: Boolean = true,
         onClose: () -> Unit = {},
+        wrapContext: ((Context) -> Context)? = null,
     ) {
         composeRule.setContent {
             val baseContext = LocalContext.current
             // findActivity() no atraviesa el contexto de forceLocale(): las pruebas que
             // necesitan el Activity real (compra) usan el contexto original.
             val context =
-                remember(baseContext) { if (localized) forceLocale(baseContext, "es-ES") else baseContext }
+                remember(baseContext) {
+                    val base = if (localized) forceLocale(baseContext, "es-ES") else baseContext
+                    wrapContext?.invoke(base) ?: base
+                }
             CompositionLocalProvider(LocalContext provides context, LocalResources provides context.resources) {
                 MaterialTheme { PremiumScreen(onClose = onClose, viewModel = viewModel) }
             }
@@ -208,6 +218,54 @@ class PremiumScreenTest {
         composeRule.waitForIdle()
 
         assertEquals(2, closes)
+    }
+
+    // Contexto que no lanza actividades reales (no abre el navegador ni Play Store): las registra,
+    // o lanza ActivityNotFoundException si no hay nadie que atienda el enlace.
+    private class SubscriptionLinkContext(
+        base: Context,
+        private val handled: Boolean = true,
+    ) : ContextWrapper(base) {
+        val started = mutableListOf<Intent>()
+
+        override fun startActivity(intent: Intent) {
+            if (!handled) throw ActivityNotFoundException("sin app para ${intent.data}")
+            started += intent
+        }
+    }
+
+    @Test
+    fun clientePagador_administrarSuscripcion_abreElCentroDeSuscripcionesDePlay() {
+        var link: SubscriptionLinkContext? = null
+        setScreen(buildViewModel(isPaid = true), wrapContext = { SubscriptionLinkContext(it).also { c -> link = c } })
+
+        scrollToText(string(R.string.premium_manage_subscription))
+        composeRule.onNodeWithText(string(R.string.premium_manage_subscription)).performClick()
+        composeRule.waitForIdle()
+
+        val intent = checkNotNull(link).started.single()
+        assertEquals(Intent.ACTION_VIEW, intent.action)
+        assertEquals("https://play.google.com/store/account/subscriptions", intent.dataString)
+        // El contexto de la prueba no es un Activity: sin NEW_TASK startActivity() lanzaría.
+        assertNotEquals(0, intent.flags and Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+
+    @Test
+    fun clientePagador_administrarSuscripcion_sinAppQueAbraElEnlace_avisaEnUnSnackbar() {
+        setScreen(buildViewModel(isPaid = true), wrapContext = { SubscriptionLinkContext(it, handled = false) })
+
+        scrollToText(string(R.string.premium_manage_subscription))
+        composeRule.onNodeWithText(string(R.string.premium_manage_subscription)).performClick()
+
+        waitForText(string(R.string.premium_manage_subscription_error))
+        assertTrue(composeRule.onAllNodesWithText(string(R.string.premium_active_title)).fetchSemanticsNodes().isNotEmpty())
+    }
+
+    @Test
+    fun usuarioGratis_noVeAdministrarSuscripcion() {
+        setScreen(buildViewModel(isPaid = false))
+
+        composeRule.onAllNodesWithText(string(R.string.premium_manage_subscription)).assertCountEquals(0)
     }
 
     @Test
