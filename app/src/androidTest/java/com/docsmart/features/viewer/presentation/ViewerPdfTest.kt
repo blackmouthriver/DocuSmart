@@ -35,7 +35,6 @@ import io.mockk.mockk
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
@@ -332,25 +331,39 @@ class ViewerPdfTest {
         assertTrue("la memoria nativa creció $crecioMb MB al recorrer 400 páginas", crecioMb < 300)
     }
 
-    @Ignore("toque sobre la página depende de la geometría del dispositivo; pendiente, ver backlog v17")
+    // Regresión: con un bitmap más angosto que la pantalla (página pequeña en un teléfono de alta resolución,
+    // o casi cualquier página en una tableta) la altura de la página se medía con la del propio bitmap y la
+    // página quedaba con proporción 1,30 en vez de 0,75: resaltados, notas y toques salían desalineados.
+    @Test
+    fun paginaPequena_conservaLaProporcionDelPdfSeaCualSeaElAnchoDePantalla() {
+        open(files.pdf())
+
+        val size = composeRule.onNodeWithContentDescription(pageDesc, useUnmergedTree = true).fetchSemanticsNode().size
+        val ratio = size.width.toFloat() / size.height
+        assertTrue("proporción de la página=$ratio (esperada 300/400 = 0,75)", kotlin.math.abs(ratio - 0.75f) < 0.01f)
+    }
+
     @Test
     fun anotacionesExistentes_tocarUnResaltadoAbreElDetalleYSePuedeCerrar() {
         harness.annotations.value = listOf(highlight("h1"), note("n1", "Nota lejana").copy(xPts = 20f, yPts = 380f))
         open(files.pdf())
 
-        composeRule.onNodeWithContentDescription(pageDesc).performClick()
+        // El LazyColumn fusiona la semántica de su única página: el nodo "fusionado" es la LISTA entera
+        // (320x640 en el emulador), y su centro no es el de la página. Se toca el nodo de la imagen.
+        composeRule.onNodeWithContentDescription(pageDesc, useUnmergedTree = true).performClick()
         composeRule.waitForText(vs(R.string.viewer_annotate_highlight_detail_body))
         composeRule.onNodeWithText(vs(R.string.general_close)).performClick()
         composeRule.waitForState { harness.viewModel.uiState.value.viewingAnnotation == null }
     }
 
-    @Ignore("inestable en el emulador de CI 320x640 (temporización); pendiente, ver backlog v17")
     @Test
     fun anotacionesExistentes_eliminarUnaNotaPideConfirmacionYLaBorra() {
         harness.annotations.value = listOf(note("n1", "Recordar vigencia"))
         open(files.pdf())
 
-        composeRule.onNodeWithContentDescription(pageDesc).performClick()
+        // El LazyColumn fusiona la semántica de su única página: el nodo "fusionado" es la LISTA entera
+        // (320x640 en el emulador), y su centro no es el de la página. Se toca el nodo de la imagen.
+        composeRule.onNodeWithContentDescription(pageDesc, useUnmergedTree = true).performClick()
         composeRule.waitForText("Recordar vigencia")
 
         composeRule.onNode(hasText(vs(R.string.general_delete)) and hasClickAction()).performClick()

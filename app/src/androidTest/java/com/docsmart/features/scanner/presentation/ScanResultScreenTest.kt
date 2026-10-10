@@ -47,7 +47,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
@@ -515,7 +514,6 @@ class ScanResultScreenTest {
         composeRule.onNodeWithText(str(R.string.converter_save)).assertExists()
     }
 
-    @Ignore("inestable en el emulador de CI 320x640 (temporización); pendiente, ver backlog v17")
     @Test
     fun compartir_abreElSelectorYAlElegirUnaAppFinalizaLaSesion() {
         val fx = Fixture()
@@ -528,16 +526,18 @@ class ScanResultScreenTest {
 
         val chooser = fx.recording!!.started.first()
         assertEquals(Intent.ACTION_CHOOSER, chooser.action)
-        @Suppress("DEPRECATION")
-        val send = chooser.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)
+        val send = chooser.parcelableExtra<Intent>(Intent.EXTRA_INTENT)
         assertNotNull(send)
         assertEquals(Intent.ACTION_SEND, send!!.action)
         assertEquals("application/pdf", send.type)
 
         // Simula que el usuario eligió una app: el sistema dispara el IntentSender del chooser.
-        @Suppress("DEPRECATION")
-        val sender = chooser.getParcelableExtra<IntentSender>(Intent.EXTRA_CHOSEN_COMPONENT_INTENT_SENDER)
-        assertNotNull(sender)
+        // Android 16 ya no guarda el IntentSender bajo EXTRA_CHOSEN_COMPONENT_INTENT_SENDER sino bajo
+        // EXTRA_CHOOSER_RESULT_INTENT_SENDER (API 34+); Android 14 todavía usa la clave antigua.
+        val sender =
+            chooserResultSender(chooser)
+                ?: chooser.parcelableExtra<IntentSender>(Intent.EXTRA_CHOSEN_COMPONENT_INTENT_SENDER)
+        assertNotNull("extras del selector: ${chooser.extras?.keySet()}", sender)
         sender!!.sendIntent(targetContext, 0, null, null, null)
 
         waitForText(str(R.string.scan_session_title), timeoutMillis = 15_000)
@@ -545,7 +545,6 @@ class ScanResultScreenTest {
         verify { fx.session.registerScanSaved() }
     }
 
-    @Ignore("inestable en el emulador de CI 320x640 (temporización); pendiente, ver backlog v17")
     @Test
     fun pdfDeEscaner_compartirCopiaAlCacheYAbreElSelector() {
         val fx = Fixture(isPdf = true)
@@ -557,8 +556,7 @@ class ScanResultScreenTest {
         clickInList(str(R.string.scan_result_share_format, "PDF"))
 
         composeRule.waitUntilOrDump("R20_SharePdf", 10_000) { fx.recording?.started?.isNotEmpty() == true }
-        @Suppress("DEPRECATION")
-        val send = fx.recording!!.started.first().getParcelableExtra<Intent>(Intent.EXTRA_INTENT)
+        val send = fx.recording!!.started.first().parcelableExtra<Intent>(Intent.EXTRA_INTENT)
         assertEquals("application/pdf", send?.type)
         assertTrue(File(scannerDir, "${PREFIX}pdf_compartido.pdf").exists())
     }
@@ -784,9 +782,7 @@ class ScanResultScreenTest {
         verify { fx.session.deleteDocument(id) }
         // "Compartir" de la fila arma el chooser de ACTION_SEND con el archivo real.
         val chooser = fx.recording!!.started.first()
-
-        @Suppress("DEPRECATION")
-        val send = chooser.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)
+        val send = chooser.parcelableExtra<Intent>(Intent.EXTRA_INTENT)
         assertEquals(Intent.ACTION_SEND, send?.action)
         assertEquals("application/pdf", send?.type)
     }
@@ -828,3 +824,23 @@ class ScanResultScreenTest {
         const val PREFIX = "r20scan_"
     }
 }
+
+/**
+ * Lee un extra Parcelable con la API tipada desde Android 13: la versión sin tipo (deprecada) puede
+ * devolver null en versiones nuevas (el emulador API 36 devolvía null para el IntentSender del selector
+ * mientras un teléfono con Android 14 lo devolvía bien).
+ */
+private inline fun <reified T : android.os.Parcelable> Intent.parcelableExtra(name: String): T? =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        getParcelableExtra(name, T::class.java)
+    } else {
+        @Suppress("DEPRECATION")
+        getParcelableExtra(name)
+    }
+
+private fun chooserResultSender(chooser: Intent): IntentSender? =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        chooser.parcelableExtra<IntentSender>(Intent.EXTRA_CHOOSER_RESULT_INTENT_SENDER)
+    } else {
+        null
+    }
