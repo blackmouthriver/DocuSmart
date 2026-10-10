@@ -151,7 +151,7 @@ private fun PlanCard(
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         // Badge de ahorro
-                        plan.savingsLabelRes?.let { labelRes ->
+                        plan.savingsPercent?.let { percent ->
                             Surface(
                                 shape = MaterialTheme.shapes.extraSmall,
                                 color =
@@ -162,7 +162,7 @@ private fun PlanCard(
                                     },
                             ) {
                                 Text(
-                                    text = stringResource(labelRes),
+                                    text = stringResource(R.string.premium_savings_percent, percent),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.SemiBold,
                                     color = savingsBadgeTextColor(plan.isPopular),
