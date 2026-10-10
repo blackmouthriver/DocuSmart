@@ -370,6 +370,31 @@ class StudyReadingTest {
         }
     }
 
+    // Backlog #7: el PDF de Estudio se renderiza bajo demanda. Antes se rasterizaban las 300 páginas por
+    // adelantado y la primera no aparecía hasta terminar; ahora aparece al instante y se llega a la última.
+    @Test
+    fun visorDePdfReal_conMuchasPaginas_abreAlInstanteYLlegaALaUltima() {
+        val total = 300
+        val pdf = newPdf(pages = total)
+        val state = ReadingState(uri = Uri.fromFile(pdf))
+        state.totalPages = total
+        val started = System.nanoTime()
+        setReading(state)
+        val pageOne = esString(R.string.viewer_page_content_desc, 1)
+        val last = esString(R.string.viewer_page_content_desc, total)
+
+        composeRule.waitUntil(timeoutMillis = 15_000) {
+            composeRule.onAllNodesWithContentDescription(pageOne).fetchSemanticsNodes().isNotEmpty()
+        }
+        val openSeconds = (System.nanoTime() - started) / 1_000_000_000.0
+        assertTrue("la primera página tardó $openSeconds s", openSeconds < 15.0)
+
+        update { state.currentPage = total }
+        composeRule.waitUntil(timeoutMillis = 15_000) {
+            composeRule.onAllNodesWithContentDescription(last).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
     // ── StudyScreen: flujos completos ─────────────────────────────────────────
     private fun setStudyReading() {
         val fakeNotes = FakeNotes()

@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -28,10 +29,10 @@ data class PdfPageSize(
 /**
  * PDF abierto UNA vez con páginas renderizadas **bajo demanda**.
  *
- * Reemplaza al render eager de [renderPdfPagesToBitmaps] en el Visor: aquel rasterizaba TODAS las
- * páginas antes de mostrar la primera y las mantenía en memoria. Medido con un libro de 2 332 páginas
- * (252x331 pt): 21,7 s y 2 968 MB de bitmaps en un teléfono de 7,6 GB; 74,6 s y los mismos 2 968 MB en
- * uno de 3,9 GB. Aquí se abre el renderer, se lee solo el tamaño de la primera página y cada página se
+ * Reemplazó al render eager (`renderPdfPagesToBitmaps`, ya eliminado) en el Visor y en Modo Estudio: aquel
+ * rasterizaba TODAS las páginas antes de mostrar la primera y las mantenía en memoria. Medido con un libro
+ * de 2 332 páginas (252x331 pt): 21,7 s y 2 968 MB de bitmaps en un teléfono de 7,6 GB; 74,6 s y los mismos
+ * 2 968 MB en uno de 3,9 GB. Aquí se abre el renderer, se lee solo el tamaño de la primera página y cada página se
  * renderiza cuando entra en pantalla, con una caché acotada por bytes ([LruByteCache]).
  *
  * `PdfRenderer` no admite dos páginas abiertas a la vez ni acceso concurrente: todo acceso se
@@ -132,14 +133,17 @@ class PdfPageSource private constructor(
             withContext(Dispatchers.IO) {
                 purgeStaleCopies(context)
                 val copy = File(context.cacheDir, "${CACHE_PREFIX}_${System.nanoTime()}.pdf")
-                check(copyPdfUriToCache(uri, context, copy)) { "no se pudo copiar el PDF al caché" }
                 var descriptor: ParcelFileDescriptor? = null
                 var renderer: PdfRenderer? = null
                 try {
+                    check(copyPdfUriToCache(uri, context, copy)) { "no se pudo copiar el PDF al caché" }
                     descriptor = ParcelFileDescriptor.open(copy, ParcelFileDescriptor.MODE_READ_ONLY)
                     renderer = PdfRenderer(descriptor)
                     check(renderer.pageCount > 0) { "el PDF no tiene páginas" }
                     val first = renderer.openPage(0).use { PdfPageSize(it.width.toFloat(), it.height.toFloat()) }
+                    // Si el documento cambió (o se salió de la pantalla) mientras se abría, nadie va a recibir esta
+                    // fuente: se libera aquí en vez de dejar el renderer y la copia abiertos hasta cerrar el proceso.
+                    ensureActive()
                     PdfPageSource(copy, descriptor, renderer, renderer.pageCount, first, cacheBudgetBytes(context))
                 } catch (e: Throwable) {
                     runCatching { renderer?.close() }
@@ -177,8 +181,8 @@ class PdfPageSource private constructor(
 
 /**
  * Tamaño del bitmap de una página de [pageWidth] x [pageHeight] puntos para mostrarla a [targetWidthPx] de
- * ancho, con alto proporcional. Se limita a [VIEWER_PAGE_MAX_PIXELS] (mismo tope que el render eager: Android
- * aborta al dibujar un bitmap > 100 MB, ver `viewerPageBitmapSize`). Función pura, testeable en JVM.
+ * ancho, con alto proporcional. Se limita a [VIEWER_PAGE_MAX_PIXELS]: Android aborta al dibujar un bitmap
+ * > 100 MB (crash real de Crashlytics, v1.1.0). Función pura, testeable en JVM.
  */
 internal fun lazyPageBitmapSize(
     pageWidth: Int,
