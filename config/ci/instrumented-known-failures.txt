@@ -1,8 +1,9 @@
 # Fallas de pruebas instrumentadas que el CI TOLERA (una por línea: Clase.metodo; `#` comenta).
 # Cualquier falla que NO esté aquí hace fallar el job (scripts/check_instrumented_results.py).
 # Agregar una entrada es una decisión deliberada y debe llevar su motivo; quitarla cuando se corrija.
-
-# Intermitente solo en el emulador lento de CI (entries.size == 0 justo tras mostrarse el resultado).
-# No se reproduce en teléfonos reales ni en un emulador local; causa no confirmada (2026-10-08,
-# ver docs/requirements/suite-pruebas-resultados-1.1.2.md). Mitigada con una espera en la prueba.
-QrCreatorFlowsTest.url_generaElCodigoYLoGuardaEnElHistorial
+#
+# Sin entradas desde 2026-10-10. Se retiró QrCreatorFlowsTest.url_generaElCodigoYLoGuardaEnElHistorial:
+# era intermitente solo en el emulador lento de CI (entries.size == 0 justo tras mostrarse el resultado)
+# y desde que la prueba espera a que el historial se escriba (assertSingleCreated) no volvió a fallar en
+# 8 corridas completas de CI (5 de ci.yml y 3 de sonarcloud.yml). Si reaparece, NO volver a tolerarla sin
+# antes entender la causa: el historial se guarda en QrScreen.kt justo después de mostrar el resultado.

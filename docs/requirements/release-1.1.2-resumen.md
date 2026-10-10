@@ -42,7 +42,7 @@ Los detalles finos de cada ronda siguen en los backlogs numerados (`backlog-bugs
 |---|---|
 | Pruebas manuales M1–M15 (`suite-pruebas-release.md`) | Las ejecuta el usuario; no hay registro de resultados en el repo |
 | Reinstalar la build de Play en el Moto E22 | Acción del usuario (se desinstaló para las instrumentadas) |
-| `QrCreatorFlowsTest.url_generaElCodigoYLoGuardaEnElHistorial` | Intermitente solo en CI, causa sin confirmar; tolerada en `config/ci/instrumented-known-failures.txt` |
+| `QrCreatorFlowsTest.url_generaElCodigoYLoGuardaEnElHistorial` | **Retirada de la lista de tolerancia (2026-10-10):** con la espera añadida a la prueba no falló en 8 corridas completas de CI; la lista `config/ci/instrumented-known-failures.txt` queda sin entradas |
 | Visor: render de **todas** las páginas a la vez | Un PDF de cientos de páginas puede dar OOM. Arreglo de fondo: render perezoso (página visible ± margen) |
 | Premium: oferta de prueba de 7 días | Falta crearla en Play Console y endurecer la app para elegir la oferta con trial (hoy `subscriptionOfferDetails.firstOrNull()`, el orden no está garantizado) |
 | Etiqueta "Ahorra 44%" | Con 6.900/46.900 COP el ahorro real es ~43%; ajustar precio o texto |
