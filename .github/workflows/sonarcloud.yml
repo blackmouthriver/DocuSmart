@@ -75,7 +75,14 @@ jobs:
       # Compilar ANTES de arrancar el emulador -- el runner solo tiene 2 vCPU,
       # compilar con el emulador ya corriendo compite por los mismos núcleos.
       - name: Compilar APKs de debug y de test
-        run: ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon
+        run: |
+          # Un fallo de red o una descarga corrupta (p. ej. "Dependency verification failed" de un .pom)
+          # no es del código: se reintenta una vez, forzando la descarga de dependencias, antes de dar
+          # el job por fallido. Un error de compilación real falla igual en el segundo intento.
+          ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon || {
+            echo "::warning::La compilación falló; se reintenta una vez (posible fallo de red)."
+            ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon --refresh-dependencies
+          }
 
       # KVM da aceleración por hardware al emulador -- sin esto corre por
       # software y es demasiado lento para un job de CI.
@@ -218,7 +225,14 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Compilar APKs de debug y de test
-        run: ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon
+        run: |
+          # Un fallo de red o una descarga corrupta (p. ej. "Dependency verification failed" de un .pom)
+          # no es del código: se reintenta una vez, forzando la descarga de dependencias, antes de dar
+          # el job por fallido. Un error de compilación real falla igual en el segundo intento.
+          ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon || {
+            echo "::warning::La compilación falló; se reintenta una vez (posible fallo de red)."
+            ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon --refresh-dependencies
+          }
 
       # Descarga los 4 artefactos coverage-shard-0..3, cada uno en su propia
       # subcarpeta (merge-multiple:false) -- ya vienen con el .ec renombrado
