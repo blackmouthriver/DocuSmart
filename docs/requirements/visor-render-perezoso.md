@@ -46,7 +46,7 @@ El E22 "lo aguanta" gracias al intercambio de memoria del sistema (el `lowmemory
 
 ## Pendiente / no incluido
 
-- **Modo Estudio** (`StudyScreen.kt`) sigue usando `renderPdfPagesToBitmaps()` (eager): conserva el problema. Migrarlo a `PdfPageSource` es el siguiente paso; hasta entonces `renderPdfPagesToBitmaps` no se puede borrar.
+- **Modo Estudio:** migrado en la rama `claude/estudio-render-perezoso` (ver la sección siguiente); ya no queda ningún uso de `renderPdfPagesToBitmaps()`.
 - Sin verificar a mano en un teléfono real: abrir el libro en la interfaz, desplazarse y comprobar a ojo que no hay huecos molestos.
 
 ## Pruebas
@@ -69,3 +69,26 @@ Edge 30 Neo (Android 14) y emulador 320×640 (Android 16), en paralelo:
 Al repetir el paquete completo del Visor en el Edge se vio un cierre del proceso (`FATAL EXCEPTION: main` → `Unable to destroy activity` → `ArrayIndexOutOfBoundsException: length=640; index=-16` en `SlotWriter.moveSlotGapTo`, runtime de Compose) en una prueba al azar de la clase. **No lo introduce este cambio**: se midió igual en `main` sin él (1 caída de 6 corridas; con el cambio, 1 de 6 en la última tanda). Es una corrupción de la tabla de composición al destruir la actividad, de la misma familia que la intermitencia "must have a looper" de `SecurityFolderFlowsTest` (composición ejecutada fuera del hilo principal por el reloj de pruebas de Compose). Puede dejar un job de CI en rojo de vez en cuando: relanzarlo. Una actualización de Compose podría corregirlo (hay actualizaciones de dependencias pendientes en Dependabot).
 
 Se probó, y se **revirtió**, escribir el estado de cada página en el hilo principal (`withContext(Dispatchers.Main.immediate)`): no cambió la frecuencia del cierre y su justificación resultó equivocada.
+
+## Segunda parte: Modo Estudio (2026-10-10)
+
+`StudyScreen.kt` (`ReadingTab` / `StudyPdfViewer`) era el último consumidor del render eager: rasterizaba todo el PDF al abrir Lectura, mantenía todos los bitmaps en memoria y no mostraba nada hasta terminar. Ahora usa `PdfPageSource`, igual que el Visor.
+
+- **Ciclo de vida:** `ReadingTab` abre la fuente al elegir documento y la cierra al cambiar de documento o salir de Lectura; **no** al alternar PDF/Texto (sigue sin releer el documento, como pidió el usuario el 2026-09-22). El `State` de la fuente es la clave del `DisposableEffect`: con `rememberUpdatedState` la limpieza vería ya la fuente del documento nuevo y la anterior quedaría abierta.
+- **Interfaz:** `StudyPdfPage` pide su bitmap al entrar en pantalla, adelanta la siguiente y muestra un hueco con la proporción estimada mientras llega. El desplazamiento a la página que lee la voz usa `pageCount` (el primer render ya no espera al documento completo).
+- **Defecto corregido de paso:** el `Image` de Estudio tampoco tenía `aspectRatio`, así que una página más angosta que la pantalla se medía con la altura de su propio bitmap (mismo defecto que se arregló en el Visor con #107). Con el render a ancho de pantalla × 1,5 y `aspectRatio` ya no ocurre.
+- **`PdfPageSource.open`:** ahora comprueba la cancelación antes de devolver la fuente y cierra renderer, descriptor y copia si el documento cambió mientras se abría (antes quedaban abiertos hasta cerrar el proceso). Además la copia a medias se borra si falla el copiado.
+- **Código eliminado:** `renderPdfPagesToBitmaps`, `renderCachedPdfPages`, `renderAllPages`, `viewerPageBitmapSize` y su escala fija 2×. `PdfPageBitmapTest` ahora cubre `copyPdfUriToCache` (origen ilegible → `false`, sin copia a medias); el caso del crash de Crashlytics sigue cubierto por `LazyPageBitmapSizeTest`.
+- **Prueba nueva:** `StudyReadingTest.visorDePdfReal_conMuchasPaginas_abreAlInstanteYLlegaALaUltima` (300 páginas: la primera aparece en < 15 s y se llega a la última).
+
+### Verificación
+
+| | Edge 30 Neo (API 34) | Emulador 320×640 (API 36) |
+|---|---|---|
+| Paquete `study` | 67/67 | 67/67 |
+| Paquete `core.pdf` | 9/9 | 9/9 |
+| Paquete `viewer` (98) | 97/98 | 98/98 |
+
+Edge `viewer`: falló `ViewerDocumentTypesTest.powerPointCorrupto_…` con `performMeasureAndLayout called during measure layout` (reloj de pruebas de Compose; es una prueba de PowerPoint y no toca PDF ni Estudio). Al repetir la clase 3 veces: 2 OK y 1 cierre del proceso con `SlotWriter.moveSlotGapTo` al destruir la actividad, el defecto preexistente de Compose descrito arriba. Ninguna de las dos es nueva ni está en código tocado por este cambio.
+
+**Sin verificar a mano:** abrir un PDF real en Lectura, alternar PDF/Texto, dejar que "Leer todo" avance de página y comprobar que el visor sigue a la voz sin huecos molestos; cambiar de documento y volver.

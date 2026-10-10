@@ -2,9 +2,7 @@ package com.docsmart.core.pdf
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.pdf.PdfRenderer
 import android.net.Uri
-import android.os.ParcelFileDescriptor
 import timber.log.Timber
 import java.io.File
 
@@ -19,31 +17,6 @@ import java.io.File
  * búsqueda en el Visor).
  */
 data class PdfPageBitmap(val bitmap: Bitmap, val pageWidthPts: Float, val pageHeightPts: Float)
-
-/** Copia el PDF de [uri] al caché de la app y renderiza cada página a un [Bitmap]. */
-fun renderPdfPagesToBitmaps(
-    uri: Uri,
-    context: Context,
-    cachePrefix: String = "preview",
-): List<PdfPageBitmap> {
-    val cacheFile = File(context.cacheDir, "${cachePrefix}_${System.currentTimeMillis()}.pdf")
-    if (!copyPdfUriToCache(uri, context, cacheFile)) {
-        Timber.e("PdfPageRenderer: no se pudo copiar el PDF al caché")
-        cacheFile.delete()
-        return emptyList()
-    }
-    // Hallazgo real de la auditoría general 2026-09-17: cacheFile solo
-    // hace falta durante el render (PdfRenderer exige un FileDescriptor
-    // real, no puede leer un Uri/stream directo) -- antes nunca se
-    // borraba, ni en éxito ni en error, acumulando una copia completa de
-    // cada PDF abierto (Visor y Modo Estudio) en cacheDir para siempre,
-    // fuera del alcance de "Limpiar caché" (que solo barre filesDir).
-    return try {
-        renderCachedPdfPages(cacheFile)
-    } finally {
-        cacheFile.delete()
-    }
-}
 
 internal fun copyPdfUriToCache(
     uri: Uri,
@@ -95,67 +68,11 @@ private fun copyContentUriToCache(
         false
     }
 
-// Hallazgo real de la auditoría general 2026-09-17: si render()/openPage()
-// lanzaba a mitad del bucle (PDF corrupto, página de tamaño extremo →
-// OutOfMemoryError), pdfRenderer.close()/fileDescriptor.close() nunca se
-// alcanzaban -- fuga del objeto nativo PdfRenderer y del descriptor de
-// archivo en cada intento fallido. Cada recurso se cierra ahora en su
-// propio finally, de adentro hacia afuera.
-private fun renderCachedPdfPages(cacheFile: File): List<PdfPageBitmap> {
-    val fileDescriptor = ParcelFileDescriptor.open(cacheFile, ParcelFileDescriptor.MODE_READ_ONLY)
-    return try {
-        val pdfRenderer = PdfRenderer(fileDescriptor)
-        try {
-            renderAllPages(pdfRenderer)
-        } finally {
-            pdfRenderer.close()
-        }
-    } finally {
-        fileDescriptor.close()
-    }
-}
-
 // Crash real en producción (Crashlytics, v1.1.0, 2026-10-05): la escala fija 2x
 // sobre una página de gran formato (planos/pósters) daba un bitmap de ~156 MB y
 // Android aborta el dibujado de cualquier bitmap > 100 MB ("Canvas: trying to
-// draw too large bitmap") -- cierre de la app al abrir un PDF válido. Como el
-// Visor mantiene TODAS las páginas en memoria a la vez, el tope es bajo
-// (8 MP = 32 MB por página; una A4 a 2x son ~2 MP, así que los documentos
-// normales no cambian). Por encima del tope se reduce la escala.
+// draw too large bitmap") -- cierre de la app al abrir un PDF válido. Tope de
+// 8 MP (32 MB) por página; ver `lazyPageBitmapSize` en PdfPageSource.kt, que lo aplica.
 internal const val VIEWER_PAGE_MAX_PIXELS = 8_000_000L
-private const val VIEWER_PAGE_SCALE = 2
 
 internal data class PageBitmapSize(val width: Int, val height: Int)
-
-/** Tamaño del bitmap de una página de [pageWidth] x [pageHeight] pts: 2x, o menos si superaría el tope. */
-internal fun viewerPageBitmapSize(
-    pageWidth: Int,
-    pageHeight: Int,
-): PageBitmapSize {
-    val width = pageWidth.coerceAtLeast(1).toLong() * VIEWER_PAGE_SCALE
-    val height = pageHeight.coerceAtLeast(1).toLong() * VIEWER_PAGE_SCALE
-    val pixels = width * height
-    if (pixels <= VIEWER_PAGE_MAX_PIXELS) return PageBitmapSize(width.toInt(), height.toInt())
-    val factor = kotlin.math.sqrt(VIEWER_PAGE_MAX_PIXELS.toDouble() / pixels)
-    return PageBitmapSize(
-        width = (width * factor).toInt().coerceAtLeast(1),
-        height = (height * factor).toInt().coerceAtLeast(1),
-    )
-}
-
-private fun renderAllPages(pdfRenderer: PdfRenderer): List<PdfPageBitmap> {
-    val pages = mutableListOf<PdfPageBitmap>()
-    for (i in 0 until pdfRenderer.pageCount) {
-        val page = pdfRenderer.openPage(i)
-        try {
-            val size = viewerPageBitmapSize(page.width, page.height)
-            val bitmap = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
-            bitmap.eraseColor(android.graphics.Color.WHITE)
-            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-            pages.add(PdfPageBitmap(bitmap, page.width.toFloat(), page.height.toFloat()))
-        } finally {
-            page.close()
-        }
-    }
-    return pages
-}

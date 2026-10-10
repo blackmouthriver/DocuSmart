@@ -52,6 +52,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -79,7 +80,8 @@ import com.docsmart.core.ads.AdConstants
 import com.docsmart.core.data.db.NoteImageEntity
 import com.docsmart.core.data.db.NoteWithImages
 import com.docsmart.core.pdf.PdfPageBitmap
-import com.docsmart.core.pdf.renderPdfPagesToBitmaps
+import com.docsmart.core.pdf.PdfPageSize
+import com.docsmart.core.pdf.PdfPageSource
 import com.docsmart.core.ui.components.BannerNavRow
 import com.docsmart.core.ui.components.DocuSmartEmptyState
 import com.docsmart.core.ui.components.DocuSmartScreenHeader
@@ -1328,28 +1330,28 @@ internal fun ReadingTab(
                 // viven acá, un nivel arriba del `when`, así que sobreviven el
                 // cambio de modo y solo se recargan si cambia el documento.
                 val pdfContext = LocalContext.current
-                var pdfPages by remember(documentUri) { mutableStateOf<List<PdfPageBitmap>>(emptyList()) }
+                // Backlog #7 (2026-10-10): el PDF se abre UNA vez y cada página se renderiza
+                // cuando entra en pantalla (ver PdfPageSource) -- antes se rasterizaban todas
+                // por adelantado y se mantenían en memoria. El State mismo es la clave del
+                // DisposableEffect: así, al cambiar de documento se cierra la fuente del
+                // documento ANTERIOR (un `rememberUpdatedState` ya apuntaría a la nueva).
+                val pdfSource = remember(documentUri) { mutableStateOf<PdfPageSource?>(null) }
                 var pdfLoadError by remember(documentUri) { mutableStateOf(false) }
                 LaunchedEffect(documentUri) {
-                    pdfPages =
-                        withContext(Dispatchers.IO) {
-                            try {
-                                renderPdfPagesToBitmaps(documentUri, pdfContext, cachePrefix = "study")
-                            } catch (e: CancellationException) {
-                                throw e
-                            } catch (e: Exception) {
-                                Timber.e("Estudio: error renderizando PDF (${e.javaClass.simpleName})")
-                                pdfLoadError = true
-                                emptyList()
-                            }
-                        }
-                }
-                // H6 (ronda 13, 2026-09-18): recicla los bitmaps de ESTE documento al
-                // cambiar de documento o salir de Lectura -- ya no al cambiar de modo.
-                DisposableEffect(documentUri) {
-                    onDispose {
-                        pdfPages.forEach { it.bitmap.recycle() }
+                    try {
+                        pdfSource.value = PdfPageSource.open(documentUri, pdfContext)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Timber.e("Estudio: error abriendo PDF (${e.javaClass.simpleName})")
+                        pdfLoadError = true
                     }
+                }
+                // Cierra el renderer, el descriptor, la copia en caché y los bitmaps de ESTE
+                // documento al cambiar de documento o salir de Lectura -- no al cambiar de modo
+                // (H6, ronda 13, 2026-09-18: antes se reciclaban uno a uno).
+                DisposableEffect(pdfSource) {
+                    onDispose { pdfSource.value?.close() }
                 }
                 Column(modifier = Modifier.fillMaxSize()) {
                     // Pedido explícito del usuario 2026-09-22: la ficha del documento
@@ -1370,7 +1372,7 @@ internal fun ReadingTab(
                     when (viewMode) {
                         ReadingViewMode.PDF ->
                             StudyPdfViewer(
-                                pages = pdfPages,
+                                source = pdfSource.value,
                                 loadError = pdfLoadError,
                                 currentPage = currentPage,
                                 modifier = Modifier.fillMaxWidth().weight(1f),
@@ -2137,17 +2139,17 @@ private fun ReadingHistoryCard(
 }
 
 // ── Visor de PDF embebido en Lectura ──────────────────
-// Mismo patrón que el Visor de documentos (renderPdfPagesToBitmaps,
-// extraído a core/pdf/PdfPageRenderer.kt al necesitarse acá también) pero
-// sin la lógica de resaltado de búsqueda -- Estudio no la necesita.
+// Mismo patrón que el Visor de documentos (PdfPageSource: el PDF se abre una vez y
+// cada página se renderiza cuando entra en pantalla) pero sin la lógica de
+// resaltado de búsqueda ni de anotaciones -- Estudio no las necesita.
 @Composable
 private fun StudyPdfViewer(
     // Pedido explícito del usuario 2026-09-22: antes esta función cargaba y
-    // dueñaba `pages` ella misma (keyed por `uri`) -- como el `when (viewMode)`
+    // dueñaba las páginas ella misma (keyed por `uri`) -- como el `when (viewMode)`
     // de ReadingTab la saca de composición al pasar a Texto, volver a PDF la
-    // recreaba desde cero y releía el PDF entero. Ahora `pages`/`loadError` los
+    // recreaba desde cero y releía el PDF entero. Ahora `source`/`loadError` los
     // dueña ReadingTab (que sobrevive el cambio de modo) y se los pasa acá.
-    pages: List<PdfPageBitmap>,
+    source: PdfPageSource?,
     loadError: Boolean,
     currentPage: Int,
     modifier: Modifier = Modifier,
@@ -2157,15 +2159,29 @@ private fun StudyPdfViewer(
     var offsetY by remember { mutableFloatStateOf(0f) }
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
     val listState = rememberLazyListState()
+    val pageCount = source?.pageCount ?: 0
+    // Tamaño real de las páginas ya renderizadas; el resto se estima con el de la primera.
+    val knownSizes = remember(source) { mutableStateMapOf<Int, PdfPageSize>() }
+    // Ancho al que se renderiza cada página: el de la pantalla menos el relleno de la lista,
+    // con un 50% extra para el zoom con pellizco.
+    val context = LocalContext.current
+    val density = LocalDensity.current
+    val renderWidthPx =
+        remember(context, density) {
+            val paddingPx = with(density) { (STUDY_PDF_HORIZONTAL_PADDING * 2).toPx() }
+            ((context.resources.displayMetrics.widthPixels - paddingPx) * STUDY_PDF_RENDER_QUALITY)
+                .toInt()
+                .coerceAtLeast(1)
+        }
 
     // Hallazgo real de la auditoría general 2026-09-17 (quinta pasada):
     // `currentPage` solo alimentaba el texto "Página X de Y" -- la imagen
     // visible se quedaba fija donde el usuario la había dejado mientras
     // "Leer todo" avanzaba de página en segundo plano. `currentPage` es
     // 1-based (ver `study_reading_page`).
-    LaunchedEffect(currentPage, pages) {
-        val index = pdfViewerPageIndex(currentPage, pages.size)
-        if (pages.isNotEmpty()) listState.animateScrollToItem(index)
+    LaunchedEffect(currentPage, pageCount) {
+        val index = pdfViewerPageIndex(currentPage, pageCount)
+        if (pageCount > 0) listState.animateScrollToItem(index)
     }
 
     when {
@@ -2177,7 +2193,7 @@ private fun StudyPdfViewer(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-        pages.isEmpty() ->
+        source == null ->
             Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 LoadingIndicator(stringResource(R.string.study_loading_document))
             }
@@ -2209,35 +2225,97 @@ private fun StudyPdfViewer(
                             translationX = offsetX,
                             translationY = offsetY,
                         ),
-                contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp, start = 8.dp, end = 8.dp),
+                contentPadding =
+                    PaddingValues(
+                        top = 8.dp,
+                        bottom = 16.dp,
+                        start = STUDY_PDF_HORIZONTAL_PADDING,
+                        end = STUDY_PDF_HORIZONTAL_PADDING,
+                    ),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                itemsIndexed(pages) { index, pageBitmap ->
-                    val shape = MaterialTheme.shapes.small
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .accentShadow(shape = shape, elevation = 2.dp)
-                                .clip(shape)
-                                .background(MaterialTheme.colorScheme.surface)
-                                .accentBorder(shape = shape),
-                    ) {
-                        Image(
-                            bitmap = pageBitmap.bitmap.asImageBitmap(),
-                            // Hallazgo real de la auditoría general 2026-09-17
-                            // (quinta pasada): sin contentDescription, TalkBack
-                            // no anuncia en qué página está durante "Leer todo"
-                            // -- justo una función pensada para accesibilidad.
-                            // Mismo string ya usado por el Visor principal.
-                            contentDescription = stringResource(R.string.viewer_page_content_desc, index + 1),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
+                items(count = pageCount) { index ->
+                    StudyPdfPage(
+                        index = index,
+                        source = source,
+                        renderWidthPx = renderWidthPx,
+                        estimatedSize = knownSizes[index] ?: source.firstPageSize,
+                        onSizeKnown = { i, size -> knownSizes[i] = size },
+                    )
                 }
             }
     }
 }
+
+private val STUDY_PDF_HORIZONTAL_PADDING = 8.dp
+
+// Calidad de render respecto al ancho de pantalla: >1 deja algo de nitidez para el zoom (mismo
+// criterio que el Visor).
+private const val STUDY_PDF_RENDER_QUALITY = 1.5f
+
+// Una página del PDF de Estudio: se pide su bitmap a la fuente cuando entra en pantalla (y se
+// adelanta la siguiente); mientras llega se muestra un hueco con la proporción estimada, así la
+// lista no salta al cargar.
+@Composable
+private fun StudyPdfPage(
+    index: Int,
+    source: PdfPageSource,
+    renderWidthPx: Int,
+    estimatedSize: PdfPageSize,
+    onSizeKnown: (Int, PdfPageSize) -> Unit,
+) {
+    val page by produceState<PdfPageBitmap?>(initialValue = null, source, renderWidthPx, index) {
+        val rendered = source.render(index, renderWidthPx)
+        value = rendered
+        if (rendered != null) {
+            onSizeKnown(index, PdfPageSize(rendered.pageWidthPts, rendered.pageHeightPts))
+            // Adelanta la siguiente: al seguir leyendo ya está en la caché.
+            if (index + 1 < source.pageCount) source.render(index + 1, renderWidthPx)
+        }
+    }
+    val shape = MaterialTheme.shapes.small
+    Box(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .accentShadow(shape = shape, elevation = 2.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape),
+    ) {
+        val pageBitmap = page
+        if (pageBitmap == null) {
+            Box(
+                modifier = Modifier.fillMaxWidth().aspectRatio(estimatedSize.aspectRatio()),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+            }
+        } else {
+            val ratio = PdfPageSize(pageBitmap.pageWidthPts, pageBitmap.pageHeightPts).aspectRatio()
+            Image(
+                bitmap = pageBitmap.bitmap.asImageBitmap(),
+                // Hallazgo real de la auditoría general 2026-09-17
+                // (quinta pasada): sin contentDescription, TalkBack
+                // no anuncia en qué página está durante "Leer todo"
+                // -- justo una función pensada para accesibilidad.
+                // Mismo string ya usado por el Visor principal.
+                contentDescription = stringResource(R.string.viewer_page_content_desc, index + 1),
+                // La altura debe seguir al ancho con la proporción REAL de la página: un bitmap más
+                // angosto que la pantalla se medía con su propia altura (mismo defecto que el Visor).
+                modifier = Modifier.fillMaxWidth().aspectRatio(ratio),
+            )
+        }
+    }
+}
+
+// Proporción ancho/alto en puntos PDF; si el tamaño no es válido, la de una A4.
+private fun PdfPageSize.aspectRatio(): Float {
+    val valid = widthPts > 0f && heightPts > 0f
+    return if (valid) widthPts / heightPts else A4_ASPECT_RATIO
+}
+
+private const val A4_ASPECT_RATIO = 595f / 842f
 
 // ── Tab de Notas ──────────────────────────────────────
 @Composable
