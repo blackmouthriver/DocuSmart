@@ -7,6 +7,7 @@ import com.docsmart.core.billing.PlanOffer
 import com.docsmart.core.billing.PurchaseResult
 import com.docsmart.core.premium.PremiumManager
 import com.docsmart.features.premium.data.repository.PremiumRepository
+import com.docsmart.features.premium.domain.model.MONTHLY_PLAN_ID
 import com.docsmart.features.premium.domain.model.PremiumPlan
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -355,6 +356,83 @@ class PremiumViewModelTest {
             offers.value = mapOf(plan.productId to PlanOffer(price = "  ", trialDays = null))
 
             assertEquals("$99", viewModel.uiState.value.plans.single().price)
+        }
+
+    // ── ahorro del plan anual con precios reales (backlog #9) ─────────────────
+
+    private val monthlyPlan =
+        PremiumPlan(
+            id = MONTHLY_PLAN_ID,
+            titleRes = 3,
+            price = "$2.99",
+            periodRes = 4,
+            productId = "com.docsmart.premium.monthly",
+        )
+    private val annualWithBadge = plan.copy(price = "$19.99", savingsPercent = 44)
+
+    private fun offersWithPrices(
+        monthlyMicros: Long?,
+        annualMicros: Long?,
+    ): Map<String, PlanOffer> =
+        mapOf(
+            monthlyPlan.productId to PlanOffer(price = "m", priceMicros = monthlyMicros),
+            annualWithBadge.productId to PlanOffer(price = "a", priceMicros = annualMicros),
+        )
+
+    @Test
+    fun `el ahorro del plan anual se calcula con los precios reales de Play`() =
+        runTest {
+            every { premiumRepository.getAvailablePlans() } returns listOf(monthlyPlan, annualWithBadge)
+            val offers = MutableStateFlow<Map<String, PlanOffer>>(emptyMap())
+            every { billingManager.planOffers } returns offers
+            val viewModel = buildViewModel()
+            assertEquals(44, viewModel.uiState.value.plans.single { it.id == "annual" }.savingsPercent)
+
+            // 6.900 COP/mes vs 46.900 COP/año = 43,4 % (no 44 %).
+            offers.value = offersWithPrices(monthlyMicros = 6_900_000_000L, annualMicros = 46_900_000_000L)
+
+            assertEquals(43, viewModel.uiState.value.plans.single { it.id == "annual" }.savingsPercent)
+            assertNull(viewModel.uiState.value.plans.single { it.id == MONTHLY_PLAN_ID }.savingsPercent)
+        }
+
+    @Test
+    fun `si Play no entrega el precio del mensual se conserva el ahorro de respaldo`() =
+        runTest {
+            every { premiumRepository.getAvailablePlans() } returns listOf(monthlyPlan, annualWithBadge)
+            val offers = MutableStateFlow<Map<String, PlanOffer>>(emptyMap())
+            every { billingManager.planOffers } returns offers
+            val viewModel = buildViewModel()
+
+            offers.value = offersWithPrices(monthlyMicros = null, annualMicros = 46_900_000_000L)
+
+            assertEquals(44, viewModel.uiState.value.plans.single { it.id == "annual" }.savingsPercent)
+        }
+
+    @Test
+    fun `si el anual no es mas barato que 12 meses del mensual el badge se oculta`() =
+        runTest {
+            every { premiumRepository.getAvailablePlans() } returns listOf(monthlyPlan, annualWithBadge)
+            val offers = MutableStateFlow<Map<String, PlanOffer>>(emptyMap())
+            every { billingManager.planOffers } returns offers
+            val viewModel = buildViewModel()
+
+            offers.value = offersWithPrices(monthlyMicros = 1_000_000L, annualMicros = 13_000_000L)
+
+            assertNull(viewModel.uiState.value.plans.single { it.id == "annual" }.savingsPercent)
+        }
+
+    @Test
+    fun `si Remote Config apaga el badge los precios reales no lo vuelven a encender`() =
+        runTest {
+            val annualNoBadge = annualWithBadge.copy(savingsPercent = null)
+            every { premiumRepository.getAvailablePlans() } returns listOf(monthlyPlan, annualNoBadge)
+            val offers = MutableStateFlow<Map<String, PlanOffer>>(emptyMap())
+            every { billingManager.planOffers } returns offers
+            val viewModel = buildViewModel()
+
+            offers.value = offersWithPrices(monthlyMicros = 6_900_000_000L, annualMicros = 46_900_000_000L)
+
+            assertNull(viewModel.uiState.value.plans.single { it.id == "annual" }.savingsPercent)
         }
 
     @Test

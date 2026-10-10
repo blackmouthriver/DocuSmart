@@ -691,7 +691,7 @@
          "%" es literal, no un placeholder (bug real corregido 2026-09-03:
          antes decía "44%%" porque alguien lo escapó como si fuera a pasar
          por String.format, mostrando el "%" duplicado en pantalla). -->
-    <string name="premium_savings_44" tools:ignore="StringFormatInvalid">Estalvia un 44%</string>
+    <string name="premium_savings_percent" tools:ignore="StringFormatInvalid">Estalvia un %1$d%%</string>
     <string name="home_section_documents">Documents</string>
     <string name="home_section_study">Estudi</string>
     <string name="home_section_protection">Protecció</string>

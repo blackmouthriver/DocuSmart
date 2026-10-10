@@ -667,7 +667,7 @@
          "%"는 플레이스홀더가 아닌 리터럴입니다 (2026-09-03에 수정된 실제 버그:
          String.format을 거칠 것으로 착각해 "44%%"로 이스케이프해 두는 바람에
          화면에 "%"가 두 번 표시되었습니다). -->
-    <string name="premium_savings_44" tools:ignore="StringFormatInvalid">44% 절약</string>
+    <string name="premium_savings_percent" tools:ignore="StringFormatInvalid">%1$d%% 절약</string>
     <string name="home_section_documents">문서</string>
     <string name="home_section_study">학습</string>
     <string name="home_section_protection">보호</string>

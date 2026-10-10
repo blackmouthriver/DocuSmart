@@ -9,6 +9,7 @@ import com.docsmart.core.billing.PlanOffer
 import com.docsmart.core.billing.PurchaseResult
 import com.docsmart.core.premium.PremiumManager
 import com.docsmart.features.premium.data.repository.PremiumRepository
+import com.docsmart.features.premium.domain.model.MONTHLY_PLAN_ID
 import com.docsmart.features.premium.domain.model.PremiumFeature
 import com.docsmart.features.premium.domain.model.PremiumPlan
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -107,8 +108,13 @@ class PremiumViewModel
                 billingManager.planOffers.collect { offers ->
                     if (offers.isEmpty()) return@collect
                     _uiState.update { state ->
+                        // El ahorro del plan anual se calcula contra el precio REAL del mensual.
+                        val monthlyMicros =
+                            state.plans
+                                .firstOrNull { it.id == MONTHLY_PLAN_ID }
+                                ?.let { offers[it.productId]?.priceMicros }
                         state.copy(
-                            plans = state.plans.map { plan -> applyOffer(plan, offers) },
+                            plans = state.plans.map { plan -> applyOffer(plan, offers, monthlyMicros) },
                             // Bug real (ronda 23): antes solo se refrescaba `plans`, dejando
                             // `selectedPlan` con el precio/trialDays viejos que llegó de
                             // PremiumRepository -- el CTA de compra (purchaseCtaFor) usa
@@ -117,7 +123,7 @@ class PremiumViewModel
                             // Se aplica la misma transformación por separado (en vez de
                             // buscar por id en `plans` ya actualizado) para no depender de
                             // que selectedPlan siga estando en la lista.
-                            selectedPlan = state.selectedPlan?.let { applyOffer(it, offers) },
+                            selectedPlan = state.selectedPlan?.let { applyOffer(it, offers, monthlyMicros) },
                         )
                     }
                 }
@@ -127,13 +133,29 @@ class PremiumViewModel
         private fun applyOffer(
             plan: PremiumPlan,
             offers: Map<String, PlanOffer>,
+            monthlyMicros: Long?,
         ): PremiumPlan =
             offers[plan.productId]?.let { offer ->
                 plan.copy(
                     price = offer.price.takeIf { it.isNotBlank() } ?: plan.price,
                     trialDays = offer.trialDays,
+                    savingsPercent = savingsFor(plan, offer, monthlyMicros),
                 )
             } ?: plan
+
+        // Backlog #9: el badge "Ahorra X%" sale de los precios reales de Play. Solo lo tienen los planes que
+        // ya lo traían (Remote Config lo puede apagar). Si Play no entregó algún precio se conserva el valor
+        // de respaldo; si entregó ambos y el anual no es más barato, el badge se oculta.
+        private fun savingsFor(
+            plan: PremiumPlan,
+            offer: PlanOffer,
+            monthlyMicros: Long?,
+        ): Int? =
+            when {
+                plan.savingsPercent == null -> null
+                monthlyMicros == null || offer.priceMicros == null -> plan.savingsPercent
+                else -> annualSavingsPercent(monthlyMicros, offer.priceMicros)
+            }
 
         // HU-54, AC1: mientras dure la prueba, PremiumActiveCard debe poder
         // mostrar la fecha real de cobro.

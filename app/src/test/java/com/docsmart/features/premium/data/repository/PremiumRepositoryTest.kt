@@ -1,6 +1,5 @@
 package com.docsmart.features.premium.data.repository
 
-import com.docsmart.R
 import com.docsmart.core.remoteconfig.RemoteConfigManager
 import io.mockk.every
 import io.mockk.mockk
@@ -27,7 +26,8 @@ class PremiumRepositoryTest {
         val annual = plans.single { it.id == "annual" }
         assertTrue(annual.isPopular)
         assertTrue(!monthly.isPopular)
-        assertEquals(R.string.premium_savings_44, annual.savingsLabelRes)
+        // 2,99 USD/mes vs 19,99 USD/año = 44,3 % de ahorro (se redondea hacia abajo).
+        assertEquals(44, annual.savingsPercent)
     }
 
     @Test
@@ -52,6 +52,6 @@ class PremiumRepositoryTest {
 
         val annual = PremiumRepository(remoteConfig).getAvailablePlans().single { it.id == "annual" }
 
-        assertNull(annual.savingsLabelRes)
+        assertNull(annual.savingsPercent)
     }
 }
