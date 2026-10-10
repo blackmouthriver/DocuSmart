@@ -45,7 +45,7 @@ fun renderPdfPagesToBitmaps(
     }
 }
 
-private fun copyPdfUriToCache(
+internal fun copyPdfUriToCache(
     uri: Uri,
     context: Context,
     cacheFile: File,

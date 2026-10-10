@@ -62,7 +62,8 @@ import com.docsmart.core.ads.DocuSmartBannerAd
 import com.docsmart.core.data.db.AnnotationEntity
 import com.docsmart.core.data.db.AnnotationType
 import com.docsmart.core.pdf.PdfPageBitmap
-import com.docsmart.core.pdf.renderPdfPagesToBitmaps
+import com.docsmart.core.pdf.PdfPageSize
+import com.docsmart.core.pdf.PdfPageSource
 import com.docsmart.core.ui.components.DocuSmartErrorState
 import com.docsmart.core.ui.components.DocumentUiModel
 import com.docsmart.core.ui.theme.accentBorder
@@ -858,7 +859,12 @@ private fun PdfViewerContent(
     onAnnotationTap: (AnnotationEntity) -> Unit = {},
 ) {
     val context = LocalContext.current
-    var pages by remember { mutableStateOf<List<PdfPageBitmap>>(emptyList()) }
+    // El PDF se abre UNA vez y cada página se renderiza cuando entra en pantalla (ver PdfPageSource): antes se
+    // rasterizaban todas por adelantado -- un libro de 2 332 páginas tardaba 21-75 s y ocupaba ~3 GB.
+    var source by remember { mutableStateOf<PdfPageSource?>(null) }
+    val pageCount = source?.pageCount ?: 0
+    // Tamaño real de las páginas ya renderizadas; el resto se estima con el de la primera.
+    val knownSizes = remember { mutableStateMapOf<Int, PdfPageSize>() }
     var loadError by remember { mutableStateOf(false) }
     var scale by remember { mutableFloatStateOf(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
@@ -867,9 +873,9 @@ private fun PdfViewerContent(
     val listState = rememberLazyListState()
     val noteHitRadiusPx = with(androidx.compose.ui.platform.LocalDensity.current) { NoteHitRadiusDp.toPx() }
 
-    LaunchedEffect(targetPage, pages.size) {
-        if (pages.isEmpty() || targetPage == null) return@LaunchedEffect
-        if (targetPage in pages.indices) {
+    LaunchedEffect(targetPage, pageCount) {
+        if (pageCount == 0 || targetPage == null) return@LaunchedEffect
+        if (targetPage in 0 until pageCount) {
             listState.animateScrollToItem(targetPage)
         }
         // Backlog UX #47/#48: avisa al ViewModel para que limpie
@@ -885,39 +891,25 @@ private fun PdfViewerContent(
 
     LaunchedEffect(uri) {
         if (uri == null) return@LaunchedEffect
-        pages =
-            withContext(Dispatchers.IO) {
-                try {
-                    renderPdfPagesToBitmaps(uri, context)
-                } catch (e: Exception) {
-                    Timber.e("Error renderizando PDF: ${e.javaClass.simpleName}")
-                    loadError = true
-                    emptyList()
-                }
+        source = null
+        // Si el archivo ya no existe / está vacío / no tiene páginas, open() lanza: el Visor se quedaba antes
+        // para siempre en "Renderizando documento…" sin salida.
+        source =
+            try {
+                PdfPageSource.open(uri, context)
+            } catch (e: Exception) {
+                Timber.e("Error abriendo PDF: ${e.javaClass.simpleName}")
+                loadError = true
+                null
             }
-        // Bug real: si el archivo ya no existe / está vacío / no tiene páginas,
-        // renderPdfPagesToBitmaps devuelve lista vacía SIN lanzar -- el Visor
-        // se quedaba para siempre en "Renderizando documento…" sin salida.
-        if (pages.isEmpty()) loadError = true
-        onPageChanged(0, pages.size)
+        onPageChanged(0, source?.pageCount ?: 0)
     }
 
-    // Hallazgo real de la auditoría general 2026-09-18 (R11): renderAllPages()
-    // crea un bitmap ARGB_8888 a 2x por cada página y nunca se reciclaba
-    // explícitamente -- para un PDF de 30-50 páginas eso son 240-400MB
-    // nativos residentes hasta que el GC decidiera pasar, un riesgo real de
-    // OOM en dispositivos con poca RAM. `key(fileUri?.toString())` en el
-    // llamador ya fuerza recrear este composable en cada cambio de
-    // documento, así que un DisposableEffect(uri) libera la lista ANTERIOR
-    // de bitmaps de forma determinista, tanto al cambiar de documento como
-    // al cerrar el Visor. Alcance de esta ronda: liberación determinista al
-    // cambiar/cerrar documento -- una reescritura a renderizado perezoso
-    // (solo página visible ± margen) queda fuera de alcance por ser un
-    // cambio arquitectónico mayor sobre un componente ya en producción.
+    // Cierra el renderer, el descriptor, la copia en caché y los bitmaps al cambiar de documento o cerrar el
+    // Visor (`key(fileUri?.toString())` en el llamador recrea este composable en cada cambio de documento).
+    val currentSource by rememberUpdatedState(source)
     DisposableEffect(uri) {
-        onDispose {
-            pages.forEach { it.bitmap.recycle() }
-        }
+        onDispose { currentSource?.close() }
     }
 
     if (loadError) {
@@ -931,7 +923,8 @@ private fun PdfViewerContent(
         return
     }
 
-    if (pages.isEmpty()) {
+    val pageSource = source
+    if (pageSource == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
@@ -990,6 +983,31 @@ private fun PdfViewerContent(
                 translationY = if (isAnnotating) 0f else offsetY,
             )
 
+    // Ancho al que se renderiza cada página: el de la pantalla menos el relleno, con un 50% extra para zoom.
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val screenWidthPx = context.resources.displayMetrics.widthPixels
+    val renderWidthPx =
+        remember(screenWidthPx, density) {
+            ((screenWidthPx - with(density) { 16.dp.toPx() }) * PAGE_RENDER_QUALITY).toInt().coerceAtLeast(1)
+        }
+    val interaction =
+        remember(
+            annotationMode,
+            selectedHighlightColor,
+            noteHitRadiusPx,
+            onHighlightDrawn,
+            onNoteRequested,
+            onAnnotationTap,
+            onTap,
+        ) {
+            PdfPageInteraction(
+                annotationMode = annotationMode,
+                selectedHighlightColor = selectedHighlightColor,
+                noteHitRadiusPx = noteHitRadiusPx,
+                callbacks = PdfAnnotationCallbacks(onHighlightDrawn, onNoteRequested, onAnnotationTap, onTap),
+            )
+        }
+
     LazyColumn(
         state = listState,
         modifier = columnModifier,
@@ -1002,69 +1020,112 @@ private fun PdfViewerContent(
             ),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        itemsIndexed(pages) { index, pageBitmap ->
-            LaunchedEffect(index, pages.size) {
-                onPageChanged(index, pages.size)
+        items(count = pageCount) { index ->
+            LaunchedEffect(index, pageCount) {
+                onPageChanged(index, pageCount)
             }
-            val pageNumber = index + 1
-            val pageHighlights = highlights[pageNumber]
-            val pageAnnotations = documentAnnotations[pageNumber].orEmpty()
-            var dragStart by remember { mutableStateOf<Offset?>(null) }
-            var dragCurrent by remember { mutableStateOf<Offset?>(null) }
-            val shape = MaterialTheme.shapes.small
+            PdfPageItem(
+                index = index,
+                source = pageSource,
+                renderWidthPx = renderWidthPx,
+                estimatedSize = knownSizes[index] ?: pageSource.firstPageSize,
+                onSizeKnown = { i, size -> knownSizes[i] = size },
+                pageHighlights = highlights[index + 1],
+                pageAnnotations = documentAnnotations[index + 1].orEmpty(),
+                interaction = interaction,
+            )
+        }
+    }
+}
+
+// Calidad de render respecto al ancho de pantalla: >1 deja algo de nitidez para el zoom sin ocupar lo que
+// ocupaba renderizar a 2x los puntos del PDF.
+private const val PAGE_RENDER_QUALITY = 1.5f
+
+// Lo que una página necesita para reaccionar al usuario (agrupado: evita LongParameterList).
+private data class PdfPageInteraction(
+    val annotationMode: AnnotationMode,
+    val selectedHighlightColor: Int,
+    val noteHitRadiusPx: Float,
+    val callbacks: PdfAnnotationCallbacks,
+)
+
+// Una página del Visor: se pide su bitmap a la fuente cuando entra en pantalla (y se adelanta la siguiente);
+// mientras llega se muestra un hueco con la proporción estimada, así la lista no salta al cargar.
+@Composable
+private fun PdfPageItem(
+    index: Int,
+    source: PdfPageSource,
+    renderWidthPx: Int,
+    estimatedSize: PdfPageSize,
+    onSizeKnown: (Int, PdfPageSize) -> Unit,
+    pageHighlights: List<PdfMatchRect>?,
+    pageAnnotations: List<AnnotationEntity>,
+    interaction: PdfPageInteraction,
+) {
+    val pageNumber = index + 1
+    val page by produceState<PdfPageBitmap?>(initialValue = null, source, renderWidthPx, index) {
+        val rendered = source.render(index, renderWidthPx)
+        value = rendered
+        if (rendered != null) {
+            onSizeKnown(index, PdfPageSize(rendered.pageWidthPts, rendered.pageHeightPts))
+            // Adelanta la siguiente: al seguir leyendo ya está en la caché.
+            if (index + 1 < source.pageCount) source.render(index + 1, renderWidthPx)
+        }
+    }
+    var dragStart by remember { mutableStateOf<Offset?>(null) }
+    var dragCurrent by remember { mutableStateOf<Offset?>(null) }
+    val shape = MaterialTheme.shapes.small
+    Box(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .accentShadow(shape = shape, elevation = 2.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface)
+                .accentBorder(shape = shape),
+    ) {
+        val pageBitmap = page
+        if (pageBitmap == null) {
             Box(
+                modifier = Modifier.fillMaxWidth().aspectRatio(estimatedSize.widthPts / estimatedSize.heightPts),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+            }
+        } else {
+            Image(
+                bitmap = pageBitmap.bitmap.asImageBitmap(),
+                contentDescription = stringResource(R.string.viewer_page_content_desc, pageNumber),
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .accentShadow(shape = shape, elevation = 2.dp)
-                        .clip(shape)
-                        .background(MaterialTheme.colorScheme.surface)
-                        .accentBorder(shape = shape),
-            ) {
-                Image(
-                    bitmap = pageBitmap.bitmap.asImageBitmap(),
-                    contentDescription = stringResource(R.string.viewer_page_content_desc, pageNumber),
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            // La altura debe seguir al ancho con la proporción REAL de la página. Sin
-                            // esto, si el bitmap (2x los puntos del PDF) era más angosto que la pantalla
-                            // -- página pequeña en un teléfono de alta resolución, o casi cualquier
-                            // página en una tableta --, Compose medía la altura con la del propio bitmap:
-                            // la página se dibujaba pequeña y centrada, mientras resaltados, notas y el
-                            // toque (que usan size.width / pageWidthPts) quedaban desalineados.
-                            .aspectRatio(pageAspectRatio(pageBitmap))
-                            .pdfAnnotationGestures(
-                                annotationMode = annotationMode,
-                                pageBitmap = pageBitmap,
-                                pageNumber = pageNumber,
-                                pageAnnotations = pageAnnotations,
-                                noteHitRadiusPx = noteHitRadiusPx,
-                                onDragPreview = { start, current ->
-                                    dragStart = start
-                                    dragCurrent = current
-                                },
-                                callbacks =
-                                    PdfAnnotationCallbacks(
-                                        onHighlightDrawn = onHighlightDrawn,
-                                        onNoteRequested = onNoteRequested,
-                                        onAnnotationTap = onAnnotationTap,
-                                        onTap = onTap,
-                                    ),
-                            )
-                            .drawWithContent {
-                                drawContent()
-                                val preview = dragStart?.let { s -> dragCurrent?.let { c -> s to c } }
-                                drawPdfPageOverlays(
-                                    pageBitmap = pageBitmap,
-                                    pageHighlights = pageHighlights,
-                                    pageAnnotations = pageAnnotations,
-                                    dragPreview = preview,
-                                    selectedHighlightColor = selectedHighlightColor,
-                                )
+                        // La altura debe seguir al ancho con la proporción REAL de la página (ver pageAspectRatio).
+                        .aspectRatio(pageAspectRatio(pageBitmap))
+                        .pdfAnnotationGestures(
+                            annotationMode = interaction.annotationMode,
+                            pageBitmap = pageBitmap,
+                            pageNumber = pageNumber,
+                            pageAnnotations = pageAnnotations,
+                            noteHitRadiusPx = interaction.noteHitRadiusPx,
+                            onDragPreview = { start, current ->
+                                dragStart = start
+                                dragCurrent = current
                             },
-                )
-            }
+                            callbacks = interaction.callbacks,
+                        )
+                        .drawWithContent {
+                            drawContent()
+                            val preview = dragStart?.let { s -> dragCurrent?.let { c -> s to c } }
+                            drawPdfPageOverlays(
+                                pageBitmap = pageBitmap,
+                                pageHighlights = pageHighlights,
+                                pageAnnotations = pageAnnotations,
+                                dragPreview = preview,
+                                selectedHighlightColor = interaction.selectedHighlightColor,
+                            )
+                        },
+            )
         }
     }
 }

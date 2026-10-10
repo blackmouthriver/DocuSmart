@@ -1,10 +1,13 @@
 package com.docsmart.features.viewer.presentation
 
+import android.os.Debug
+import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -13,6 +16,7 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
@@ -306,6 +310,25 @@ class ViewerPdfTest {
         composeRule.waitForState { harness.viewModel.uiState.value.annotationMode == AnnotationMode.NONE }
         composeRule.onNodeWithText(vs(R.string.viewer_annotate_toolbar_label)).assertDoesNotExist()
         assertTrue(!harness.viewModel.uiState.value.showAnnotationToolbar)
+    }
+
+    // El Visor renderiza cada página al entrar en pantalla (PdfPageSource), no todas por adelantado: con un libro
+    // de 2 332 páginas tardaba 21-75 s y ocupaba ~3 GB. Con 400 páginas el render eager ocupaba ~770 MB.
+    @Test
+    fun pdfDeMuchasPaginas_abreAlInstanteSePuedeLlegarAlFinalYNoOcupaTodaLaMemoria() {
+        val file = files.pdf(pages = 400)
+        val nativoAntes = Debug.getNativeHeapAllocatedSize()
+        val inicio = SystemClock.elapsedRealtime()
+
+        open(file)
+
+        val abrir = SystemClock.elapsedRealtime() - inicio
+        assertTrue("abrir 400 páginas tardó $abrir ms", abrir < 15_000)
+        composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(399)
+        composeRule.waitForViewerNode(hasContentDescription(vs(R.string.viewer_page_content_desc, 400)))
+
+        val crecioMb = (Debug.getNativeHeapAllocatedSize() - nativoAntes) / (1024 * 1024)
+        assertTrue("la memoria nativa creció $crecioMb MB al recorrer 400 páginas", crecioMb < 300)
     }
 
     // Regresión: con un bitmap más angosto que la pantalla (página pequeña en un teléfono de alta resolución,
