@@ -33,7 +33,14 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Compilar (debug)
-        run: ./gradlew assembleDebug --no-daemon
+        run: |
+          # Un fallo de red o una descarga corrupta (p. ej. "Dependency verification failed" de un .pom)
+          # no es del código: se reintenta una vez, forzando la descarga de dependencias, antes de dar
+          # el job por fallido. Un error de compilación real falla igual en el segundo intento.
+          ./gradlew assembleDebug --no-daemon || {
+            echo "::warning::La compilación falló; se reintenta una vez (posible fallo de red)."
+            ./gradlew assembleDebug --no-daemon --refresh-dependencies
+          }
 
       - name: Lint
         run: ./gradlew lintDebug --no-daemon
@@ -139,7 +146,14 @@ jobs:
       # instrumentación -- mucho más liviano en CPU con el emulador ya
       # activo.
       - name: Compilar APKs de debug y de test
-        run: ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon
+        run: |
+          # Un fallo de red o una descarga corrupta (p. ej. "Dependency verification failed" de un .pom)
+          # no es del código: se reintenta una vez, forzando la descarga de dependencias, antes de dar
+          # el job por fallido. Un error de compilación real falla igual en el segundo intento.
+          ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon || {
+            echo "::warning::La compilación falló; se reintenta una vez (posible fallo de red)."
+            ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon --refresh-dependencies
+          }
 
       # KVM da aceleración por hardware al emulador en los runners Linux
       # hospedados por GitHub -- sin esto el emulador corre por software y

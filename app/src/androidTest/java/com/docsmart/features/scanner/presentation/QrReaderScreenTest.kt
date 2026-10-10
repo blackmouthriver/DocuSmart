@@ -106,10 +106,11 @@ class QrReaderScreenTest {
     }
 
     @Test
-    fun banner_volverEHistorialInvocanSusCallbacks() {
+    fun volverYBotonHistorial_invocanSusCallbacks() {
         val shown = show()
 
-        composeRule.onNodeWithContentDescription(str(R.string.qr_history_title)).performClick()
+        // El historial es un botón con texto bajo el banner (backlog #10), no un icono dentro de él.
+        composeRule.onNodeWithText(str(R.string.qr_history_open)).performClick()
         composeRule.onNodeWithText(str(R.string.general_back)).performClick()
         composeRule.waitForIdle()
 
