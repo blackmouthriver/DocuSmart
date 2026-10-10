@@ -672,7 +672,7 @@
          il 2026-09-03: prima diceva "44%%" perché qualcuno lo aveva
          escapato come se dovesse passare per String.format, mostrando il
          "%" duplicato a schermo). -->
-    <string name="premium_savings_44" tools:ignore="StringFormatInvalid">Risparmia il 44%</string>
+    <string name="premium_savings_percent" tools:ignore="StringFormatInvalid">Risparmia il %1$d%%</string>
     <string name="home_section_documents">Documenti</string>
     <string name="home_section_study">Studio</string>
     <string name="home_section_protection">Protezione</string>

@@ -677,7 +677,7 @@
          "%" est littéral, pas un espace réservé (bug réel corrigé le 2026-09-03 :
          avant il était écrit "44%%" car quelqu'un l'avait échappé comme s'il
          devait passer par String.format, affichant le "%" en double à l'écran). -->
-    <string name="premium_savings_44" tools:ignore="StringFormatInvalid">Économise 44 %</string>
+    <string name="premium_savings_percent" tools:ignore="StringFormatInvalid">Économise %1$d %%</string>
     <string name="home_section_documents">Documents</string>
     <string name="home_section_study">Étude</string>
     <string name="home_section_protection">Protection</string>

@@ -63,6 +63,9 @@ sealed interface PurchaseResult {
 data class PlanOffer(
     val price: String,
     val trialDays: Int? = null,
+    // Precio recurrente en micro-unidades (priceAmountMicros): sirve para calcular el ahorro del plan
+    // anual frente al mensual con los precios REALES de Play, no con un texto fijo.
+    val priceMicros: Long? = null,
 )
 
 /**
@@ -351,7 +354,8 @@ class BillingManager
 
         private fun buildPurchaseParams(productId: String): BillingFlowParams? {
             val details = productDetailsCache[productId]
-            val offerToken = details?.subscriptionOfferDetails?.firstOrNull()?.offerToken
+            // La MISMA oferta que la UI muestra (precio y días de prueba): ver selectSubscriptionOffer().
+            val offerToken = details?.let(::selectSubscriptionOffer)?.offerToken
 
             if (details == null || offerToken == null) {
                 emitResult(PurchaseResult.Error(purchaseUnavailableMessage(hasDetails = details != null)))
@@ -551,6 +555,7 @@ internal fun planOfferFor(details: ProductDetails): PlanOffer {
     return PlanOffer(
         price = recurringPhase?.formattedPrice ?: "",
         trialDays = trialPhase?.billingPeriod?.let(::iso8601PeriodToDays),
+        priceMicros = recurringPhase?.priceAmountMicros,
     )
 }
 
@@ -573,11 +578,38 @@ internal fun trialEndsAtMillisOf(
 private const val MILLIS_PER_DAY = 24L * 60 * 60 * 1000
 
 private fun pricingPhasesOf(details: ProductDetails): List<ProductDetails.PricingPhase> =
-    details.subscriptionOfferDetails
-        ?.firstOrNull()
+    selectSubscriptionOffer(details)
         ?.pricingPhases
         ?.pricingPhaseList
         .orEmpty()
+
+// Backlog #8: antes se usaba `subscriptionOfferDetails.firstOrNull()`, pero Play Billing NO garantiza
+// el orden de esa lista. Con un plan base y una oferta de prueba gratuita en el mismo producto, el
+// primero podía ser cualquiera: se compraba una oferta distinta de la mostrada, o el usuario perdía
+// la prueba. La lista trae solo las ofertas para las que el usuario es elegible (la de prueba
+// desaparece si ya la usó), así que basta preferir en este orden:
+//   1. una oferta con prueba gratuita (la de más días; a igual duración, por offerId para ser estable);
+//   2. el plan base (offerId == null);
+//   3. cualquier otra, de forma estable.
+internal fun selectSubscriptionOffer(details: ProductDetails): ProductDetails.SubscriptionOfferDetails? {
+    val offers = details.subscriptionOfferDetails.orEmpty()
+    val withTrial =
+        offers
+            .filter { freeTrialDaysOf(it) != null }
+            .sortedWith(
+                compareByDescending<ProductDetails.SubscriptionOfferDetails> { freeTrialDaysOf(it) }
+                    .thenBy { it.offerId.orEmpty() },
+            )
+    return withTrial.firstOrNull()
+        ?: offers.firstOrNull { it.offerId == null }
+        ?: offers.minByOrNull { it.offerId.orEmpty() }
+}
+
+private fun freeTrialDaysOf(offer: ProductDetails.SubscriptionOfferDetails): Int? =
+    offer.pricingPhases.pricingPhaseList
+        .firstOrNull { it.priceAmountMicros == 0L }
+        ?.billingPeriod
+        ?.let(::iso8601PeriodToDays)
 
 // HU-54: Play Billing describe la duración de cada fase de precio (incluida
 // la de prueba gratuita) como una duración ISO-8601 simple -- "P7D", "P1W",

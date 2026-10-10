@@ -49,7 +49,7 @@ class PremiumComponentsTest {
             titleRes = R.string.premium_plan_annual,
             price = "USD 39.99",
             periodRes = R.string.premium_period_year,
-            savingsLabelRes = R.string.premium_savings_44,
+            savingsPercent = 43,
             isPopular = true,
             productId = "com.docsmart.premium.annual",
             trialDays = 7,
@@ -123,7 +123,7 @@ class PremiumComponentsTest {
 
         composeRule.onNodeWithText(string(R.string.premium_choose_plan)).assertExists()
         composeRule.onNodeWithText(string(R.string.premium_recommended)).assertExists()
-        composeRule.onNodeWithText(string(R.string.premium_savings_44)).assertExists()
+        composeRule.onNodeWithText(string(R.string.premium_savings_percent, 43)).assertExists()
         composeRule.onNodeWithText(plural(R.plurals.premium_trial_badge, 7)).assertExists()
         composeRule.onNodeWithText(monthly.price).assertIsNotSelected()
         composeRule.onNodeWithText(annual.price).assertIsSelected()

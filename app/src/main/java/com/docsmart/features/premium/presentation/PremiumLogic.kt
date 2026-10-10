@@ -34,3 +34,25 @@ internal fun purchaseCtaFor(plan: PremiumPlan?): PurchaseCta =
         plan.trialDays != null -> PurchaseCta.StartTrial(plan.trialDays)
         else -> PurchaseCta.GetPlan(plan)
     }
+
+/**
+ * Backlog #9: porcentaje que se ahorra al pagar el plan anual en vez de 12 meses del mensual, con
+ * los precios reales (micro-unidades) que devuelve Play. Se redondea hacia abajo para no exagerar
+ * la promesa (6.900 COP/mes vs 46.900 COP/año = 43,4 % -> 43, no 44). `null` si falta algún precio o
+ * el anual no es realmente más barato: en ese caso no se muestra el badge.
+ */
+internal fun annualSavingsPercent(
+    monthlyMicros: Long?,
+    annualMicros: Long?,
+): Int? {
+    val yearlyAtMonthly = monthlyMicros?.takeIf { it > 0L }?.times(MONTHS_PER_YEAR)
+    val annual = annualMicros?.takeIf { it > 0L }
+    return if (yearlyAtMonthly == null || annual == null || annual >= yearlyAtMonthly) {
+        null
+    } else {
+        ((yearlyAtMonthly - annual) * PERCENT / yearlyAtMonthly).toInt().takeIf { it > 0 }
+    }
+}
+
+private const val MONTHS_PER_YEAR = 12L
+private const val PERCENT = 100L

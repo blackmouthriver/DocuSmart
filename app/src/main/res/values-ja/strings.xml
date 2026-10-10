@@ -667,7 +667,7 @@
          「%」はプレースホルダーではなくリテラル文字(2026年09月03日に修正された実際のバグ:
          誰かがString.formatを通すかのようにエスケープしたため以前は「44%%」となっており、
          画面に「%」が重複して表示されていた)。 -->
-    <string name="premium_savings_44" tools:ignore="StringFormatInvalid">44%お得</string>
+    <string name="premium_savings_percent" tools:ignore="StringFormatInvalid">%1$d%%お得</string>
     <string name="home_section_documents">ドキュメント</string>
     <string name="home_section_study">学習</string>
     <string name="home_section_protection">保護</string>

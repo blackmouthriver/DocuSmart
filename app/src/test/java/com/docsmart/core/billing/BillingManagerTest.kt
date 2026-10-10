@@ -165,14 +165,98 @@ class BillingManagerTest {
             every { billingPeriod } returns period
         }
 
-    private fun detailsWith(phases: List<ProductDetails.PricingPhase>?): ProductDetails {
+    private fun offerWith(
+        phases: List<ProductDetails.PricingPhase>,
+        offerId: String? = null,
+        token: String = "token-${offerId ?: "base"}",
+    ): ProductDetails.SubscriptionOfferDetails {
         val holder = mockk<ProductDetails.PricingPhases>()
-        every { holder.pricingPhaseList } returns phases.orEmpty()
-        val offer = mockk<ProductDetails.SubscriptionOfferDetails>()
-        every { offer.pricingPhases } returns holder
-        val details = mockk<ProductDetails>()
-        every { details.subscriptionOfferDetails } returns if (phases == null) null else listOf(offer)
-        return details
+        every { holder.pricingPhaseList } returns phases
+        return mockk {
+            every { pricingPhases } returns holder
+            every { this@mockk.offerId } returns offerId
+            every { offerToken } returns token
+        }
+    }
+
+    private fun detailsWithOffers(vararg offers: ProductDetails.SubscriptionOfferDetails): ProductDetails =
+        mockk { every { subscriptionOfferDetails } returns offers.toList() }
+
+    private fun detailsWith(phases: List<ProductDetails.PricingPhase>?): ProductDetails =
+        mockk {
+            every { subscriptionOfferDetails } returns if (phases == null) null else listOf(offerWith(phases))
+        }
+
+    private val basePlan = listOf(phase(2_990_000L, "2,99 US$", "P1M"))
+    private val trialSevenDays = listOf(phase(0L, "Gratis", "P7D"), phase(2_990_000L, "2,99 US$", "P1M"))
+    private val trialThreeDays = listOf(phase(0L, "Gratis", "P3D"), phase(2_990_000L, "2,99 US$", "P1M"))
+
+    // ── selectSubscriptionOffer(): qué oferta se compra y se muestra (backlog #8) ──
+
+    @Test
+    fun `selectSubscriptionOffer prefiere la oferta con prueba gratis aunque el plan base venga primero`() {
+        val details = detailsWithOffers(offerWith(basePlan), offerWith(trialSevenDays, offerId = "prueba-7d"))
+
+        assertEquals("prueba-7d", selectSubscriptionOffer(details)?.offerId)
+    }
+
+    @Test
+    fun `selectSubscriptionOffer prefiere la oferta con prueba gratis aunque venga primero`() {
+        val details = detailsWithOffers(offerWith(trialSevenDays, offerId = "prueba-7d"), offerWith(basePlan))
+
+        assertEquals("prueba-7d", selectSubscriptionOffer(details)?.offerId)
+    }
+
+    @Test
+    fun `selectSubscriptionOffer con varias pruebas elige la de mas dias`() {
+        val details =
+            detailsWithOffers(
+                offerWith(trialThreeDays, offerId = "prueba-3d"),
+                offerWith(basePlan),
+                offerWith(trialSevenDays, offerId = "prueba-7d"),
+            )
+
+        assertEquals("prueba-7d", selectSubscriptionOffer(details)?.offerId)
+    }
+
+    @Test
+    fun `selectSubscriptionOffer sin prueba elige el plan base y no otra oferta`() {
+        // El usuario ya usó la prueba: Play ya no la lista; queda el plan base y una oferta de otro tipo.
+        val otra = offerWith(listOf(phase(1_000_000L, "1 US$", "P1M"), phase(2_990_000L, "2,99 US$", "P1M")), "intro")
+        val details = detailsWithOffers(otra, offerWith(basePlan))
+
+        assertNull(selectSubscriptionOffer(details)?.offerId)
+        assertEquals("token-base", selectSubscriptionOffer(details)?.offerToken)
+    }
+
+    @Test
+    fun `selectSubscriptionOffer sin plan base ni prueba es estable e independiente del orden`() {
+        val b = offerWith(basePlan, offerId = "b")
+        val a = offerWith(basePlan, offerId = "a")
+
+        assertEquals("a", selectSubscriptionOffer(detailsWithOffers(b, a))?.offerId)
+        assertEquals("a", selectSubscriptionOffer(detailsWithOffers(a, b))?.offerId)
+    }
+
+    @Test
+    fun `selectSubscriptionOffer sin ofertas devuelve null`() {
+        assertNull(selectSubscriptionOffer(detailsWith(null)))
+    }
+
+    @Test
+    fun `selectSubscriptionOffer no trata como prueba una fase gratis de duracion no interpretable`() {
+        val rara = listOf(phase(0L, "Gratis", "raro"), phase(2_990_000L, "2,99 US$", "P1M"))
+        val details = detailsWithOffers(offerWith(rara, offerId = "rara"), offerWith(basePlan))
+
+        assertNull(selectSubscriptionOffer(details)?.offerId)
+    }
+
+    @Test
+    fun `planOfferFor y trialEndsAtMillisOf usan la misma oferta que se compra`() {
+        val details = detailsWithOffers(offerWith(basePlan), offerWith(trialSevenDays, offerId = "prueba-7d"))
+
+        assertEquals(PlanOffer(price = "2,99 US$", trialDays = 7, priceMicros = 2_990_000L), planOfferFor(details))
+        assertEquals(1_000L + 7L * 24 * 60 * 60 * 1000, trialEndsAtMillisOf(purchaseAt(1_000L), details))
     }
 
     @Test
@@ -185,7 +269,7 @@ class BillingManagerTest {
                 ),
             )
 
-        assertEquals(PlanOffer(price = "2,99 US$", trialDays = 7), planOfferFor(details))
+        assertEquals(PlanOffer(price = "2,99 US$", trialDays = 7, priceMicros = 2_990_000L), planOfferFor(details))
     }
 
     @Test
@@ -198,14 +282,14 @@ class BillingManagerTest {
                 ),
             )
 
-        assertEquals(PlanOffer(price = "29,99 US$", trialDays = 7), planOfferFor(details))
+        assertEquals(PlanOffer(price = "29,99 US$", trialDays = 7, priceMicros = 29_990_000L), planOfferFor(details))
     }
 
     @Test
     fun `planOfferFor sin fase de prueba deja trialDays en null`() {
         val details = detailsWith(listOf(phase(2_990_000L, "2,99 US$", "P1M")))
 
-        assertEquals(PlanOffer(price = "2,99 US$", trialDays = null), planOfferFor(details))
+        assertEquals(PlanOffer(price = "2,99 US$", trialDays = null, priceMicros = 2_990_000L), planOfferFor(details))
     }
 
     @Test
