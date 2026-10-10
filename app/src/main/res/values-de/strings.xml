@@ -665,7 +665,7 @@
     <string name="premium_plan_annual">Jährlich</string>
     <string name="premium_period_month">pro Monat</string>
     <string name="premium_period_year">pro Jahr</string>
-    <string name="premium_savings_44" tools:ignore="StringFormatInvalid">44 % sparen</string>
+    <string name="premium_savings_percent" tools:ignore="StringFormatInvalid">%1$d %% sparen</string>
     <string name="home_section_documents">Dokumente</string>
     <string name="home_section_study">Lernen</string>
     <string name="home_section_protection">Schutz</string>

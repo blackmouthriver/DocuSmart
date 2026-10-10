@@ -3,12 +3,17 @@ package com.docsmart.features.premium.domain.model
 import androidx.annotation.StringRes
 import com.docsmart.R
 
+// Id del plan mensual: el anual calcula su ahorro contra el precio real de este.
+const val MONTHLY_PLAN_ID = "monthly"
+
 data class PremiumPlan(
     val id: String,
     @StringRes val titleRes: Int,
     val price: String,
     @StringRes val periodRes: Int,
-    @StringRes val savingsLabelRes: Int? = null,
+    // Porcentaje que se ahorra frente a pagar el plan mensual 12 veces (badge "Ahorra X%"), o null si
+    // no hay badge. Se calcula con los precios reales de Play (ver annualSavingsPercent).
+    val savingsPercent: Int? = null,
     val isPopular: Boolean = false,
     // ID de Play Store Billing
     val productId: String,

@@ -669,7 +669,7 @@
     <string name="premium_plan_annual">Ежегодно</string>
     <string name="premium_period_month">в месяц</string>
     <string name="premium_period_year">в год</string>
-    <string name="premium_savings_44" tools:ignore="StringFormatInvalid">Экономия 44%</string>
+    <string name="premium_savings_percent" tools:ignore="StringFormatInvalid">Экономия %1$d%%</string>
     <string name="home_section_documents">Документы</string>
     <string name="home_section_study">Учёба</string>
     <string name="home_section_protection">Защита</string>

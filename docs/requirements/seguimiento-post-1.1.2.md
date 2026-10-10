@@ -40,3 +40,45 @@ El Moto E22 estaba desconectado (offline) durante esta tanda y no se probó.
 ## Pendiente nuevo: intermitencia "must have a looper" en `SecurityFolderFlowsTest`
 
 Cuatro pruebas distintas de esa clase han fallado, de a una por corrida y no siempre, con `IllegalStateException: The current thread must have a looper!` (`vistaPreviaFallida_…`, `archivoPendienteLocal_fallido_…`, `restaurarFallido_…`; antes también el `@Ignore` de `archivoPendienteContentInexistente`). La traza pasa por `TestMonotonicFrameClock.performFrame` componiendo el `LazyColumn` de `SecurityScreen.kt:759` en un hilo sin `Looper` (el programador de prefetch del `LazyColumn` pide el `Choreographer`). Es un problema de la infraestructura de pruebas (en la app real la composición es siempre en el hilo principal), pero **puede poner en rojo el CI de vez en cuando** ahora que falla ante fallas nuevas: si pasa, relanzar el job (`gh run rerun <id> --failed`) y no tratarlo como regresión.
+
+## Backlog #8 y #9 — Premium: oferta correcta y ahorro real (2026-10-10)
+
+Rama `claude/premium-seleccion-oferta`. **Tampoco está en el `.aab` 1.1.2.**
+
+### #8 — Qué oferta se compra y se muestra
+
+**Problema.** La compra usaba `subscriptionOfferDetails.firstOrNull()` y la UI mostraba el precio y los días de prueba de la fase de esa misma primera oferta. Play Billing **no garantiza el orden** de esa lista. Con un plan base y una oferta de prueba gratuita de 7 días en el mismo producto (lo previsto en Play Console), cualquiera podía venir primero: el usuario compraría una oferta distinta de la que ve, o perdería la prueba.
+
+**Arreglo (`selectSubscriptionOffer` en `BillingManager.kt`).** Una sola función decide la oferta y la usan **la compra, el precio/días de prueba mostrados y el cálculo del fin de la prueba**, así nunca se desincronizan. Play solo lista las ofertas para las que el usuario es elegible (la de prueba desaparece si ya la usó), así que basta este orden:
+
+1. una oferta con fase gratuita interpretable (la de más días; a igual duración, por `offerId`, para ser estable);
+2. el plan base (`offerId == null`);
+3. cualquier otra, de forma estable (por `offerId`).
+
+Una fase gratis con duración no interpretable (`"raro"`) no cuenta como prueba, igual que ya hacía `planOfferFor`.
+
+**Pendiente del lado de Play Console (no es código):** la oferta de prueba de 7 días **todavía hay que crearla** en el producto anual/mensual. Hasta entonces la app compra el plan base, como antes.
+
+### #9 — Etiqueta "Ahorra 44%"
+
+**Problema.** El texto estaba fijo en 12 idiomas (`premium_savings_44`). El 44 % sale de los precios de respaldo en USD ($2,99 / $19,99 = 44,3 %); con los precios reales en COP (6.900 / 46.900) el ahorro es **43,4 %**.
+
+**Arreglo.** El porcentaje se calcula con los precios reales de Play (`priceAmountMicros` recurrente, ahora en `PlanOffer.priceMicros`):
+
+- `annualSavingsPercent(monthlyMicros, annualMicros)` (`PremiumLogic.kt`): `1 − anual / (mensual × 12)`, **redondeado hacia abajo** para no exagerar la promesa. `null` si falta un precio o el anual no es más barato → el badge se oculta.
+- `PremiumPlan.savingsLabelRes` (texto fijo) → `savingsPercent: Int?`; la tarjeta usa `premium_savings_percent` ("Ahorra %1$d%%") en los 12 idiomas.
+- `PremiumRepository` sigue dando el valor de respaldo (44) y respeta Remote Config (`premium_show_savings_badge`): si el badge está apagado, los precios reales **no** lo encienden.
+- `PremiumViewModel.applyOffer` recalcula al llegar la oferta de Play, tanto en `plans` como en `selectedPlan`. Si Play no entrega algún precio se conserva el de respaldo.
+
+El resultado depende del país: en un teléfono con precios en USD seguirá diciendo 44 %; en Colombia, 43 %.
+
+### Verificación
+
+| | Resultado |
+|---|---|
+| Unitarias `core.billing` + `features.premium` | 80/80 (8 nuevas de selección de oferta, 4 de `PremiumViewModel`, 6 de `annualSavingsPercent`) |
+| Instrumentadas `features.premium` | 23/23 en Edge 30 Neo y en emulador 320×640 |
+| ktlint, detekt, `lintDebug`, ensamblado | OK |
+
+**Sin verificar:** contra Play real. Hace falta una versión en prueba cerrada con la oferta de prueba creada para ver, con una cuenta elegible, que el cuadro de compra muestra "7 días gratis" y que, con una cuenta que ya usó la prueba, aparece el plan base. Hasta ese momento la lógica solo está cubierta con simulaciones de `ProductDetails`.
+
