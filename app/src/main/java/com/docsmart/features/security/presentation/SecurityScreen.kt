@@ -615,6 +615,16 @@ private fun SetupPinScreen(
                 .background(Brush.linearGradient(pinBannerGradient)),
         contentAlignment = Alignment.Center,
     ) {
+        // Backlog #17 (revisión visual tras el rediseño): la flecha era hija de la columna con scroll, así
+        // que quedaba centrada con el contenido y cambiaba de lugar respecto de `PinUnlockScreen`. Ahora
+        // va anclada arriba a la izquierda, igual que allí, y no se desplaza con el contenido.
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier.align(Alignment.TopStart).padding(16.dp),
+        ) {
+            Icon(Icons.Rounded.ArrowBack, stringResource(R.string.general_back), tint = Color.White)
+        }
+
         // Bug real corregido 2026-09-08: mismo problema que en
         // `PinUnlockScreen` -- sin scroll, esta columna podía cortar el
         // teclado numérico o los botones en pantallas chicas.
@@ -626,10 +636,6 @@ private fun SetupPinScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(32.dp),
         ) {
-            IconButton(onClick = onBack, modifier = Modifier.align(Alignment.Start)) {
-                Icon(Icons.Rounded.ArrowBack, stringResource(R.string.general_back), tint = Color.White)
-            }
-
             Icon(
                 Icons.Rounded.LockOpen,
                 null,
