@@ -41,6 +41,8 @@ import com.docsmart.core.ui.theme.accentBorder
 import com.docsmart.core.ui.theme.accentShadow
 import com.docsmart.core.ui.theme.rememberBannerGradient
 import com.docsmart.core.ui.util.SecureScreenEffect
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
 
@@ -54,13 +56,24 @@ import java.io.File
 // que sobrevive mientras exista su NavBackStackEntry, no solo mientras esta
 // Composable esté en pantalla. Acá solo queda escuchar la ruta de vista
 // previa para navegar al Visor.
+// SecurityViewModel emite estado y eventos desde `Dispatchers.IO`. Con el contexto vacío (valor por
+// omisión) el colector se reanuda en el hilo que emite si el despachador de efectos es "unconfined":
+// es el caso del reloj de pruebas de Compose, y la recomposición del LazyColumn corría entonces en un
+// hilo sin Looper (`IllegalStateException: The current thread must have a looper!` al pedir el
+// Choreographer), una intermitencia que ponía en rojo el CI. En producción ya se recogía en el hilo
+// principal, así que fijarlo no cambia el comportamiento; solo lo garantiza también en las pruebas.
+private val MAIN_COLLECT_CONTEXT = Dispatchers.Main.immediate
+
 @Composable
 private fun SecurityBackgroundEffects(
     viewModel: SecurityViewModel,
     onPreviewFile: (String) -> Unit,
 ) {
     LaunchedEffect(Unit) {
-        viewModel.previewRequest.collect { path -> onPreviewFile(path) }
+        // El ViewModel emite desde Dispatchers.IO; se recoge en el hilo principal (ver MAIN_COLLECT_CONTEXT).
+        withContext(MAIN_COLLECT_CONTEXT) {
+            viewModel.previewRequest.collect { path -> onPreviewFile(path) }
+        }
     }
 }
 
@@ -112,7 +125,7 @@ fun SecurityScreen(
     // Inyectable para pruebas instrumentadas (sin Hilt): null = el de Hilt, solo al abrir el selector.
     pickerViewModel: AppLibraryPickerViewModel? = null,
 ) {
-    val uiState = viewModel.uiState.collectAsState().value
+    val uiState = viewModel.uiState.collectAsState(context = MAIN_COLLECT_CONTEXT).value
     val context = LocalContext.current
 
     val activity =
@@ -192,8 +205,10 @@ fun SecurityScreen(
             }
         }
     LaunchedEffect(Unit) {
-        viewModel.pendingOriginalDelete.collect { request ->
-            originalDeleteLauncher.launch(IntentSenderRequest.Builder(request.intentSender).build())
+        withContext(MAIN_COLLECT_CONTEXT) {
+            viewModel.pendingOriginalDelete.collect { request ->
+                originalDeleteLauncher.launch(IntentSenderRequest.Builder(request.intentSender).build())
+            }
         }
     }
 

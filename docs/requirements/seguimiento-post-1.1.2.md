@@ -37,6 +37,21 @@ El Moto E22 estaba desconectado (offline) durante esta tanda y no se probó.
 
 > **Corrección sobre una medición intermedia.** Una primera tanda de repeticiones dio "56 de 56 pasan". Era errónea: el script contaba como bueno cualquier intento sin fallo aunque la prueba no se ejecutara de verdad. Se rehízo exigiendo código de estado 0 (corrió y pasó; ni fallo ni ignorada) y esos resultados son los que valen.
 
-## Pendiente nuevo: intermitencia "must have a looper" en `SecurityFolderFlowsTest`
+## Intermitencia "must have a looper" en `SecurityFolderFlowsTest` — resuelta (2026-10-10)
 
-Cuatro pruebas distintas de esa clase han fallado, de a una por corrida y no siempre, con `IllegalStateException: The current thread must have a looper!` (`vistaPreviaFallida_…`, `archivoPendienteLocal_fallido_…`, `restaurarFallido_…`; antes también el `@Ignore` de `archivoPendienteContentInexistente`). La traza pasa por `TestMonotonicFrameClock.performFrame` componiendo el `LazyColumn` de `SecurityScreen.kt:759` en un hilo sin `Looper` (el programador de prefetch del `LazyColumn` pide el `Choreographer`). Es un problema de la infraestructura de pruebas (en la app real la composición es siempre en el hilo principal), pero **puede poner en rojo el CI de vez en cuando** ahora que falla ante fallas nuevas: si pasa, relanzar el job (`gh run rerun <id> --failed`) y no tratarlo como regresión.
+Cinco pruebas distintas de esa clase llegaron a fallar, de a una por corrida y no siempre, con `IllegalStateException: The current thread must have a looper!` (`vistaPreviaFallida_…`, `archivoPendienteLocal_…`, `restaurar_sinPoderBorrarLaCopia_…`, `botonInicioDeLaCarpeta_…`, `eliminar_pideConfirmacion_…`). Dejó en rojo el CI de `main` en dos ocasiones (tras #107 y tras #109), porque la guardia de #103 ya no tolera fallas nuevas.
+
+**Causa.** `SecurityViewModel` emite estado y eventos desde `Dispatchers.IO`. `SecurityScreen` los recogía con el contexto vacío. En producción el efecto corre en el hilo principal, pero el reloj de pruebas de Compose usa un despachador "unconfined": el colector se **reanuda en el hilo que emite** (IO), y la recomposición del `LazyColumn` (`SecurityScreen.kt`, `SecureFolderContent`) corría en un hilo sin `Looper`; al crear el programador de prefetch pedía el `Choreographer` y lanzaba la excepción. La traza (`ComposeInternal`, hilo distinto del principal, `TestMonotonicFrameClock.performFrame` → `Recomposer.performRecompose` → `LazyLayout` → `Choreographer.getInstance`) lo muestra.
+
+**Arreglo.** Los tres puntos de recolección de la pantalla (`uiState`, `previewRequest`, `pendingOriginalDelete`) usan `Dispatchers.Main.immediate` (`MAIN_COLLECT_CONTEXT`). En producción no cambia nada (ya corrían en el hilo principal); en las pruebas deja de reanudarse la composición en el hilo del emisor.
+
+**Medición** (clase `SecurityFolderFlowsTest`, 19 pruebas, tras un calentamiento, criterio estricto: `OK (19 tests)`):
+
+| | Edge 30 Neo | Emulador 320×640 |
+|---|---|---|
+| Antes (8 corridas) | 7 OK, **1 falla** | 5 OK, **3 fallas** |
+| Después (8 corridas) | 8 OK | 8 OK |
+
+Las 4 fallas de la línea base fueron la misma excepción, en pruebas distintas. Paquete `features.security` completo con el arreglo: 43/43 en ambos.
+
+**Alcance.** Cubre esta pantalla. La caída de proceso `SlotWriter.moveSlotGapTo` al destruir la actividad (descrita en `visor-render-perezoso.md`) tiene otra firma y **sigue pendiente**: ocurre en pruebas del Visor y de PowerPoint, no en `Security*`. Si aparecen más pantallas con la misma excepción de `looper`, el patrón es el mismo: un ViewModel que emite desde IO y una pantalla que recoge con el contexto vacío.
