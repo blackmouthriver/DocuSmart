@@ -46,7 +46,7 @@ Los detalles finos de cada ronda siguen en los backlogs numerados (`backlog-bugs
 | Visor: render de **todas** las páginas a la vez | Un PDF de cientos de páginas puede dar OOM. Arreglo de fondo: render perezoso (página visible ± margen) |
 | Premium: oferta de prueba de 7 días | Falta crearla en Play Console y endurecer la app para elegir la oferta con trial (hoy `subscriptionOfferDetails.firstOrNull()`, el orden no está garantizado) |
 | Etiqueta "Ahorra 44%" | Con 6.900/46.900 COP el ahorro real es ~43%; ajustar precio o texto |
-| Lector de QR | El icono de historial sigue dentro del banner (el Creador ya lo sacó) |
+| Lector de QR | **Resuelto post-1.1.2 (PR #112, fuera del `.aab`):** el historial es ahora un botón con texto bajo el banner, igual que en el Creador (antes un icono suelto dentro del banner). Pruebas `features.scanner` 125/125 en Edge y emulador |
 | `app-ads.txt` de AdMob | Tarea de hosting, sigue pendiente (ver memoria del proyecto) |
 
 ## 5. Novedades para Play Console (borrador, español, ≤ 500 caracteres)

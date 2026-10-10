@@ -347,17 +347,25 @@ fun QrReaderScreen(
                 screenSubtitle = stringResource(R.string.qr_reader_subtitle),
                 onBack = onBack,
                 onHome = onHome,
-                actions = {
-                    IconButton(onClick = onHistoryClick) {
-                        Icon(
-                            Icons.Rounded.History,
-                            contentDescription = stringResource(R.string.qr_history_title),
-                            tint = Color.White,
-                        )
-                    }
-                },
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
             )
+            // Backlog #10: igual que en el Creador, el acceso al historial es un botón con texto
+            // (antes un icono suelto dentro del banner que no se entendía).
+            OutlinedButton(
+                onClick = onHistoryClick,
+                // border = null: accentBorder ya dibuja el contorno (sin esto se veía doble).
+                shape = MaterialTheme.shapes.medium,
+                border = null,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .accentBorder(MaterialTheme.shapes.medium),
+            ) {
+                Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.qr_history_open))
+            }
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 if (qrResult == null) {
                     if (!hasCameraPermission) {
