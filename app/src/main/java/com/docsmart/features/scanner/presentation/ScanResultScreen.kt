@@ -1641,7 +1641,7 @@ private suspend fun shareScanResult(
 ): Boolean =
     when {
         state.savedFile != null ->
-            shareFileAwaitingSelection(context, lifecycleOwner, state.savedFile, state.shareChooserTitle)
+            shareOnMainThread(context, lifecycleOwner, state.savedFile, state.shareChooserTitle)
         state.isPdf -> {
             val cacheFile =
                 copyUriToCache(
@@ -1654,13 +1654,27 @@ private suspend fun shareScanResult(
                     ),
                 )
             if (cacheFile != null) {
-                shareFileAwaitingSelection(context, lifecycleOwner, cacheFile, state.shareChooserTitle)
+                shareOnMainThread(context, lifecycleOwner, cacheFile, state.shareChooserTitle)
             } else {
                 Timber.e("No se pudo copiar PDF al cache")
                 false
             }
         }
         else -> false
+    }
+
+// shareFileAwaitingSelection() registra un observer del ciclo de vida (addObserver exige el hilo
+// principal: IllegalStateException si no) y un receiver. Tras copyUriToCache() (que salta a
+// Dispatchers.IO) la corrutina seguía en el hilo del que llama: en la app real el scope de
+// composición es el principal, pero no hay por qué depender de eso -- se garantiza aquí.
+private suspend fun shareOnMainThread(
+    context: Context,
+    lifecycleOwner: LifecycleOwner,
+    file: File,
+    chooserTitle: String,
+): Boolean =
+    withContext(Dispatchers.Main.immediate) {
+        shareFileAwaitingSelection(context, lifecycleOwner, file, chooserTitle)
     }
 
 // Extraído de ScanResultScreen (LongMethod de detekt) -- una página

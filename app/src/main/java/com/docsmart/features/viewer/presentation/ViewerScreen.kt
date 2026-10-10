@@ -1027,6 +1027,13 @@ private fun PdfViewerContent(
                     modifier =
                         Modifier
                             .fillMaxWidth()
+                            // La altura debe seguir al ancho con la proporción REAL de la página. Sin
+                            // esto, si el bitmap (2x los puntos del PDF) era más angosto que la pantalla
+                            // -- página pequeña en un teléfono de alta resolución, o casi cualquier
+                            // página en una tableta --, Compose medía la altura con la del propio bitmap:
+                            // la página se dibujaba pequeña y centrada, mientras resaltados, notas y el
+                            // toque (que usan size.width / pageWidthPts) quedaban desalineados.
+                            .aspectRatio(pageAspectRatio(pageBitmap))
                             .pdfAnnotationGestures(
                                 annotationMode = annotationMode,
                                 pageBitmap = pageBitmap,
@@ -1061,6 +1068,15 @@ private fun PdfViewerContent(
         }
     }
 }
+
+// Proporción ancho/alto de la página en puntos PDF (ya refleja la rotación, ver PdfPageBitmap). Si por
+// alguna razón la altura no es válida se cae a la del propio bitmap en vez de lanzar en aspectRatio().
+private fun pageAspectRatio(pageBitmap: PdfPageBitmap): Float =
+    if (pageBitmap.pageWidthPts > 0f && pageBitmap.pageHeightPts > 0f) {
+        pageBitmap.pageWidthPts / pageBitmap.pageHeightPts
+    } else {
+        pageBitmap.bitmap.width.toFloat() / pageBitmap.bitmap.height.coerceAtLeast(1)
+    }
 
 // HU-46: agrupa los callbacks de gestos de anotación -- evita
 // LongParameterList en pdfAnnotationGestures() de abajo (mismo criterio ya

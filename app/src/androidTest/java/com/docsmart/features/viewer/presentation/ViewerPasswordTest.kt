@@ -16,7 +16,6 @@ import com.docsmart.R
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
@@ -77,11 +76,13 @@ class ViewerPasswordTest {
     }
 
     // Gap real (ronda 23): el unico test que ejercitaba `passwordError` en
-    // pantalla estaba completo (@Ignore) porque su SEGUNDA mitad (desbloqueo
-    // con la contraseña correcta + render real de paginas) es inestable en el
-    // emulador de CI. Aislado acá solo el rechazo de la contraseña incorrecta
+    // pantalla estaba ignorado porque su SEGUNDA mitad (desbloqueo con la
+    // contraseña correcta + render real de paginas) se creía inestable en el
+    // emulador de CI. Se aisló acá solo el rechazo de la contraseña incorrecta
     // -- no dispara ningun render de PDF, solo el chequeo rapido de iText
-    // (isPasswordAccepted) -- para no perder cobertura activa de ese mensaje.
+    // (isPasswordAccepted). Desde 2026-10-10 el test completo
+    // (pdfProtegido_rechazaLaContrasenaIncorrectaYAbreConLaCorrecta) está
+    // reactivado y pasa estable; este queda como cobertura más barata y rápida.
     @Test
     fun pdfProtegido_contrasenaIncorrectaMuestraElMensajeDeReintentoYSigueBloqueado() {
         openProtected(files.pdf(password = "clave123"))
@@ -94,7 +95,6 @@ class ViewerPasswordTest {
         assertEquals(0, backCalls)
     }
 
-    @Ignore("inestable en el emulador de CI 320x640 (temporización); pendiente, ver backlog v17")
     @Test
     fun pdfProtegido_rechazaLaContrasenaIncorrectaYAbreConLaCorrecta() {
         openProtected(files.pdf(password = "clave123"))
