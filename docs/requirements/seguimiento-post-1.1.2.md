@@ -97,3 +97,26 @@ El resultado depende del país: en un teléfono con precios en USD seguirá dici
 
 **Sin verificar:** contra Play real. Hace falta una versión en prueba cerrada con la oferta de prueba creada para ver, con una cuenta elegible, que el cuadro de compra muestra "7 días gratis" y que, con una cuenta que ya usó la prueba, aparece el plan base. Hasta ese momento la lógica solo está cubierta con simulaciones de `ProductDetails`.
 
+## Dependabot y alineación de Compose (2026-10-10)
+
+**Estado de Dependabot.** Los 11 PRs abiertos (#84 a #94: navigation 2.8.4 → 2.10.2, play-services-ads 23.3 → 25.5, dagger 2.57 → 2.60.1, itext forms 7.2.5 → 9.7.1, gradle-wrapper 9.5 → 9.8, firebase-bom 34.18 → 34.19, room-common, archunit y `actions/download-artifact` 6 → 8) los cerró la cuenta del propietario el 2026-10-09; Dependabot respondió que no volverá a avisar de esas versiones y las ramas se borraron. **No hay PRs ni ramas de Dependabot abiertos.** Las etiquetas `dependencies` y `ci` que pide `dependabot.yml` tampoco existen en el repositorio (Dependabot lo avisaba en cada PR).
+
+**Por qué las actualizaciones no se fusionan solas.** El proyecto tiene *dependency locking* (`app/gradle.lockfile`, `lockAllConfigurations()`) y verificación de checksums (`gradle/verification-metadata.xml`): cambiar una versión no cambia lo resuelto hasta regenerar ambos. Procedimiento:
+
+1. Cambiar la versión (catálogo `gradle/libs.versions.toml` o `app/build.gradle.kts`).
+2. `./gradlew :app:dependencies --write-locks`.
+3. `./gradlew --write-verification-metadata sha256 assembleDebug assembleDebugAndroidTest testDebugUnitTest lintDebug detekt ktlintCheck`.
+4. Revisar que el diff de ambos archivos solo tenga lo esperado y correr la suite.
+
+**Hallazgo: mezcla de versiones de Compose.** `compose-bom = "2024.11.00"` (Compose 1.7.x, Material 3 **1.3.1**) convivía con `foundation = "1.11.0"` fijado aparte y con versiones `1.11.0` escritas a mano en `app/build.gradle.kts`. Resultado resuelto: runtime, ui, foundation y animation en **1.11.0**, pero Material 3 en 1.3.1 y los íconos en 1.7.5, es decir, Material 3 de 2024 sobre un runtime de 2026 (combinación no soportada).
+
+**Cambio.**
+
+- BOM `2026.04.01`, que corresponde exactamente a Compose 1.11.0 y trae Material 3 **1.4.0**.
+- Se quita el pin `foundation` y las versiones manuales de animation, runtime, ui-*, material-icons-core y ui-test: las gobierna el BOM, así que al subirlo ya no se desfasan.
+- Lock: material3 1.3.1 → 1.4.0, material-icons 1.7.5 → 1.7.8, material-ripple 1.7.5 → 1.11.0, compose-bom. `verification-metadata.xml` solo gana esos 9 componentes (ninguno se elimina).
+
+**Verificación local.** ktlint, detekt, lint, unitarias y ensamblado OK. Instrumentada en emulador: el fragmento 1 de 2 de la suite pasó completo (`OK (401 tests)`). El fragmento 0 murió con `OutOfMemoryError` del proceso de instrumentación (heap de 576 MB) al correr medio centenar de clases en un solo proceso; no es del cambio: el CI reparte la suite en 8 shards. La verificación completa es la del CI.
+
+**Sin verificar a mano.** Material 3 1.4.0 puede cambiar detalles visuales (sombras, formas por defecto, controles). Revisar a ojo las pantallas principales antes de fusionar.
+

@@ -475,15 +475,15 @@ dependencies {
     // (Composable/remember/State de runtime, Animatable de animation,
     // Modifier de foundation-layout, Icons.* de material-icons-core, Dp/Offset
     // de ui-unit/ui-geometry, TextStyle de ui-text, rememberSaveable).
-    implementation("androidx.compose.animation:animation:1.11.0")
-    implementation("androidx.compose.animation:animation-core:1.11.0")
-    implementation("androidx.compose.foundation:foundation-layout:1.11.0")
-    implementation("androidx.compose.material:material-icons-core:1.7.5")
-    implementation("androidx.compose.runtime:runtime:1.11.0")
-    implementation("androidx.compose.runtime:runtime-saveable:1.11.0")
-    implementation("androidx.compose.ui:ui-geometry:1.11.0")
-    implementation("androidx.compose.ui:ui-text:1.11.0")
-    implementation("androidx.compose.ui:ui-unit:1.11.0")
+    implementation("androidx.compose.animation:animation")
+    implementation("androidx.compose.animation:animation-core")
+    implementation("androidx.compose.foundation:foundation-layout")
+    implementation("androidx.compose.material:material-icons-core")
+    implementation("androidx.compose.runtime:runtime")
+    implementation("androidx.compose.runtime:runtime-saveable")
+    implementation("androidx.compose.ui:ui-geometry")
+    implementation("androidx.compose.ui:ui-text")
+    implementation("androidx.compose.ui:ui-unit")
 
     // ── Navegación ────────────────────────────────────────────────────────────
     implementation(libs.androidx.navigation.compose)
@@ -746,7 +746,7 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     // buildHealth: SemanticsNodeInteraction/finders (ui-test) usados directo
     // desde los ...ScreenTest.kt, no solo vía ui-test-junit4.
-    androidTestImplementation("androidx.compose.ui:ui-test:1.11.0")
+    androidTestImplementation("androidx.compose.ui:ui-test")
     // mockk-android, no mockk: mockear en el dispositivo necesita soporte
     // dexmaker/bytebuddy-android, distinto del mockk de test/ (JVM).
     androidTestImplementation("io.mockk:mockk-android:1.13.13")

@@ -2,7 +2,7 @@
 [versions]
 agp = "8.13.2"
 kotlin = "2.2.21"
-compose-bom = "2024.11.00"
+compose-bom = "2026.04.01"
 core-ktx = "1.15.0"
 lifecycle = "2.8.7"
 activity-compose = "1.13.0"
@@ -12,7 +12,6 @@ hilt-navigation = "1.2.0"
 ksp = "2.2.21-2.0.5"
 coroutines = "1.11.0"
 coil = "2.7.0"
-foundation = "1.11.0"
 compiler = "3.2.0-alpha11"
 room = "2.8.4"
 sqlite = "2.7.0"
@@ -50,7 +49,7 @@ hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", v
 androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hilt-navigation" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
-androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
 androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-lifecycle-process = { group = "androidx.lifecycle", name = "lifecycle-process", version.ref = "lifecycle" }
 androidx-compiler = { group = "androidx.databinding", name = "compiler", version.ref = "compiler" }
