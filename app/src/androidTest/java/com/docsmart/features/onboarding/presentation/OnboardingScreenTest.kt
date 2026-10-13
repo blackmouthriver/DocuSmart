@@ -58,7 +58,10 @@ class OnboardingScreenTest {
         override fun getSharedPreferences(
             name: String?,
             mode: Int,
-        ): SharedPreferences = prefsByName.getOrPut(name ?: "default") { fakeSharedPreferences() }
+        ): SharedPreferences =
+            synchronized(prefsByName) {
+                prefsByName.getOrPut(name ?: "default") { fakeSharedPreferences() }
+            }
 
         private fun fakeSharedPreferences(): SharedPreferences {
             val store = mutableMapOf<String, Any?>()

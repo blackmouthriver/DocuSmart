@@ -49,13 +49,22 @@ internal class MemoryPrefsContext(
 ) : ContextWrapper(base) {
     private val prefsByName = mutableMapOf<String, SharedPreferences>()
 
+    // `getOrPut` NO es atómico: con el despachador "unconfined" del reloj de pruebas de Compose, el guardado
+    // de la pantalla corre en un hilo de trabajo mientras la prueba sondea desde otro. Sin sincronizar,
+    // ambos creaban su propio SharedPreferences falso, uno pisaba al otro en el mapa y la entrada quedaba en
+    // el descartado: `QrCreatorFlowsTest.url_genera...` fallaba solo en el emulador lento del CI
+    // ("entries.size == 0" tras 5 s de espera).
     override fun getSharedPreferences(
         name: String?,
         mode: Int,
-    ): SharedPreferences = prefsByName.getOrPut(name ?: "default") { fakePrefs() }
+    ): SharedPreferences =
+        synchronized(prefsByName) {
+            prefsByName.getOrPut(name ?: "default") { fakePrefs() }
+        }
 
     private fun fakePrefs(): SharedPreferences {
-        val store = mutableMapOf<String, String?>()
+        // También se lee/escribe desde hilos distintos (ver arriba).
+        val store = java.util.Collections.synchronizedMap(mutableMapOf<String, String?>())
         val editor = mockk<SharedPreferences.Editor>(relaxed = true)
         every { editor.putString(any(), any()) } answers {
             store[firstArg<String>()] = secondArg<String?>()
