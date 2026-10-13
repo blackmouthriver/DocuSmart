@@ -73,7 +73,10 @@ class SettingsScreenTest {
         override fun getSharedPreferences(
             name: String?,
             mode: Int,
-        ): SharedPreferences = prefsByName.getOrPut(name ?: "default") { fakeSharedPreferences() }
+        ): SharedPreferences =
+            synchronized(prefsByName) {
+                prefsByName.getOrPut(name ?: "default") { fakeSharedPreferences() }
+            }
     }
 
     // Bug real corregido 2026-09-09: solo simulaba getString/putString --

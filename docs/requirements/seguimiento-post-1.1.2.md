@@ -128,3 +128,18 @@ El resultado depende del país: en un teléfono con precios en USD seguirá dici
 
 El shard 0 cerró el proceso una vez en `ViewerDocumentTypesTest` (la caída preexistente `SlotWriter.moveSlotGapTo` de Compose al destruir la actividad); no tiene relación con este cambio. El tiempo real en CI se confirma con el run de este PR.
 
+## `QrCreatorFlowsTest.url_genera...` intermitente: causa real y arreglo (2026-10-13)
+
+**Síntoma.** `url_generaElCodigoYLoGuardaEnElHistorial` fallaba solo en el emulador lento del CI con `ComposeTimeoutException: Condition still not satisfied after 5000 ms` (el historial seguía vacío). Se retiró de la lista de tolerancia en #114 tras 8 corridas limpias, y falló en el primer CI posterior (#130): esa conclusión era demasiado optimista.
+
+**Causa.** Una carrera en la infraestructura de pruebas, no en el producto. La pantalla guarda el historial en una corrutina que, con el despachador "unconfined" del reloj de pruebas de Compose, continúa en un **hilo de trabajo** (el log lo muestra: `qr_created` se imprime desde un hilo distinto del principal). Mientras, la prueba sondea el historial desde el hilo de instrumentación. `MemoryPrefsContext.getSharedPreferences` hacía `prefsByName.getOrPut(name) { fakePrefs() }` sobre un mapa **sin sincronizar**: `getOrPut` no es atómico y crear los `SharedPreferences` falsos (mocks de MockK) es lento en CI, así que ambos hilos creaban el suyo, uno pisaba al otro en el mapa y la entrada quedaba en el que se descartó. Nunca se reproducía sola ni en local (15/15), porque ahí el hilo de guardado termina antes del primer sondeo.
+
+**Arreglo.**
+
+- `MemoryPrefsContext` (`ScannerTestSupport.kt`): `getOrPut` dentro de `synchronized` y el `store` como mapa sincronizado.
+- Mismo patrón en `OnboardingScreenTest`, `SettingsScreenTest` y `StudyScreenTest` (que usaban `getOrPut` sin sincronizar); `StudyTestSupport` ya lo tenía sincronizado.
+
+**Verificación local.** `QrCreatorFlowsTest` 23/23 en 3 corridas; Onboarding, Settings y Study 2/2, 3/3 y 2/2. La carrera depende de la velocidad del CI, así que la confirmación real son los próximos CI.
+
+**Lección.** "0 fallas en N corridas" no prueba que una intermitencia esté corregida si no se entiende la causa: aquí la lista de tolerancia se retiró antes de tiempo. Otras intermitencias del mismo tipo (continuación en hilo de trabajo bajo el reloj de pruebas) ya se arreglaron en `SecurityScreen` (#111); la guardia `AndroidTestMockkGuardTest` cubre otro hallazgo parecido (#129).
+
