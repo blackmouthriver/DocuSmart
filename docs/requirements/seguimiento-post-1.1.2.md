@@ -97,3 +97,34 @@ El resultado depende del país: en un teléfono con precios en USD seguirá dici
 
 **Sin verificar:** contra Play real. Hace falta una versión en prueba cerrada con la oferta de prueba creada para ver, con una cuenta elegible, que el cuadro de compra muestra "7 días gratis" y que, con una cuenta que ya usó la prueba, aparece el plan base. Hasta ese momento la lógica solo está cubierta con simulaciones de `ProductDetails`.
 
+## Shard 6/8 del CI: ~30 min en vez de ~10 — resuelto (2026-10-13)
+
+**Síntoma.** En todos los CI desde el 8/10 el shard 6/8 de pruebas instrumentadas tardaba 25–39 min y los otros siete ~10 min, así que cada PR esperaba ~35 min por un solo shard. Las pruebas de Compose de ese shard duraban 10–70 s cada una **desde la primera**, frente a ~0,6 s en los demás.
+
+**Causa.** `BillingManagerConnectionTest.launchPurchase_conProductoQueNoExisteEnElCatalogo_devuelveFalse` hacía `mockk<Activity>()`. MockK retransforma `android.app.Activity` y toda su jerarquía hasta `Context`; desde entonces **cada** `getResources()` & co. del proceso de instrumentación pasa por `AndroidMockKDispatcher` y no se deshace. Como el reparto de pruebas entre shards es por hash y las clases corren en orden alfabético (`core.billing` antes que casi todo lo de UI), esa prueba cayó al principio del shard 6 y envenenó las ~100 pruebas siguientes. Era la misma causa de los 439 cuadros saltados, de las 72 recolecciones de basura (7 en un shard sano) y del `OutOfMemoryError` visto al correr medio centenar de clases en un solo proceso.
+
+**Cómo se encontró.** Los logs de un shard rápido (5/8) y del lento (6/8) del mismo run: la preparación del emulador era idéntica; el lanzamiento de cada actividad de prueba tardaba ~6 s casi exactos en el lento y ms en el rápido. Se bisecó en el emulador y en un teléfono real ordenando las primeras pruebas del shard:
+
+| Secuencia | `NavGraphHelpersTest` (actividad siguiente) |
+|---|---|
+| sola | 1,3 s |
+| tras construir `BillingManager` | 1,1 s |
+| **tras `launchPurchase_…` con `mockk<Activity>()`** | **15,0 s** (y la siguiente, 19 s) |
+| tras `appLifecycleTracker_…` | 1,4 s |
+
+`mockk<ContentResolver>()` (4 pruebas) **no** envenena (1,3 s); `Activity` sí por colgar de la ruta caliente de todo `Context`.
+
+**Arreglo.**
+
+- La prueba usa una instancia real sin adjuntar (`Activity()` en el hilo principal: crea un `Handler`) en vez de un mock; esa rama de `launchPurchase` no la usa.
+- `AndroidTestMockkGuardTest` (JVM, en `app/src/test/.../architecture`) falla si alguna prueba instrumentada vuelve a hacer `mockk<>`/`spyk<>` de `Activity`, `FragmentActivity`, `ComponentActivity`, `Context`, `ContextWrapper` o `Application` (incluida la forma `val x: Context = mockk()`). Verificada en negativo.
+
+**Resultado** (emulador local, partición idéntica a la del CI, `numShards=8`):
+
+| | Antes (CI) | Después (local) |
+|---|---|---|
+| Shard 6/8, 102 pruebas | ~28 min | **170 s**, `OK (102 tests)` |
+| Shards 0/8 y 1/8 (control) | ~3 min de pruebas | 207 s y 193 s |
+
+El shard 0 cerró el proceso una vez en `ViewerDocumentTypesTest` (la caída preexistente `SlotWriter.moveSlotGapTo` de Compose al destruir la actividad); no tiene relación con este cambio. El tiempo real en CI se confirma con el run de este PR.
+

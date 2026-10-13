@@ -69,14 +69,21 @@ class BillingManagerConnectionTest {
     // esto es determinista independientemente de si el emulador de CI tiene
     // o no Google Play, a diferencia de restorePurchases() de arriba.
     // Ejerce buildPurchaseParams() (rama "sin detalles") y el early-return de
-    // launchPurchase(). No se dereferencia `activity` en esa rama, así que un
-    // mock sin comportamiento alcanza.
+    // launchPurchase(). No se dereferencia `activity` en esa rama.
+    //
+    // NO usar `mockk<Activity>()`: MockK instrumenta (retransforma) `android.app.Activity` y toda su
+    // jerarquía hasta `Context`, y desde entonces CADA llamada a getResources() & co. del proceso de
+    // instrumentación pasa por `AndroidMockKDispatcher`. Medido: la actividad de la siguiente prueba pasó
+    // de 1,3 s a 15 s y ese costo se queda hasta el final del proceso (el shard 6/8 del CI tardaba ~30 min
+    // frente a ~10 de los demás solo por esto). Una instancia real sin adjuntar sirve igual: no se usa.
     @Test
     fun launchPurchase_conProductoQueNoExisteEnElCatalogo_devuelveFalse() {
         val manager = buildManager()
-        val activity = mockk<Activity>()
+        // Activity() crea un Handler: necesita un hilo con Looper (el de instrumentación no lo tiene).
+        var activity: Activity? = null
+        InstrumentationRegistry.getInstrumentation().runOnMainSync { activity = Activity() }
 
-        val launched = manager.launchPurchase(activity, "com.docsmart.producto.inexistente.ronda21")
+        val launched = manager.launchPurchase(checkNotNull(activity), "com.docsmart.producto.inexistente.ronda21")
 
         assertFalse(launched)
     }
