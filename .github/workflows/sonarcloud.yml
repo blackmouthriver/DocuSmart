@@ -157,7 +157,7 @@ jobs:
 
       - name: Publicar cobertura de este shard
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: coverage-shard-${{ matrix.shardIndex }}
           retention-days: 1
@@ -166,7 +166,7 @@ jobs:
 
       - name: Publicar reporte de pruebas instrumentadas (este shard)
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: reporte-compose-ui-testing-shard-${{ matrix.shardIndex }}
           retention-days: 14
@@ -278,7 +278,7 @@ jobs:
 
       - name: Publicar reporte de cobertura fusionado
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: reporte-cobertura-jacoco-sonar
           retention-days: 14
