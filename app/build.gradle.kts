@@ -478,7 +478,7 @@ dependencies {
     implementation("androidx.compose.animation:animation:1.11.0")
     implementation("androidx.compose.animation:animation-core:1.11.0")
     implementation("androidx.compose.foundation:foundation-layout:1.11.0")
-    implementation("androidx.compose.material:material-icons-core:1.7.5")
+    implementation("androidx.compose.material:material-icons-core:1.7.8")
     implementation("androidx.compose.runtime:runtime:1.11.0")
     implementation("androidx.compose.runtime:runtime-saveable:1.11.0")
     implementation("androidx.compose.ui:ui-geometry:1.11.0")
