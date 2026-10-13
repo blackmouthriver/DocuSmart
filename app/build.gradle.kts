@@ -457,8 +457,8 @@ dependencies {
     // no depender de que otra dependencia de nivel superior siga trayéndolas.
     implementation("androidx.core:core:1.18.0")
     implementation("androidx.activity:activity:1.13.0")
-    implementation("androidx.annotation:annotation:1.9.1")
-    implementation("androidx.collection:collection:1.5.0")
+    implementation("androidx.annotation:annotation:1.11.0")
+    implementation("androidx.collection:collection:1.7.0")
     implementation("androidx.fragment:fragment:1.5.4")
 
     // ── Compose BOM ───────────────────────────────────────────────────────────
@@ -478,7 +478,7 @@ dependencies {
     implementation("androidx.compose.animation:animation:1.11.0")
     implementation("androidx.compose.animation:animation-core:1.11.0")
     implementation("androidx.compose.foundation:foundation-layout:1.11.0")
-    implementation("androidx.compose.material:material-icons-core:1.7.5")
+    implementation("androidx.compose.material:material-icons-core:1.7.8")
     implementation("androidx.compose.runtime:runtime:1.11.0")
     implementation("androidx.compose.runtime:runtime-saveable:1.11.0")
     implementation("androidx.compose.ui:ui-geometry:1.11.0")
@@ -660,7 +660,7 @@ dependencies {
     runtimeOnly("com.journeyapps:zxing-android-embedded:4.3.0") { isTransitive = false }
 
     // ── Guava ─────────────────────────────────────────────────────────────────
-    implementation("com.google.guava:guava:32.1.3-android")
+    implementation("com.google.guava:guava:33.7.2-android")
 
     // ── Biometría ─────────────────────────────────────────────────────────────
     implementation("androidx.biometric:biometric:1.1.0")

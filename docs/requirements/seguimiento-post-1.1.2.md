@@ -128,6 +128,31 @@ El resultado depende del país: en un teléfono con precios en USD seguirá dici
 
 El shard 0 cerró el proceso una vez en `ViewerDocumentTypesTest` (la caída preexistente `SlotWriter.moveSlotGapTo` de Compose al destruir la actividad); no tiene relación con este cambio. El tiempo real en CI se confirma con el run de este PR.
 
+## Dependabot: por qué sus PRs no pasan solos y cómo se aplican (2026-10-13)
+
+**Por qué fallan todos.** Salvo los de GitHub Actions, los PRs de Dependabot fallan en la compilación con `Dependency verification failed`: el repo tiene *dependency locking* (`app/gradle.lockfile`, `lockAllConfigurations()`) y verificación de checksums (`gradle/verification-metadata.xml`), y Dependabot no regenera esta última. Los de Actions solo fallan en SonarCloud, que no recibe secretos en PRs de Dependabot.
+
+**Procedimiento manual** (un lote de versiones a la vez):
+
+1. Cambiar las versiones (`gradle/libs.versions.toml` y/o `app/build.gradle.kts`).
+2. Si cambia un plugin: `./gradlew --write-verification-metadata sha256 help` (hay que registrar sus checksums antes de poder resolverlo).
+3. `./gradlew :app:dependencies --write-locks`.
+4. `./gradlew --write-verification-metadata sha256 assembleDebug assembleDebugAndroidTest testDebugUnitTest lintDebug detekt ktlintCheck`.
+5. Revisar que el diff de ambos archivos solo traiga lo esperado (componentes nuevos, ninguno eliminado) y dejar correr el CI.
+
+**Estado de los 12 PRs abiertos el 2026-10-13** (#117 a #128):
+
+| PR | Cambio | Decisión |
+|---|---|---|
+| #119, #120, #121, #126, #127 | guava 33.7.2, annotation 1.11.0, collection 1.7.0, kover 0.9.11, material-icons-core 1.7.8 | aplicados juntos (lote 1) |
+| #122, #123 | `download-artifact` / `upload-artifact`: solo el hash del parche | se pueden fusionar tal cual |
+| #117 | mockk 1.13.13 → 1.14.11 | aparte: toca todas las pruebas (y MockK ya mostró efectos globales sobre `Activity`) |
+| #118 | Gradle 9.5.0 → 9.8.1 | aparte: cambia la herramienta de build |
+| #124 | Kotlin 2.2.21 → 2.4.21 | no ahora: obliga a mover KSP (`2.2.21-2.0.5`), Hilt, Room y detekt a la vez |
+| #125, #128 | iText forms 7.2.5 → 9.8.0 y cleanup 3.0.2 → 5.0.8 | no ahora: salto mayor, hay que migrar iText completo (kernel, layout, io, sign…) |
+
+**Hallazgo relacionado.** `compose-bom = "2024.11.00"` deja Material 3 en 1.3.1 sobre runtime/ui 1.11.0 (mezcla no soportada). Alinear al BOM `2026.04.01` (Material 3 1.4.0) cambia el color del texto de los `OutlinedButton` de azul a gris (`onSurfaceVariant`); se decidió no hacerlo antes de la 1.1.3 (PR #116 cerrado, rama `claude/alinear-compose-bom` conserva el trabajo).
+
 ## `QrCreatorFlowsTest.url_genera...` intermitente: causa real y arreglo (2026-10-13)
 
 **Síntoma.** `url_generaElCodigoYLoGuardaEnElHistorial` fallaba solo en el emulador lento del CI con `ComposeTimeoutException: Condition still not satisfied after 5000 ms` (el historial seguía vacío). Se retiró de la lista de tolerancia en #114 tras 8 corridas limpias, y falló en el primer CI posterior (#130): esa conclusión era demasiado optimista.
