@@ -1,0 +1,5 @@
+# Mínimo de pruebas unitarias que debe ejecutar `testDebugUnitTest` (scripts/check_unit_test_count.py).
+# Un entero en la primera línea no comentada. Al 2026-10-13 se ejecutan 1550 en 157 clases; el mínimo deja
+# margen para borrar algunas a propósito, pero atrapa que el descubrimiento se desplome (p. ej. sin
+# junit-jupiter-engine solo corren 17). Si se eliminan muchas pruebas a propósito, bájalo aquí.
+1400

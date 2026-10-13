@@ -168,3 +168,21 @@ El shard 0 cerró el proceso una vez en `ViewerDocumentTypesTest` (la caída pre
 
 **Lección.** "0 fallas en N corridas" no prueba que una intermitencia esté corregida si no se entiende la causa: aquí la lista de tolerancia se retiró antes de tiempo. Otras intermitencias del mismo tipo (continuación en hilo de trabajo bajo el reloj de pruebas) ya se arreglaron en `SecurityScreen` (#111); la guardia `AndroidTestMockkGuardTest` cubre otro hallazgo parecido (#129).
 
+## mockk 1.13.13 → 1.14.11 (#117) y la caída silenciosa de 1550 pruebas unitarias (2026-10-13)
+
+**Qué parecía.** Un cambio de versión de 6 líneas en `app/build.gradle.kts` (mockk, mockk-dsl, mockk-android, mockk-agent-android, mockk-agent), más lock y checksums.
+
+**Qué era.** Con mockk 1.14 `testDebugUnitTest` terminaba **en verde** pero ejecutaba **17 pruebas en vez de ~1550**: solo corrían los 2 specs de Kotest. El motor `org.junit.jupiter:junit-jupiter-engine:5.14.4` (y `junit-jupiter`, `junit-jupiter-params`) llegaba al classpath de pruebas **de forma transitiva a través de mockk 1.13.x**; con 1.14 desaparecieron del lockfile y JUnit Platform ya no descubría las pruebas Jupiter. Ninguna prueba falla cuando no se ejecuta, así que ni el CI ni `ktlint`/`detekt` lo habrían notado: el PR de Dependabot habría entrado "en verde" apagando el 99 % de las unitarias.
+
+El propio `build.gradle.kts` documentaba la suposición ("jupiter-engine sigue presente en el classpath de test en runtime vía otras dependencias"): una dependencia implícita sin dueño.
+
+**Arreglo.**
+
+- `testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.14.4")` explícito (se quita la suposición del comentario).
+- Guardia nueva en CI, `scripts/check_unit_test_count.py` + `config/ci/unit-tests-min.txt` (1400): tras `testDebugUnitTest` falla si el número de pruebas ejecutadas cae por debajo del mínimo. Con sus pruebas propias (`scripts/test_check_unit_test_count.py`, incluido el caso real de 17 pruebas).
+- mockk 1.14.11 en las 6 líneas; locks y checksums regenerados (+18 componentes: mockk 1.14.11, byte-buddy 1.18.2, objenesis 3.4, dexmaker 2.28.6; ninguno eliminado).
+
+**Verificación local.** 157 clases, **1550 pruebas, 0 fallas** (igual que antes). Las instrumentadas con mockk-android 1.14 las valida el CI de este PR.
+
+**Lección.** Una actualización de dependencias que "compila y pasa" puede haber dejado de ejecutar pruebas. Vale la pena contar pruebas, no solo mirar el color.
+
