@@ -168,3 +168,13 @@ El shard 0 cerró el proceso una vez en `ViewerDocumentTypesTest` (la caída pre
 
 **Lección.** "0 fallas en N corridas" no prueba que una intermitencia esté corregida si no se entiende la causa: aquí la lista de tolerancia se retiró antes de tiempo. Otras intermitencias del mismo tipo (continuación en hilo de trabajo bajo el reloj de pruebas) ya se arreglaron en `SecurityScreen` (#111); la guardia `AndroidTestMockkGuardTest` cubre otro hallazgo parecido (#129).
 
+## Gradle 9.8.1 (#118): no aplicable con AGP 8.x (2026-10-13)
+
+Se probó a mano: wrapper regenerado con `./gradlew wrapper --gradle-version 9.8.1 --gradle-distribution-sha256-sum <hash>` (el hash que proponía Dependabot, `dce76f55…`, coincide con el publicado por Gradle). Gradle 9.8.1 arranca, pero el plugin de Android no se puede aplicar:
+
+> Plugin 'com.android.internal.application' relies on 'org.gradle.api.problems.internal.InternalProblems', a Gradle internal API that was removed in Gradle 9.6.0.
+
+**Conclusión.** Con AGP 8.13.2 el tope compatible es Gradle **9.5.x** (el actual). Subir Gradle exige migrar antes a AGP 9 (Dependabot ya propuso #69, 8.13.2 → 9.4.1, cerrado el 2026-09-21), que es una migración mayor. Además Gradle 9.8.1 trae Kotlin 2.4.10 en su DSL y pide checksums nuevos de `kotlin-stdlib`/`kotlin-reflect` en `verification-metadata.xml`.
+
+**Qué se hizo.** #118 cerrado; `.github/dependabot.yml` ignora `gradle-wrapper >= 9.6.0` con el motivo, para que no vuelva cada semana (quitar la regla al migrar a AGP 9). Orden correcto para esa migración cuando se aborde: AGP 9 → (Kotlin / KSP / Hilt / Room según lo exija) → Gradle.
+

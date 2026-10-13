@@ -11,6 +11,13 @@ updates:
       - "dependencies"
     commit-message:
       prefix: "deps"
+    ignore:
+      # AGP 8.x NO funciona con Gradle >= 9.6.0: el plugin de Android usa `InternalProblems`, una API
+      # interna que Gradle eliminó en 9.6.0 ("Plugin 'com.android.internal.application' relies on ...").
+      # Probado a mano con 9.8.1 (PR #118, cerrado). Quitar esta regla al migrar a AGP 9.
+      - dependency-name: "gradle-wrapper"
+        versions:
+          - ">= 9.6.0"
 
   # ── Acciones usadas en los workflows de CI ───────────────────────────────
   - package-ecosystem: "github-actions"
