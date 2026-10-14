@@ -202,3 +202,11 @@ Se probó a mano: wrapper regenerado con `./gradlew wrapper --gradle-version 9.8
 
 **Pendiente relacionado.** Los cierres de proceso de Compose al destruir la actividad en pruebas del Visor (`SlotWriter.moveSlotGapTo`, `runDetachLifecycle`) son de la misma familia (composición tocada fuera del hilo principal) pero con otra firma; este cambio solo cubre `rememberDocumentLoad`. El render perezoso del PDF (`PdfPageItem`/`produceState`, #108) escribe estado tras `withContext(IO)` y es el candidato siguiente.
 
+## Gradle 9.5.0 → 9.5.1 (#135) (2026-10-14)
+
+Parche dentro del tope compatible con AGP 8.13.2 (Gradle < 9.6, ver la sección de Gradle 9.8.1). Aplicado con la tarea `wrapper` y el hash oficial publicado por Gradle (`bafc141b…`, idéntico al que proponía Dependabot).
+
+**Verificación local con Gradle 9.5.1:** `assembleDebug`, `assembleDebugAndroidTest`, `testDebugUnitTest` (**1550 pruebas, 0 fallas**; guardia de conteo OK), `lintDebug`, `detekt` y `ktlintCheck`: BUILD SUCCESSFUL. A diferencia de 9.8.1 (Kotlin 2.4.10 embebido) **no** pidió checksums nuevos: `verification-metadata.xml` y los lockfiles no cambian.
+
+**CI de Dependabot (#135):** solo cayó el shard 5/8, por la falla de infraestructura del emulador (`Error on ZipFile unknown archive` al instalar el SDK; el emulador nunca arrancó), no por el wrapper.
+
