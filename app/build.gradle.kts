@@ -679,9 +679,12 @@ dependencies {
     // ── Testing ───────────────────────────────────────────────────────────────
     // buildHealth (paso 3, removida): junit-jupiter es el paraguas
     // (api+params+engine); el código fuente solo usa org.junit.jupiter.api.*
-    // (junit-jupiter-api, declarado directo abajo). jupiter-engine sigue
-    // presente en el classpath de test en runtime vía otras dependencias.
+    // (junit-jupiter-api, declarado directo abajo).
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    // El motor de Jupiter se declara EXPLÍCITO: hoy llega como transitiva de mockk 1.13.x, pero con mockk
+    // 1.14 desaparece en silencio -- `testDebugUnitTest` seguía "verde" descubriendo solo los 2 specs de
+    // Kotest (17 pruebas) en vez de ~1550. Ver también scripts/check_unit_test_count.py (CI).
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.14.4")
     testImplementation("io.mockk:mockk:1.13.13")
     testImplementation("app.cash.turbine:turbine:1.2.1")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")

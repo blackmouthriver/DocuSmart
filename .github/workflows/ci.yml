@@ -51,6 +51,11 @@ jobs:
       - name: Pruebas unitarias
         run: ./gradlew testDebugUnitTest --no-daemon
 
+      # Un descubrimiento que se desploma (p. ej. sin junit-jupiter-engine solo corren los 2 specs de
+      # Kotest) deja la tarea en verde sin fallar ninguna prueba: este paso lo vuelve visible.
+      - name: Verificar que no se perdieron pruebas unitarias
+        run: python3 scripts/check_unit_test_count.py app/build/test-results/testDebugUnitTest config/ci/unit-tests-min.txt
+
       - name: Publicar reportes
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
