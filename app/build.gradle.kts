@@ -63,7 +63,7 @@ android {
         applicationId = "com.docsmart"
         minSdk = 26
         targetSdk = 36
-        versionCode = 8
+        versionCode = 9
         versionName = "1.1.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Libera el registro de llamadas de MockK tras cada prueba (fuga de heap, ronda 20).

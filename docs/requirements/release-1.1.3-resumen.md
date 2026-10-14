@@ -1,4 +1,6 @@
-# Release 1.1.3 (versionCode 8) — resumen
+# Release 1.1.3 (versionCode 9) — resumen
+
+> **Reemisión (2026-10-14):** Play Console no permitió publicar el código 8 en producción, así que el mismo contenido (mismo `versionName 1.1.3`, mismo commit funcional) se reemite con **versionCode 9**. Donde este documento diga «código 8», léase 9 para el `.aab` que se sube a producción.
 
 Fecha: 2026-10-14. Sucede a la **1.1.2 (versionCode 7)**, ya en prueba cerrada. Esta versión reúne todo lo fusionado en `main` desde esa compilación (PR #105 a #142). Detalle técnico y mediciones en `seguimiento-post-1.1.2.md`.
 
