@@ -56,7 +56,8 @@ class LibraryScreenExtrasTest {
     val permissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             *if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+                // Android 13+: la Biblioteca ya no pide ningún permiso de medios.
+                emptyArray<String>()
             } else {
                 arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
             },
