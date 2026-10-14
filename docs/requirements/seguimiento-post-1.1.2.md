@@ -178,6 +178,18 @@ Se probó a mano: wrapper regenerado con `./gradlew wrapper --gradle-version 9.8
 
 **Qué se hizo.** #118 cerrado; `.github/dependabot.yml` ignora `gradle-wrapper >= 9.6.0` con el motivo, para que no vuelva cada semana (quitar la regla al migrar a AGP 9). Orden correcto para esa migración cuando se aborde: AGP 9 → (Kotlin / KSP / Hilt / Room según lo exija) → Gradle.
 
+## Guardia contra la caída silenciosa de pruebas unitarias (2026-10-13)
+
+**Hallazgo (al probar mockk 1.14, #117).** `junit-jupiter-engine` llega hoy al classpath de pruebas **de forma transitiva a través de mockk 1.13.x**. Con mockk 1.14 desaparece del lockfile y `testDebugUnitTest` sigue terminando **en verde** pero ejecutando **17 pruebas en vez de ~1550** (solo los 2 specs de Kotest). Ninguna prueba falla cuando no se ejecuta, así que ni el CI ni ktlint/detekt lo habrían notado: el PR de Dependabot habría entrado "en verde" apagando el 99 % de las unitarias.
+
+**Qué se hizo (sin tocar la versión de mockk).**
+
+- `testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.14.4")` explícito en `app/build.gradle.kts` (el comentario anterior documentaba la suposición de que llegaba "vía otras dependencias").
+- `scripts/check_unit_test_count.py` + `config/ci/unit-tests-min.txt` (mínimo 1400; hoy se ejecutan 1550 en 157 clases): paso nuevo del CI tras `testDebugUnitTest` que falla si se ejecutan menos pruebas. Con sus pruebas propias (`scripts/test_check_unit_test_count.py`), incluido el caso real de 17.
+- Lock y checksums sin cambios: el motor ya estaba resuelto, ahora además se declara.
+
+**Estado de mockk 1.14.11 (#117 / PR #132).** Aplicado a mano funciona en las unitarias (1550, 0 fallas), pero su CI cayó 3 veces seguidas en el shard 0 con cierres de proceso de Compose en pruebas del Visor (`ViewerDocumentTypesTest`, `ViewerPdfTest`), cuando ese shard pasaba limpio en los CI de `main`. No se pudo aislar si mockk 1.14 empeora esa intermitencia o fue mala suerte (el emulador local, con 15 GB de RAM y ~2 GB libres, no aguantó una comparación larga). Queda abierto, sin fusionar, hasta resolver la causa de fondo de esas caídas (estado de Compose escrito desde hilos de IO bajo el reloj de pruebas).
+
 ## Visor de documentos: `rememberDocumentLoad` escribía estado desde IO (2026-10-13)
 
 **Síntoma.** `ViewerDocumentTypesTest.excel_conUnaSolaHojaNoMuestraPestanas` falló en CI con `IllegalStateException: The current thread must have a looper!` (la misma firma que ya se corrigió en Seguridad, #111). La traza de `ComposeInternal` pasa por `ExcelViewerContent` → `LazyColumn` → `LazyLayout` → `Choreographer.getInstance()` en un hilo distinto del principal.
