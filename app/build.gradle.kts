@@ -612,7 +612,7 @@ dependencies {
     implementation("com.jakewharton.timber:timber:5.0.1")
 
     // ── CameraX ───────────────────────────────────────────────────────────────
-    val cameraxVersion = "1.3.4"
+    val cameraxVersion = "1.4.2"
     implementation("androidx.camera:camera-core:$cameraxVersion")
     // camera-camera2 es el backend real de CameraX (Camera2 vendor
     // implementation) -- se carga por service loader en runtime, el código
