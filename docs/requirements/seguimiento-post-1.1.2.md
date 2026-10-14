@@ -190,3 +190,15 @@ Se probó a mano: wrapper regenerado con `./gradlew wrapper --gradle-version 9.8
 
 **Estado de mockk 1.14.11 (#117 / PR #132).** Aplicado a mano funciona en las unitarias (1550, 0 fallas), pero su CI cayó 3 veces seguidas en el shard 0 con cierres de proceso de Compose en pruebas del Visor (`ViewerDocumentTypesTest`, `ViewerPdfTest`), cuando ese shard pasaba limpio en los CI de `main`. No se pudo aislar si mockk 1.14 empeora esa intermitencia o fue mala suerte (el emulador local, con 15 GB de RAM y ~2 GB libres, no aguantó una comparación larga). Queda abierto, sin fusionar, hasta resolver la causa de fondo de esas caídas (estado de Compose escrito desde hilos de IO bajo el reloj de pruebas).
 
+## Visor de documentos: `rememberDocumentLoad` escribía estado desde IO (2026-10-13)
+
+**Síntoma.** `ViewerDocumentTypesTest.excel_conUnaSolaHojaNoMuestraPestanas` falló en CI con `IllegalStateException: The current thread must have a looper!` (la misma firma que ya se corrigió en Seguridad, #111). La traza de `ComposeInternal` pasa por `ExcelViewerContent` → `LazyColumn` → `LazyLayout` → `Choreographer.getInstance()` en un hilo distinto del principal.
+
+**Causa (por lectura del código y de la traza).** `rememberDocumentLoad` (carga compartida de Word/Excel/PowerPoint/Texto) escribía `isLoading = false` y `hasError = true` **dentro** del bloque `withContext(Dispatchers.IO)`. En producción es inofensivo (el estado se publica y la recomposición vuelve al hilo principal), pero con el despachador "unconfined" del reloj de pruebas de Compose la recomposición corre en el hilo que escribe, sin `Looper`.
+
+**Arreglo.** El bloque de IO solo calcula y devuelve `(dato, falló)`; el estado (`data`, `hasError`, `isLoading`) se escribe después con `withContext(Dispatchers.Main.immediate)`, igual que en `SecurityScreen`. En producción el efecto ya corre en el hilo principal, así que no cambia nada observable. De paso, `CancellationException` ya no se traga como error de lectura.
+
+**Verificación.** ktlint, detekt y ensamblado OK; `ViewerDocumentTypesTest` pasó 23/23 en el emulador local tras el cambio. **No hay una medición estadística de la intermitencia**: el emulador local (15 GB de RAM, ~2 GB libres) no completó una serie larga de repeticiones, así que la confirmación real son los CI siguientes.
+
+**Pendiente relacionado.** Los cierres de proceso de Compose al destruir la actividad en pruebas del Visor (`SlotWriter.moveSlotGapTo`, `runDetachLifecycle`) son de la misma familia (composición tocada fuera del hilo principal) pero con otra firma; este cambio solo cubre `rememberDocumentLoad`. El render perezoso del PDF (`PdfPageItem`/`produceState`, #108) escribe estado tras `withContext(IO)` y es el candidato siguiente.
+

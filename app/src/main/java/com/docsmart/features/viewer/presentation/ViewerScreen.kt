@@ -89,6 +89,7 @@ import com.docsmart.features.viewer.presentation.components.ViewerNoteInputDialo
 import com.docsmart.features.viewer.presentation.components.ViewerRenameDialog
 import com.docsmart.features.viewer.presentation.components.ViewerShareChoiceDialog
 import com.docsmart.features.viewer.presentation.components.ViewerTopBar
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -1371,18 +1372,27 @@ private fun <T> rememberDocumentLoad(
 
     LaunchedEffect(uri) {
         if (uri == null) return@LaunchedEffect
-        data =
+        // El estado de Compose NO se escribe dentro del bloque de IO: con el despachador "unconfined" del reloj
+        // de pruebas, escribir `isLoading`/`hasError` desde el hilo de IO hacía que la recomposición (el
+        // LazyColumn de Excel/Word) corriera en ese hilo sin Looper -> "The current thread must have a
+        // looper!", intermitente en CI (ViewerDocumentTypesTest). El bloque solo devuelve el resultado.
+        val (loaded, failed) =
             withContext(Dispatchers.IO) {
                 try {
-                    context.contentResolver.openInputStream(uri)?.use { extract(it) } ?: initial
+                    (context.contentResolver.openInputStream(uri)?.use { extract(it) } ?: initial) to false
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     Timber.e("Error leyendo $errorLogTag: ${e.javaClass.simpleName}")
-                    hasError = true
-                    initial
-                } finally {
-                    isLoading = false
+                    initial to true
                 }
             }
+        // En producción este efecto ya corre en el hilo principal (no cambia nada); en pruebas lo garantiza.
+        withContext(Dispatchers.Main.immediate) {
+            data = loaded
+            hasError = failed
+            isLoading = false
+        }
     }
     return DocumentLoadState(data, isLoading, hasError)
 }
