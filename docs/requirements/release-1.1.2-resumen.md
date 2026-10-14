@@ -43,9 +43,9 @@ Los detalles finos de cada ronda siguen en los backlogs numerados (`backlog-bugs
 | Pruebas manuales M1–M15 (`suite-pruebas-release.md`) | Las ejecuta el usuario; no hay registro de resultados en el repo |
 | Reinstalar la build de Play en el Moto E22 | Acción del usuario (se desinstaló para las instrumentadas) |
 | `QrCreatorFlowsTest.url_generaElCodigoYLoGuardaEnElHistorial` | **Retirada de la lista de tolerancia (2026-10-10):** con la espera añadida a la prueba no falló en 8 corridas completas de CI; la lista `config/ci/instrumented-known-failures.txt` queda sin entradas |
-| Visor: render de **todas** las páginas a la vez | Un PDF de cientos de páginas puede dar OOM. Arreglo de fondo: render perezoso (página visible ± margen) |
-| Premium: oferta de prueba de 7 días | Falta crearla en Play Console y endurecer la app para elegir la oferta con trial (hoy `subscriptionOfferDetails.firstOrNull()`, el orden no está garantizado) |
-| Etiqueta "Ahorra 44%" | Con 6.900/46.900 COP el ahorro real es ~43%; ajustar precio o texto |
+| Visor: render de **todas** las páginas a la vez | **Resuelto en la 1.1.3 (#108, #109):** render bajo demanda con caché por bytes en el Visor y en Modo Estudio |
+| Premium: oferta de prueba de 7 días | **App resuelta en la 1.1.3 (#110):** elige de forma estable la oferta con prueba. **Sigue pendiente crearla en Play Console** |
+| Etiqueta "Ahorra 44%" | **Resuelto en la 1.1.3 (#110):** el porcentaje se calcula con los precios reales de Play (con 7.000/47.000 COP es 44 %) |
 | Lector de QR | **Resuelto post-1.1.2 (PR #112, fuera del `.aab`):** el historial es ahora un botón con texto bajo el banner, igual que en el Creador (antes un icono suelto dentro del banner). Pruebas `features.scanner` 125/125 en Edge y emulador |
 | `app-ads.txt` de AdMob | Tarea de hosting, sigue pendiente (ver memoria del proyecto) |
 
