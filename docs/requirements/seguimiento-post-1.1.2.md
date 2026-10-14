@@ -1,6 +1,64 @@
 # Seguimiento posterior a la 1.1.2
 
-Trabajo del backlog hecho después de generar el `.aab` 1.1.2 (`versionCode 7`). **Nada de lo de aquí está en ese `.aab`**; irá en la siguiente versión. Complementa `release-1.1.2-resumen.md`.
+Trabajo del backlog hecho después de generar el `.aab` 1.1.2 (`versionCode 7`). **Nada de lo de aquí está en ese `.aab`**; todo está incluido en la **1.1.3 (`versionCode 8`)**. Complementa `release-1.1.2-resumen.md`.
+
+## Estado del backlog al cierre de la 1.1.3 (2026-10-14)
+
+Versión **1.1.3 (código 8)**, generada desde `main` 7fc479b (PR #143). Numeración del backlog de trabajo posterior a la 1.1.2 (#6 a #19; **no** son números de PR). El porcentaje cuenta ítems cerrados sobre ítems numerados: mide cantidad, no esfuerzo ni riesgo.
+
+| # | Ítem | Estado | Referencia |
+|---|---|---|---|
+| 6 | Auditoría de idioma: recursos de la Application no seguían el idioma de la app | Hecho | #105, #102 |
+| 7 | Visor: render de todas las páginas a la vez (OOM en PDFs grandes) y lo mismo en Modo Estudio | Hecho | #108, #109 |
+| 8 | Premium: elegir de forma estable la oferta con prueba gratis | Hecho en código; **falta crear la oferta en Play Console** | #110 |
+| 9 | Etiqueta «Ahorra 44 %» fija | Hecho: se calcula con los precios reales de Play | #110 |
+| 10 | Lector de QR: historial dentro del banner | Hecho | #112 |
+| 11 | `QrCreatorFlowsTest.url_genera...` intermitente | Hecho: causa real en `MemoryPrefsContext` | #131 |
+| 12 | Siete pruebas con `@Ignore` | Hecho (y defecto real del visor encontrado) | #107 |
+| 13 | `sonarcloud.yml` sin guardia de fallas | **Descartado a propósito**: `ci.yml` ya la impone y duplicarla pondría dos workflows en rojo por el mismo flake | — |
+| 14 | Reintento ante fallas de red/descargas corruptas en CI | Hecho | #113 |
+| 15 | `app-ads.txt` de AdMob | **Pendiente** (hosting, no es código del repo) | — |
+| 16 | Producto anual y oferta de prueba de 7 días en Play Console | **Pendiente** (del propietario) | — |
+| 17 | Pantallas con PIN sin revisar tras el rediseño | Hecho (flecha de volver corregida) | #115 |
+| 18 | QR por Wi-Fi local | **Diferido** por decisión del propietario | — |
+| 19 | Play Integrity | **Sin integrar**; decisión pendiente | — |
+
+**Avance: 10 de 14 cerrados (71 %)**: 9 implementados y verificados + 1 descartado con motivo (#13). Abiertos: 4, de los cuales 3 no dependen de código (#15, #16 y la decisión de #19) y 1 está diferido (#18).
+
+### Hecho adicional que no estaba en la lista numerada
+
+| Ítem | Referencia |
+|---|---|
+| Shard 6/8 del CI de ~30 min a ~10 min (`mockk<Activity>()` envenenaba la instrumentación) + guardia contra su reintroducción | #129 |
+| Intermitencia «must have a looper» en Seguridad | #111 |
+| Intermitencia «must have a looper» en el visor de documentos (`rememberDocumentLoad`) | #141 (efecto **sin medición estadística**) |
+| Guardia que falla si se pierden pruebas unitarias (mínimo 1400; hoy 1550) | #140 |
+| Dependabot: lote de 5 actualizaciones a mano, Gradle 9.5.1, acciones de artefactos; Gradle ≥ 9.6 ignorado por incompatibilidad con AGP 8.x | #130, #142, #122, #123, #133 |
+| Suite instrumentada completa en dos teléfonos reales (799 pruebas, 8/8 en cada uno) y pruebas manuales M7, M8, M12, idioma, anotaciones y notificaciones | — |
+
+### Deuda técnica abierta
+
+| Ítem | Detalle | Siguiente paso |
+|---|---|---|
+| mockk 1.14.11 | Aplicado a mano pasa las unitarias, pero su CI cayó 3 veces seguidas en el shard 0 con cierres de proceso de Compose en pruebas del Visor | Resolver antes la causa de fondo de esas caídas |
+| Cierres de proceso de Compose al destruir la actividad (`SlotWriter.moveSlotGapTo`, `runDetachLifecycle`) en pruebas del Visor | Preexistente y intermitente; misma familia que los «looper» (estado escrito desde IO bajo el reloj de pruebas) | Candidato: `PdfPageItem`/`produceState` del render perezoso (#108) |
+| Material 3 1.3.1 sobre runtime 1.11.0 | Alinear al BOM 2026.04.01 (M3 1.4.0) cambia el color del texto de los `OutlinedButton` (38 usos) | Después de la 1.1.3, con helper de color y revisión visual (rama borrada; recuperable desde el PR #116) |
+| Kotlin 2.4.21 (#124) | Obliga a mover KSP (`2.2.21-2.0.5`), Hilt, Room y detekt a la vez | Proyecto aparte |
+| iText 9 (#125, #128, #136) | Migración completa de API (kernel, layout, io, forms, cleanup) | Proyecto aparte |
+| Gradle ≥ 9.6 | AGP 8.13.2 usa `InternalProblems`, eliminada en Gradle 9.6 | Migrar antes a AGP 9 (migración mayor) |
+| Dependabot sin revisar: #134 Firebase BOM 35, #137 fragment, #138 core-ktx, #139 Spotless 8.10.4 | Cada uno exige el procedimiento manual de locks y checksums | Revisar uno por uno |
+| Demora de las notificaciones de Agenda y Notas | Reportada como «se demora un poco»; sin cifra. En el Edge el permiso de alarmas exactas estaba concedido y no había Doze | Medir (¿segundos o minutos?) |
+
+### Qué falta para dar por cerrada la 1.1.3
+
+| Acción | Quién |
+|---|---|
+| Subir `DocuSmart-1.1.3-code8.aab` a prueba cerrada y repetir M7/M8 con esa build | Propietario |
+| Vigilar Crashlytics 24–48 h y promover a producción gradual (10–20 %) | Propietario |
+| Crear la oferta de prueba de 7 días y confirmar el producto anual (#16) | Propietario |
+| Publicar `app-ads.txt` (#15) | Propietario |
+| Borrar los `DocuSmart_PRUEBA_*.pdf` de Descargas en los dos teléfonos y restaurar el idioma | Propietario |
+| Decidir si Play Integrity (#19) entra en el alcance | Propietario |
 
 ## Backlog #12 — reactivar las pruebas con `@Ignore` (2026-10-10)
 
