@@ -2,6 +2,7 @@ package com.docsmart.features.library.data
 
 import android.content.ContentResolver
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract
 import com.docsmart.core.data.FavoritesRepository
@@ -19,6 +20,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
+import io.mockk.verify
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
@@ -415,6 +417,81 @@ class DocumentRepositoryTest {
 
             assertEquals(uriString, newId)
             coVerify(exactly = 2) { favorites.saveAlias(uriString, "x.pdf") }
+        }
+
+    // ── 1.1.5: fotos agregadas con el selector del sistema ───────────────────
+
+    @Test
+    fun `deleteDocument de una foto del selector solo la quita sin borrar la original`() =
+        runTest {
+            val pickerId = "content://media/picker/0/com.android.providers.media.photopicker/media/1000157509"
+            val mockUri = mockk<Uri>()
+            every { Uri.parse(pickerId) } returns mockUri
+            val resolver = mockk<ContentResolver>(relaxed = true)
+            every { context.contentResolver } returns resolver
+            historyDao.recordOpen(DocumentHistoryEntry(pickerId, 1000L))
+
+            val outcome = repository.deleteDocument(pickerId)
+
+            assertTrue(outcome is DocumentRepository.DeleteOutcome.Deleted)
+            // La foto original de la galeria NO se toca...
+            verify(exactly = 0) { resolver.delete(any(), any(), any()) }
+            // ...solo se libera el permiso persistente y se quita del historial.
+            verify { resolver.releasePersistableUriPermission(mockUri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+            assertTrue(historyDao.recentDocumentIds(10).isEmpty())
+        }
+
+    @Test
+    fun `deleteDocument de una foto del selector tolera que ya no haya permiso que liberar`() =
+        runTest {
+            val pickerId = "content://media/picker/0/com.android.providers.media.photopicker/media/1000157510"
+            val mockUri = mockk<Uri>()
+            every { Uri.parse(pickerId) } returns mockUri
+            val resolver = mockk<ContentResolver>(relaxed = true)
+            every { resolver.releasePersistableUriPermission(any(), any()) } throws SecurityException("sin permiso")
+            every { context.contentResolver } returns resolver
+            historyDao.recordOpen(DocumentHistoryEntry(pickerId, 1000L))
+
+            val outcome = repository.deleteDocument(pickerId)
+
+            assertTrue(outcome is DocumentRepository.DeleteOutcome.Deleted)
+            assertTrue(historyDao.recentDocumentIds(10).isEmpty())
+        }
+
+    @Test
+    fun `addPickedImages toma el permiso persistente y registra cada foto en el historial`() =
+        runTest {
+            val first = mockk<Uri>()
+            val second = mockk<Uri>()
+            every { first.toString() } returns "content://media/picker/0/x/media/1"
+            every { second.toString() } returns "content://media/picker/0/x/media/2"
+            val resolver = mockk<ContentResolver>(relaxed = true)
+            every { context.contentResolver } returns resolver
+
+            val persisted = repository.addPickedImages(listOf(first, second))
+
+            assertEquals(2, persisted)
+            verify { resolver.takePersistableUriPermission(first, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+            verify { resolver.takePersistableUriPermission(second, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+            assertEquals(
+                setOf("content://media/picker/0/x/media/1", "content://media/picker/0/x/media/2"),
+                historyDao.recentDocumentIds(10).toSet(),
+            )
+        }
+
+    @Test
+    fun `addPickedImages registra la foto aunque el sistema no conceda acceso persistente`() =
+        runTest {
+            val uri = mockk<Uri>()
+            every { uri.toString() } returns "content://media/picker/0/x/media/3"
+            val resolver = mockk<ContentResolver>(relaxed = true)
+            every { resolver.takePersistableUriPermission(any(), any()) } throws SecurityException("no persistible")
+            every { context.contentResolver } returns resolver
+
+            val persisted = repository.addPickedImages(listOf(uri))
+
+            assertEquals(0, persisted)
+            assertEquals(listOf("content://media/picker/0/x/media/3"), historyDao.recentDocumentIds(10))
         }
 
     // ── deleteDocument sobre documentos SAF (carpeta vinculada) ───────────────

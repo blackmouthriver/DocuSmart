@@ -81,7 +81,7 @@ class LibraryViewModel
             loadDocuments()
         }
 
-        // SPIKE (2026-10-14): fotos elegidas con el selector del sistema.
+        // 1.1.5: fotos elegidas con el selector del sistema (acceso persistente).
         fun onPhotosPicked(uris: List<Uri>) {
             if (uris.isEmpty()) return
             viewModelScope.launch {

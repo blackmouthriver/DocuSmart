@@ -150,7 +150,7 @@ class DocumentRepository
         }
 
         /**
-         * SPIKE (2026-10-14): registra fotos elegidas con el selector de fotos
+         * 1.1.5: registra fotos elegidas con el selector de fotos
          * del sistema. Toma el permiso de URI persistente (la documentación del
          * selector lo admite, hasta 5000 concesiones) y las deja en el historial
          * para que la Biblioteca las liste. Devuelve cuántas quedaron con acceso
@@ -271,6 +271,12 @@ class DocumentRepository
          */
         suspend fun deleteDocument(documentId: String): DeleteOutcome =
             withContext(Dispatchers.IO) {
+                // 1.1.5: una foto agregada con el selector del sistema es una
+                // referencia de solo lectura, no una fila propia de MediaStore --
+                // se quita de DocuSmart, nunca se borra la foto original.
+                if (PickedMediaUris.isPickedReference(documentId)) {
+                    return@withContext removePickedReference(documentId)
+                }
                 // Fila 22 del backlog UX: un documento de la carpeta vinculada por
                 // SAF también empieza con "content://" pero NO es un Uri de
                 // MediaStore -- MediaStore.createDeleteRequest() lanza
@@ -292,6 +298,22 @@ class DocumentRepository
                 }
                 deleteLegacyDocument(documentId)
             }
+
+        // Quita una foto del selector de DocuSmart sin tocar la original: libera
+        // el permiso persistente (devuelve el cupo del sistema) y borra su fila
+        // del historial. Un fallo al liberar no impide quitarla de la Biblioteca.
+        private suspend fun removePickedReference(documentId: String): DeleteOutcome {
+            try {
+                context.contentResolver.releasePersistableUriPermission(
+                    Uri.parse(documentId),
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+            } catch (e: SecurityException) {
+                Timber.w("removePickedReference: sin permiso que liberar (${e.javaClass.simpleName})")
+            }
+            documentHistoryDao.remove(documentId)
+            return DeleteOutcome.Deleted
+        }
 
         // Hallazgo real de la auditoría de la capa de persistencia (Media, catch
         // de CancellationException agregado): extraída de deleteDocument() para

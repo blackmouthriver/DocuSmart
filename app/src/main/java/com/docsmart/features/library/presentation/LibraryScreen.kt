@@ -103,11 +103,8 @@ fun LibraryScreen(
         remember(linkedFolderUri) {
             linkedFolderUri?.let { viewModel.linkedFolderDisplayName(it) }
         }
-    // SPIKE (2026-10-14): selector de fotos del sistema (no requiere permiso).
-    val pickPhotosLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.PickMultipleVisualMedia(),
-        ) { uris -> viewModel.onPhotosPicked(uris) }
+    // 1.1.5: selector de fotos del sistema (no requiere permiso).
+    val onPickPhotos = rememberPickPhotosAction(viewModel)
     val linkFolderLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.OpenDocumentTree(),
@@ -198,18 +195,9 @@ fun LibraryScreen(
             )
         }
 
-        // SPIKE (2026-10-14): botón provisional, sin string localizado.
+        // 1.1.5: agrega fotos con el selector del sistema (sin permiso de medios).
         if (uiState.selectedTab == LibraryTab.DEVICE) {
-            item {
-                OutlinedButton(
-                    onClick = {
-                        pickPhotosLauncher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                ) { Text("Agregar fotos") }
-            }
+            item { AddPhotosButton(onClick = onPickPhotos) }
         }
 
         // ── Vincular Descargas (fila 22 backlog UX): solo en la pestaña
@@ -603,6 +591,28 @@ private fun LinkDownloadsFolderCard(onLinkClick: () -> Unit) {
             )
         }
     }
+}
+
+// 1.1.5: selector de fotos del sistema -- extraído de LibraryScreen para no
+// superar el umbral LongMethod de detekt. Devuelve la acción que lo abre.
+@Composable
+private fun rememberPickPhotosAction(viewModel: LibraryViewModel): () -> Unit {
+    val launcher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.PickMultipleVisualMedia(),
+        ) { uris -> viewModel.onPhotosPicked(uris) }
+    return {
+        launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+    }
+}
+
+// 1.1.5: botón de la pestaña Dispositivo.
+@Composable
+private fun AddPhotosButton(onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+    ) { Text(stringResource(R.string.library_add_photos)) }
 }
 
 // ── Sin permisos ──────────────────────────────────────────────────────────────

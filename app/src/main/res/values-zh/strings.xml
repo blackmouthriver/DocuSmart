@@ -52,7 +52,9 @@
     <string name="library_tab_device">设备</string>
     <string name="library_tab_app_files">我的文件</string>
     <string name="library_tab_file_count">%1$d 个文件</string>
-    <string name="library_tab_device_description">你设备上已有的照片和文档</string>
+    <string name="library_tab_device_description">设备上的文档和你添加的照片</string>
+    <string name="library_add_photos">添加照片</string>
+    <string name="viewer_image_no_access">无法访问此图片。请在 资料库 → 添加照片 中重新添加。</string>
     <string name="library_tab_app_files_description">你在 DocuSmart 中创建或转换的文档</string>
     <string name="library_no_permission_denied_title">权限被拒绝</string>
     <string name="library_no_permission_required_title">需要文件访问权限</string>

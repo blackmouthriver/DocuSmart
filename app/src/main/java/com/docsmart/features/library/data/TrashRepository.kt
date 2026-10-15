@@ -389,7 +389,11 @@ class TrashRepository
 
         // Los ids de MediaStore real siempre son content://media/...; cualquier
         // otro content:// es un documento SAF (ver DocumentRepository).
-        private fun isMediaStoreId(documentId: String): Boolean = documentId.startsWith("content://media/")
+        // 1.1.5: las fotos del selector del sistema (content://media/picker...)
+        // son referencias de solo lectura -- NO van al pedido de borrado de
+        // MediaStore (pediria borrar la foto original de la galeria).
+        private fun isMediaStoreId(documentId: String): Boolean =
+            documentId.startsWith("content://media/") && !PickedMediaUris.isPickedReference(documentId)
 
         private fun clearPurgeCandidate(documentId: String) {
             purgeCandidatePrefs.edit().remove("candidate_$documentId").apply()

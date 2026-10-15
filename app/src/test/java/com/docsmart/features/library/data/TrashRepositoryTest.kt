@@ -45,6 +45,7 @@ class TrashRepositoryTest {
     private lateinit var trashDao: FakeTrashDao
     private lateinit var favorites: FavoritesRepository
     private lateinit var documentRepository: DocumentRepository
+    private lateinit var mediaDeletePermission: MediaDeletePermission
     private lateinit var repository: TrashRepository
 
     @BeforeEach
@@ -63,7 +64,7 @@ class TrashRepositoryTest {
         // (individual, en lote o por vencimiento) también debe limpiar el
         // flag de favorito, no solo el alias.
         coEvery { favorites.removeFavorite(any()) } just Runs
-        val mediaDeletePermission = mockk<MediaDeletePermission>(relaxed = true)
+        mediaDeletePermission = mockk<MediaDeletePermission>(relaxed = true)
         // Hallazgo real de la auditoría de la capa de persistencia (Alta):
         // onIdChanged()/onPermanentlyDeleted() ahora envuelven su cuerpo en
         // `database.withTransaction {}` -- sobre una base mockeada, la
@@ -398,6 +399,30 @@ class TrashRepositoryTest {
             assertTrue(trashDao.getAll().isEmpty())
             coVerify { favorites.removeFavorite(first.absolutePath) }
             coVerify { favorites.removeFavorite(second.absolutePath) }
+        }
+
+    @Test
+    fun `deleteAllForever con una foto del selector la quita sin pedir borrar la original`() =
+        runTest {
+            val pickerId = "content://media/picker/0/com.android.providers.media.photopicker/media/1000157509"
+            trashDao.insert(TrashEntry(pickerId, 1000L))
+            mockkStatic(Uri::class)
+            try {
+                val mockUri = mockk<Uri>()
+                every { Uri.parse(pickerId) } returns mockUri
+                val resolver = mockk<ContentResolver>(relaxed = true)
+                every { context.contentResolver } returns resolver
+
+                val outcome = repository.deleteAllForever(listOf(pickerId))
+
+                assertTrue(outcome is TrashRepository.BulkDeleteOutcome.Done)
+                assertTrue(trashDao.getAll().isEmpty())
+                // Nada de pedido de borrado en lote de MediaStore ni delete() real.
+                verify(exactly = 0) { mediaDeletePermission.createBulkDeleteRequest(any()) }
+                verify(exactly = 0) { resolver.delete(any(), any(), any()) }
+            } finally {
+                unmockkStatic(Uri::class)
+            }
         }
 
     @Test

@@ -201,6 +201,23 @@ class LibraryScreenTest {
     }
 
     @Test
+    fun pestanaDispositivo_ofreceAgregarFotos_yMisArchivosNo() {
+        // 1.1.5: sin READ_MEDIA_IMAGES, las fotos entran por el selector del
+        // sistema -- el boton vive solo en la pestana Dispositivo.
+        val viewModel = buildViewModel(listOf(deviceDoc("Foto.jpg"), appDoc("Archivo.pdf")))
+
+        setContentWithLocale { LibraryScreen(viewModel = viewModel) }
+        waitForText("Foto.jpg")
+
+        composeRule.onNodeWithText("Agregar fotos").assertExists()
+
+        composeRule.onNodeWithText("Mis archivos").performClick()
+        waitForText("Archivo.pdf")
+
+        composeRule.onAllNodesWithText("Agregar fotos").assertCountEquals(0)
+    }
+
+    @Test
     fun buscar_filtraDocumentosPorNombre() {
         val viewModel =
             buildViewModel(

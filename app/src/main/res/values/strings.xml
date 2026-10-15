@@ -57,7 +57,9 @@
     <string name="library_tab_device">Dispositivo</string>
     <string name="library_tab_app_files">Mis archivos</string>
     <string name="library_tab_file_count">%1$d archivos</string>
-    <string name="library_tab_device_description">Fotos y documentos que ya tenías guardados en tu dispositivo</string>
+    <string name="library_tab_device_description">Documentos de tu dispositivo y las fotos que agregues</string>
+    <string name="library_add_photos">Agregar fotos</string>
+    <string name="viewer_image_no_access">No tenemos acceso a esta imagen. Vuelve a agregarla desde Biblioteca → Agregar fotos.</string>
     <string name="library_tab_app_files_description">Documentos que creaste o convertiste dentro de DocuSmart</string>
     <string name="library_no_permission_denied_title">Permiso denegado</string>
     <string name="library_no_permission_required_title">Acceso a archivos requerido</string>

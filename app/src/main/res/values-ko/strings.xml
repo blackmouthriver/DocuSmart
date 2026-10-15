@@ -52,7 +52,9 @@
     <string name="library_tab_device">기기</string>
     <string name="library_tab_app_files">내 파일</string>
     <string name="library_tab_file_count">파일 %1$d개</string>
-    <string name="library_tab_device_description">이미 기기에 저장되어 있던 사진과 문서</string>
+    <string name="library_tab_device_description">기기에 있는 문서와 추가한 사진</string>
+    <string name="library_add_photos">사진 추가</string>
+    <string name="viewer_image_no_access">이 이미지에 접근할 수 없습니다. 보관함 → 사진 추가에서 다시 추가해 주세요.</string>
     <string name="library_tab_app_files_description">DocuSmart에서 만들거나 변환한 문서</string>
     <string name="library_no_permission_denied_title">권한이 거부되었습니다</string>
     <string name="library_no_permission_required_title">파일 접근 권한이 필요합니다</string>
