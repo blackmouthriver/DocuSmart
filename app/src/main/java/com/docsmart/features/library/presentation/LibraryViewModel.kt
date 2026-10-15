@@ -81,6 +81,15 @@ class LibraryViewModel
             loadDocuments()
         }
 
+        // SPIKE (2026-10-14): fotos elegidas con el selector del sistema.
+        fun onPhotosPicked(uris: List<Uri>) {
+            if (uris.isEmpty()) return
+            viewModelScope.launch {
+                repository.addPickedImages(uris)
+                loadDocuments()
+            }
+        }
+
         fun dismissLinkFolderError() {
             _uiState.update { it.copy(linkFolderError = null) }
         }

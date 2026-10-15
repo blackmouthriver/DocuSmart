@@ -11,6 +11,7 @@ import com.docsmart.R
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.canonicalMediaUri
 import com.docsmart.core.data.db.DocumentHistoryDao
+import com.docsmart.core.data.db.DocumentHistoryEntry
 import com.docsmart.core.data.db.TrashDao
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
@@ -147,6 +148,32 @@ class DocumentRepository
             val fallback = all.filter { it.id !in alreadyIncluded }
             return (fromHistory + fallback).take(limit)
         }
+
+        /**
+         * SPIKE (2026-10-14): registra fotos elegidas con el selector de fotos
+         * del sistema. Toma el permiso de URI persistente (la documentación del
+         * selector lo admite, hasta 5000 concesiones) y las deja en el historial
+         * para que la Biblioteca las liste. Devuelve cuántas quedaron con acceso
+         * persistente realmente concedido.
+         */
+        suspend fun addPickedImages(uris: List<Uri>): Int =
+            withContext(Dispatchers.IO) {
+                var persisted = 0
+                uris.forEach { uri ->
+                    try {
+                        context.contentResolver.takePersistableUriPermission(
+                            uri,
+                            android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                        )
+                        persisted++
+                    } catch (e: SecurityException) {
+                        Timber.w("addPickedImages: sin acceso persistente (${e.javaClass.simpleName})")
+                    }
+                    documentHistoryDao.recordOpen(DocumentHistoryEntry(uri.toString(), System.currentTimeMillis()))
+                }
+                Timber.d("addPickedImages: ${uris.size} elegidas, $persisted con acceso persistente")
+                persisted
+            }
 
         /**
          * Excluye documentos en la papelera (RF-VIS-07) -- `TrashRepository`

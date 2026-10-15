@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -102,6 +103,11 @@ fun LibraryScreen(
         remember(linkedFolderUri) {
             linkedFolderUri?.let { viewModel.linkedFolderDisplayName(it) }
         }
+    // SPIKE (2026-10-14): selector de fotos del sistema (no requiere permiso).
+    val pickPhotosLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.PickMultipleVisualMedia(),
+        ) { uris -> viewModel.onPhotosPicked(uris) }
     val linkFolderLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.OpenDocumentTree(),
@@ -190,6 +196,20 @@ fun LibraryScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 20.dp),
             )
+        }
+
+        // SPIKE (2026-10-14): botón provisional, sin string localizado.
+        if (uiState.selectedTab == LibraryTab.DEVICE) {
+            item {
+                OutlinedButton(
+                    onClick = {
+                        pickPhotosLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                ) { Text("Agregar fotos") }
+            }
         }
 
         // ── Vincular Descargas (fila 22 backlog UX): solo en la pestaña
