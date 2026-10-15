@@ -646,21 +646,21 @@ internal fun NoPermissionContent(
 }
 
 // ── Helpers de permisos ───────────────────────────────────────────────────────
-// READ_MEDIA_VIDEO removido 2026-09-10: DocuSmart no tiene ninguna función
-// que use contenido de video, ver comentario en MainActivity.kt.
+// 2026-10-14: en Android 13+ la Biblioteca no necesita ningún permiso de medios
+// (se quitó READ_MEDIA_IMAGES por la política de fotos y vídeos de Play): lo
+// que genera la app y la carpeta vinculada por SAF se leen sin permiso. Solo
+// Android 12 o menor usa READ_EXTERNAL_STORAGE para ver Descargas de otras apps.
 private fun getRequiredPermissions(): Array<String> =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+        emptyArray()
     } else {
         arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
     }
 
 private fun checkStoragePermission(context: android.content.Context): Boolean =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES) == PermissionChecker.PERMISSION_GRANTED
-    } else {
-        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PermissionChecker.PERMISSION_GRANTED
-    }
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ||
+        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) ==
+        PermissionChecker.PERMISSION_GRANTED
 
 // Atajo a la carpeta vinculada por SAF (fila 22 backlog UX): delega en
 // cualquier app que sepa abrir un árbol de documentos (normalmente el
