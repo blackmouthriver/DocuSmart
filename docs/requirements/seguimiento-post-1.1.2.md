@@ -77,6 +77,37 @@ La revisión de producción marcó «Usar selectores de sistema alternativos par
 
 **Producción:** la 1.1.4 (código 10) está aprobada en prueba cerrada y **en revisión en producción** desde 2026-10-15 (junto con los cambios de países). Hasta su resultado se pausa el trabajo del #150. Idea pedida por el propietario para después: botón «Agregar documentos» (selector de archivos con acceso persistente), porque los documentos de otras apps en Descargas no aparecen en Android 13+ y «Vincular carpeta» no admite la raíz de Descargas.
 
+### Recomendación de R8 en Play Console (2026-10-15) — tarea futura, no urgente
+
+Play Console (Panel de control de la versión, 1.1.4) muestra «Mejora la memoria y el rendimiento con la optimización de R8». Es una **acción recomendada**, no un problema de política ni un bloqueo.
+
+| Indicador | Valor |
+|---|---|
+| Tasa de optimización / ofuscación / reducción | 42 % cada una |
+| Reducción optimizada de recursos | No habilitada |
+| Complemento de Gradle | Sugiere AGP 9.0 o posterior (bloqueado: migración mayor, ver «Deuda técnica abierta») |
+
+**Diagnóstico (medido sobre `mapping.txt`/`seeds.txt` del build de release de la 1.1.4):** `release` ya usa `isMinifyEnabled = true`, `isShrinkResources = true` y `proguard-android-optimize.txt`. El 42 % lo causan las reglas `-keep ... { *; }` de `app/proguard-rules.pro`:
+
+| Librería | Clases totales | Conservadas por `-keep` |
+|---|---|---|
+| Apache POI | 4 132 | 3 536 |
+| `org.openxmlformats.schemas` | 2 996 | 2 247 |
+| iText | 1 343 | 1 331 |
+| XmlBeans | 1 217 | 1 033 |
+| Código de DocuSmart (`com.docsmart`) | 1 096 | 31 |
+| Total del bundle | 27 475 | 9 839 |
+
+Las cuatro librerías de documentos son el 83 % de lo conservado; el código propio ya está optimizado. Los `-keep` de POI/XmlBeans/OpenXML existen **a propósito**: XmlBeans carga clases por reflexión y, sin ellos, R8 las elimina en release y fallan las conversiones Word/Excel/PowerPoint.
+
+**Decisión (2026-10-15):** no tocar mientras la 1.1.4 está en revisión de producción. Beneficio moderado (bundle más pequeño, algo menos de memoria); riesgo alto (cierre solo en release, en conversiones).
+
+**Plan si se aborda (PR aparte):**
+1. Empezar por reglas de bajo riesgo: iText y Hilt/`javax.inject`/Timber, midiendo el tamaño del `.aab` antes y después.
+2. Dejar POI/XmlBeans/OpenXML para el final (son los frágiles).
+3. Probar un **build de release instalado** (no el debug) con cada conversión (Word, Excel, PowerPoint, PDF, imagen a PDF) en los dos teléfonos reales.
+4. Probar la reducción optimizada de recursos con AGP 8.13 (compilando; en AGP 9 pasa a ser el valor por defecto).
+
 ## Estado del backlog al cierre de la 1.1.3 (2026-10-14)
 
 Versión **1.1.3 (código 8)**, generada desde `main` 7fc479b (PR #143). Numeración del backlog de trabajo posterior a la 1.1.2 (#6 a #19; **no** son números de PR). El porcentaje cuenta ítems cerrados sobre ítems numerados: mide cantidad, no esfuerzo ni riesgo.
