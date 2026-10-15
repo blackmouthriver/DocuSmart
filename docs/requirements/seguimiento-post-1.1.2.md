@@ -53,6 +53,30 @@ La revisión de producción marcó «Usar selectores de sistema alternativos par
 | Despliegue gradual (10–20 %) y vigilar Crashlytics 24–48 h | Propietario |
 | Decidir el alcance de la 1.1.5 (selector de fotos) | Propietario |
 
+### Limpieza de ramas y Dependabot (2026-10-15)
+
+| Acción | Detalle |
+|---|---|
+| Ramas fusionadas borradas | `claude/camerax-1-4-2`, `claude/version-1-1-4`, `claude/docs-estado-1-1-4` (remotas y locales) y la local `claude/spike-selector-fotos` (contenida en la rama del #150) |
+| PR #149 (docs) | Fusionado en `main` (`234b0ec`) |
+| PR #138 (core-ktx 1.15 → 1.19.1) | **Cerrado como innecesario**: cambia el alias `androidx-core-ktx` de `gradle/libs.versions.toml`, que la app no referencia (core-ktx llega por transitiva y el lockfile resuelve 1.18.0). Su único check en rojo era SonarCloud, que falla en los PR de Dependabot porque no tiene los secretos |
+| Ramas conservadas a propósito | `claude/mockk-1-14` (mockk 1.14, bloqueada por el flake del Visor), #147 (superado por #150, a cerrar tras el resultado de la revisión de producción) y #150 (selector de fotos) |
+
+**PR abiertos al 2026-10-15 (10):**
+
+| PR | Qué es | Estado |
+|---|---|---|
+| #150 | Selector de fotos del sistema en vez de `READ_MEDIA_IMAGES` (1.1.5) | Unitarias 1 559/1 559, detekt/ktlint/lint OK; solo falla SonarCloud (sin revisar, probable cobertura del código nuevo). Pendiente: suite instrumentada en dos teléfonos reales |
+| #147 | Quitar `READ_MEDIA_IMAGES` (sin botón de agregar) | Superado por #150; solo falla SonarCloud |
+| #139 | Spotless 7.0.2 → 8.10.4 | Falla el build; requiere locks/checksums manuales |
+| #137 | `androidx.fragment` 1.5.4 → 1.9.1 | Falla el build; requiere locks/checksums manuales |
+| #134 | Firebase BOM 34.18.0 → 35.0.0 | Falla el build |
+| #136, #128, #125 | iText 9 (`io`, `cleanup`, `forms`) | Migración de API completa, proyecto aparte |
+| #124 | Kotlin 2.2.21 → 2.4.21 | Obliga a mover KSP, Hilt, Room y detekt a la vez |
+| #117 | mockk 1.13.13 → 1.14.11 | Bloqueado por el flake de cierre de proceso en pruebas del Visor |
+
+**Producción:** la 1.1.4 (código 10) está aprobada en prueba cerrada y **en revisión en producción** desde 2026-10-15 (junto con los cambios de países). Hasta su resultado se pausa el trabajo del #150. Idea pedida por el propietario para después: botón «Agregar documentos» (selector de archivos con acceso persistente), porque los documentos de otras apps en Descargas no aparecen en Android 13+ y «Vincular carpeta» no admite la raíz de Descargas.
+
 ## Estado del backlog al cierre de la 1.1.3 (2026-10-14)
 
 Versión **1.1.3 (código 8)**, generada desde `main` 7fc479b (PR #143). Numeración del backlog de trabajo posterior a la 1.1.2 (#6 a #19; **no** son números de PR). El porcentaje cuenta ítems cerrados sobre ítems numerados: mide cantidad, no esfuerzo ni riesgo.
