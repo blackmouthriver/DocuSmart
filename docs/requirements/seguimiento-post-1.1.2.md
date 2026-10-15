@@ -1,6 +1,57 @@
 # Seguimiento posterior a la 1.1.2
 
-Trabajo del backlog hecho después de generar el `.aab` 1.1.2 (`versionCode 7`). **Nada de lo de aquí está en ese `.aab`**; todo está incluido en la **1.1.3 (`versionCode 8`)**. Complementa `release-1.1.2-resumen.md`.
+Trabajo del backlog hecho después de generar el `.aab` 1.1.2 (`versionCode 7`). **Nada de lo de aquí está en ese `.aab`**; todo está incluido en la **1.1.3**, y la **1.1.4 (`versionCode 10`)** solo añade la corrección de 16 kB. Complementa `release-1.1.2-resumen.md`.
+
+## Estado al cierre de la 1.1.4 (2026-10-14)
+
+Versión **1.1.4 (código 10)**, generada desde `main` 2d7ad52 (PR #148). Es una versión **mínima y deliberada**: solo corrige el bloqueo de 16 kB de Google Play. El detalle de lo anterior sigue en la sección de la 1.1.3 más abajo.
+
+### Qué pasó y por qué hubo una 1.1.4
+
+| Hecho | Detalle |
+|---|---|
+| Aviso al subir el código 9 | «No admite tamaños de página de memoria de 16 kB» con la nota «ignorado para esta versión» |
+| Causa real | Una sola `.so` con `p_align=4096`: `libimage_processing_util_jni.so` de `camera-core` 1.3.4 (medido sobre el `.aar` de cada versión: desde 1.4.0 viene a 16 kB) |
+| Qué lo hace grave | «Estado según las políticas» lo trata como causa de **rechazo**: «No podrás publicar actualizaciones de la aplicación» y «Tu última versión de producción no admite 16 kB» |
+| Corrección | CameraX 1.3.4 → 1.4.2 (#146); versión 1.1.4 / código 10 (#148). Sin cambios de código de la app |
+| Verificación | 12 `.so` de 64 bits (arm64-v8a, x86_64) en 16384; `zipalign -c -P 16` OK; lector de QR probado en el Edge (único uso de CameraX) con QR real leído; 114/114 pruebas instrumentadas de `features.scanner.presentation`; CI 20/20 |
+| Artefacto | `DocuSmart-1.1.4-code10.aab`, 58 874 455 bytes, SHA-256 `6ab08610242cc48890f4337cafe9177028f94b579fa386a852f7b4cc2cdbf6a6` |
+
+**Lección:** el «ignorado para esta versión» de la pantalla de subida **no** equivale a que Play lo acepte. La fuente de verdad es «Estado según las políticas» (Política y programas) y «Ver app bundles». Una `.so` de 32 bits (`libbarhopper_v3`, `libmlkit_google_ocr_pipeline`, de ML Kit) sigue en 4096; el requisito aplica a 64 bits, pero la confirmación oficial es «Ver app bundles» tras subir el `.aab`.
+
+### Permiso de fotos (`READ_MEDIA_IMAGES`): decisión y plan
+
+La revisión de producción marcó «Usar selectores de sistema alternativos para fotos o vídeos» (en prueba cerrada no salía).
+
+| Tema | Detalle |
+|---|---|
+| Qué usa el permiso | La Biblioteca lista las 50 imágenes más recientes de la galería (`DocumentRepository.loadImagesFromMediaStore`) y **toda** la pantalla estaba bloqueada tras él. El `.aab` ya no declara `READ_MEDIA_VIDEO`/`AUDIO` |
+| Por qué no basta quitarlo (#147) | Cualquier foto de galería ya guardada en Recientes/historial con URI `content://media/external/images/media/<id>` falla en el Visor con `SecurityException` (verificado en el Edge: «Error al abrir el documento» / «formato no compatible») |
+| Decisión del propietario (opción A) | Mantener el permiso, **no** fusionar #147, seguir en prueba cerrada y presentar la declaración de fotos y vídeos |
+| Declaración | Borrador en `declaracion-permiso-fotos-play.md`. El campo de Play Console admite **250 caracteres**; el texto previo («solo… mediante el selector del sistema») contradecía la necesidad del permiso |
+| Riesgo asumido | La política admite acceso amplio solo si es la función *principal* (galerías, editores); el eje de DocuSmart son los documentos. Aprobación no garantizada; sin ella, Play puede rechazar y, según la política, retirar apps que no cumplen |
+| Plan de fondo (1.1.5) | Botón «Agregar fotos» con `PickMultipleVisualMedia` + `takePersistableUriPermission` (la documentación oficial lo permite, hasta 5 000 concesiones), manejo de entradas viejas del historial y quitar el permiso. Hace innecesaria la declaración |
+
+### Backlog: cambios desde la 1.1.3
+
+| # | Ítem | Estado |
+|---|---|---|
+| 16 | Producto anual y oferta de prueba de 7 días | **Actualizado:** anual verificado (compra mensual y anual probadas en M7); la oferta de 7 días se difiere a la próxima versión por decisión del propietario y no requiere código |
+| 20 | Alinear librerías nativas a 16 kB | **Hecho** (#146, #148); falta confirmar en «Ver app bundles» |
+| 21 | Declaración de fotos y vídeos en Play Console | **En curso** (texto ≤ 250 caracteres, ver documento aparte) |
+| 22 | Selector de fotos con acceso persistente, sin `READ_MEDIA_IMAGES` | **Propuesto para la 1.1.5** (PR #147 como base, sin fusionar) |
+| 23 | Texto de la Biblioteca «Fotos y documentos que ya tenías guardados…» (12 idiomas) | **Pendiente**: inexacto en Android 13+ si se quita el permiso |
+| 24 | «Vincular carpeta» y la carpeta Descargas | **Por verificar**: desde Android 11 `ACTION_OPEN_DOCUMENT_TREE` no permite elegir la raíz de Descargas, solo subcarpetas |
+| 25 | Manejo de documentos movidos o borrados con permiso persistente | **Por revisar**: aunque se tome `takePersistableUriPermission`, el acceso se pierde si el archivo se mueve o se borra |
+
+### Qué falta para dar por cerrada la 1.1.4
+
+| Acción | Quién |
+|---|---|
+| Subir `DocuSmart-1.1.4-code10.aab` y confirmar «Ver app bundles» (16 kB) y que el aviso salga de «Estado según las políticas» | Propietario |
+| Presentar la declaración de fotos con el texto corregido **antes** de enviar a producción | Propietario |
+| Despliegue gradual (10–20 %) y vigilar Crashlytics 24–48 h | Propietario |
+| Decidir el alcance de la 1.1.5 (selector de fotos) | Propietario |
 
 ## Estado del backlog al cierre de la 1.1.3 (2026-10-14)
 
