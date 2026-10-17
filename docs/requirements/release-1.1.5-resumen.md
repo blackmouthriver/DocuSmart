@@ -49,8 +49,8 @@ Una prueba corta (2026-10-14, Edge 30 Neo, Android 14) demostró que el selector
 | detekt, ktlint, lint | OK |
 | SonarCloud | Fallaba solo por cobertura del código nuevo (73 % < 80 %); se agregaron pruebas de `onPhotosPicked` |
 | Manifiesto final de release | Sin ningún `<uses-permission>` de `READ_MEDIA_*` (las coincidencias de texto son comentarios) |
-| **Suite instrumentada, Moto E22 (Android 12)** | **8/8 fragmentos OK, 800 pruebas** |
-| **Suite instrumentada, Edge 30 Neo (Android 14)** | 7/8 OK; el único fallo (`ViewerDocumentTypesTest.excel_muestraHojasConPestanasYCambiaDeHoja`, «must have a looper») pasó 3/3 sola y la clase completa dio 23/23: intermitencia preexistente, ajena a este cambio |
+| Suite instrumentada, Moto E22, corrida anterior (solo cambios de fotos) | 8/8 fragmentos OK, 800 pruebas |
+| Suite instrumentada, Edge 30 Neo, corrida anterior (solo cambios de fotos) | 7/8 OK; el único fallo (`ViewerDocumentTypesTest.excel_muestraHojasConPestanasYCambiaDeHoja`, «must have a looper») pasó 3/3 sola y la clase completa dio 23/23: intermitencia preexistente, ajena a este cambio |
 | Biblioteca y Visor con el APK corregido (Edge) | `features.library` 81/81; `features.viewer` 98/98 (dos veces; un cierre de proceso en la primera corrida, flake conocido de Compose en el Visor) |
 | Instalación limpia, sin diálogo de permisos | OK |
 | Agregar fotos con el selector, 3 + 2 fotos, todas con acceso persistente | OK |
@@ -61,7 +61,9 @@ Una prueba corta (2026-10-14, Edge 30 Neo, Android 14) demostró que el selector
 | Eliminar → Papelera lista el documento → Restaurar → reaparece en Biblioteca | OK |
 | «Eliminar ahora» borra el archivo real (solo el de prueba); los demás quedan intactos | OK |
 | Unitarias `features.library` con los cambios de documentos | 133/133 (7 nuevas); instrumentadas `features.library` 85/85 en Edge y E22 (incluye `DocumentPickingTest`) |
-| Suite instrumentada completa con los cambios de documentos | **pendiente** (se corre al cerrar los ajustes de la 1.1.5) |
+| **Suite instrumentada completa con todos los cambios (commit `84ada52`), Edge 30 Neo (Android 14)** | **8/8 fragmentos OK.** Un cierre de proceso conocido del Visor en el fragmento 3 (`powerPointCorrupto…`), resuelto por el reintento automático |
+| **Suite instrumentada completa con todos los cambios, Moto E22 (Android 12)** | **8/8 fragmentos OK.** El fragmento 0 falló una vez con 11/117 (todas «No compose hierarchies found», en componentes sin relación con este PR, y tardó 547 s) y **repetido pasó 117/117** en 403 s: tropiezo del arranque, no del código |
+| **Unitarias completas** | **1 569 en 158 clases, 0 fallas** (mínimo de la guardia: 1 400) |
 | Compartir desde una foto agregada | **pendiente (manual)** |
 | Fotos en la nube (Google Fotos remoto) | **pendiente (manual)** |
 
