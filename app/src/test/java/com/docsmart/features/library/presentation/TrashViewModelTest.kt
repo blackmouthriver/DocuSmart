@@ -259,6 +259,18 @@ class TrashViewModelTest {
     }
 
     @Test
+    fun `deleteAll Failed avisa que no se pudo eliminar en vez de no hacer nada`() {
+        coEvery { repository.loadTrashedDocuments() } returns listOf(trashed("a"))
+        coEvery { repository.deleteAllForever(listOf("a")) } returns TrashRepository.BulkDeleteOutcome.Failed
+        val viewModel = buildViewModel()
+
+        viewModel.deleteAll()
+
+        assertEquals("delete-error", viewModel.uiState.value.actionError)
+        verify(exactly = 0) { soundEffectPlayer.playDelete() }
+    }
+
+    @Test
     fun `deleteAll PartialNeedsPermission avisa que algunos hay que borrarlos uno por uno`() {
         coEvery { repository.loadTrashedDocuments() } returns listOf(trashed("a"))
         coEvery { repository.deleteAllForever(listOf("a")) } returns

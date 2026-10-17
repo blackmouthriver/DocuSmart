@@ -321,6 +321,12 @@ class DocumentRepository
                     return@withContext deleteSafDocument(uri, documentId)
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && documentId.startsWith("content://")) {
+                    // 1.1.5: lo propio se borra directo; createDeleteRequest rechaza todo lo que no
+                    // sea imagen/video/audio (un PDF o un .txt propios nunca se podian borrar).
+                    if (mediaDeletePermission.deleteOwned(Uri.parse(documentId))) {
+                        documentHistoryDao.remove(documentId)
+                        return@withContext DeleteOutcome.Deleted
+                    }
                     val intentSender = mediaDeletePermission.createBulkDeleteRequest(listOf(Uri.parse(documentId)))
                     return@withContext if (intentSender != null) {
                         DeleteOutcome.NeedsPermission(intentSender)

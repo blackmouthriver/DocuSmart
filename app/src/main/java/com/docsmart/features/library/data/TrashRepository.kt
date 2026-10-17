@@ -293,6 +293,10 @@ class TrashRepository
             ) : BulkDeleteOutcome
 
             data object PartialNeedsPermission : BulkDeleteOutcome
+
+            /** 1.1.5: no se pudo borrar nada de lo pendiente (ni directo ni con el diálogo del
+             *  sistema): antes se devolvía «Hecho» sin avisar y «Borrar todo» parecía no hacer nada. */
+            data object Failed : BulkDeleteOutcome
         }
 
         /**
@@ -324,27 +328,38 @@ class TrashRepository
                     }
                 }
 
-                if (mediaFiles.isEmpty()) return@withContext BulkDeleteOutcome.Done
+                // 1.1.5: lo que la propia app guardó en MediaStore (PDF, Word, texto...) se borra
+                // directo, sin diálogo. Solo lo ajeno pasa por el pedido del sistema.
+                val notOwned =
+                    mediaFiles.filterNot { id ->
+                        val gone = mediaDeletePermission.deleteOwned(android.net.Uri.parse(id))
+                        if (gone) finishPermanentDelete(id)
+                        gone
+                    }
+                if (notOwned.isEmpty()) return@withContext BulkDeleteOutcome.Done
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    val uris = mediaFiles.map { android.net.Uri.parse(it) }
+                    val uris = notOwned.map { android.net.Uri.parse(it) }
                     val intentSender = mediaDeletePermission.createBulkDeleteRequest(uris)
-                    if (intentSender != null) return@withContext BulkDeleteOutcome.NeedsPermission(intentSender, mediaFiles)
+                    if (intentSender != null) {
+                        return@withContext BulkDeleteOutcome.NeedsPermission(intentSender, notOwned)
+                    }
                 }
 
                 var pendingPermission = false
-                mediaFiles.forEach { id ->
+                var failed = false
+                notOwned.forEach { id ->
                     when (documentRepository.deleteDocument(id)) {
-                        is DocumentRepository.DeleteOutcome.Deleted -> {
-                            trashDao.remove(id)
-                            clearPurgeCandidate(id)
-                            documentIdentityMaintenance.onPermanentlyDeleted(id)
-                        }
+                        is DocumentRepository.DeleteOutcome.Deleted -> finishPermanentDelete(id)
                         is DocumentRepository.DeleteOutcome.NeedsPermission -> pendingPermission = true
-                        DocumentRepository.DeleteOutcome.Failed -> Unit
+                        DocumentRepository.DeleteOutcome.Failed -> failed = true
                     }
                 }
-                if (pendingPermission) BulkDeleteOutcome.PartialNeedsPermission else BulkDeleteOutcome.Done
+                when {
+                    pendingPermission -> BulkDeleteOutcome.PartialNeedsPermission
+                    failed -> BulkDeleteOutcome.Failed
+                    else -> BulkDeleteOutcome.Done
+                }
             }
 
         /**
@@ -425,6 +440,13 @@ class TrashRepository
 
         // Los ids de MediaStore real siempre son content://media/...; cualquier
         // otro content:// es un documento SAF (ver DocumentRepository).
+        // Limpieza común tras un borrado definitivo confirmado.
+        private suspend fun finishPermanentDelete(documentId: String) {
+            trashDao.remove(documentId)
+            clearPurgeCandidate(documentId)
+            documentIdentityMaintenance.onPermanentlyDeleted(documentId)
+        }
+
         // 1.1.5: las fotos del selector del sistema (content://media/picker...)
         // son referencias de solo lectura -- NO van al pedido de borrado de
         // MediaStore (pediria borrar la foto original de la galeria).

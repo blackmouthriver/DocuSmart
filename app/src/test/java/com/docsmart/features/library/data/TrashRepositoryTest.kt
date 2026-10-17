@@ -493,6 +493,86 @@ class TrashRepositoryTest {
             assertEquals(listOf(safDocId), historyDao.recentDocumentIds(10))
         }
 
+    // ── 1.1.5: "Borrar todo" no borraba los archivos propios guardados en Descargas ─────────
+    // createDeleteRequest() rechaza todo lo que no sea imagen/video/audio (un PDF o un .txt):
+    // sin el borrado directo, «Borrar todo» no hacia nada y devolvia «Hecho» sin avisar.
+
+    private val ownedDocId = "content://media/external/downloads/1000158193"
+    private val foreignDocId = "content://media/external/downloads/1000158999"
+
+    // `deleteOwned` responde true solo para el primer Uri pedido (el propio); el resto, false.
+    private var ownedAnswers = 0
+
+    private fun callOriginalOwned(
+        ownedId: String,
+        @Suppress("UNUSED_PARAMETER") uri: Uri,
+    ): Boolean = ownedAnswers++ == 0 && ownedId.isNotEmpty()
+
+    private inline fun withUris(block: () -> Unit) {
+        ownedAnswers = 0
+        mockkStatic(Uri::class)
+        try {
+            every { Uri.parse(any()) } answers { mockk<Uri>(relaxed = true) }
+            block()
+        } finally {
+            unmockkStatic(Uri::class)
+        }
+    }
+
+    @Test
+    fun `deleteAllForever borra directo los archivos propios de MediaStore sin pedir el dialogo del sistema`() =
+        runTest {
+            trashDao.insert(TrashEntry(ownedDocId, 1000L))
+            withUris {
+                every { mediaDeletePermission.deleteOwned(any()) } returns true
+
+                val outcome = repository.deleteAllForever(listOf(ownedDocId))
+
+                assertTrue(outcome is TrashRepository.BulkDeleteOutcome.Done)
+                assertTrue(trashDao.getAll().isEmpty())
+                coVerify { favorites.removeFavorite(ownedDocId) }
+                verify(exactly = 0) { mediaDeletePermission.createBulkDeleteRequest(any()) }
+            }
+        }
+
+    @Test
+    fun `deleteAllForever avisa cuando nada se pudo borrar en vez de devolver Hecho en silencio`() =
+        runTest {
+            trashDao.insert(TrashEntry(foreignDocId, 1000L))
+            withUris {
+                every { mediaDeletePermission.deleteOwned(any()) } returns false
+                every { mediaDeletePermission.createBulkDeleteRequest(any()) } returns null
+                val resolver = mockk<ContentResolver>(relaxed = true)
+                every { resolver.delete(any(), any(), any()) } returns 0
+                every { context.contentResolver } returns resolver
+
+                val outcome = repository.deleteAllForever(listOf(foreignDocId))
+
+                assertTrue(outcome is TrashRepository.BulkDeleteOutcome.Failed)
+                // Lo que no se pudo borrar sigue en la papelera.
+                assertEquals(listOf(foreignDocId), trashDao.getAll().map { it.documentId })
+            }
+        }
+
+    @Test
+    fun `deleteAllForever borra lo propio y pide el dialogo solo para lo ajeno`() =
+        runTest {
+            trashDao.insert(TrashEntry(ownedDocId, 1000L))
+            trashDao.insert(TrashEntry(foreignDocId, 2000L))
+            withUris {
+                every { mediaDeletePermission.deleteOwned(any()) } answers { callOriginalOwned(ownedDocId, firstArg()) }
+                val sender = mockk<android.content.IntentSender>()
+                every { mediaDeletePermission.createBulkDeleteRequest(any()) } returns sender
+
+                val outcome = repository.deleteAllForever(listOf(ownedDocId, foreignDocId))
+
+                // Los propios se limpiaron; el dialogo del sistema (solo en Android 11+) o el
+                // fallo por elemento cubren lo ajeno -- nunca «Hecho» con filas sin borrar.
+                assertEquals(listOf(foreignDocId), trashDao.getAll().map { it.documentId })
+                assertTrue(outcome !is TrashRepository.BulkDeleteOutcome.Done)
+            }
+        }
+
     @Test
     fun `deleteAllForever con una foto del selector la quita sin pedir borrar la original`() =
         runTest {
