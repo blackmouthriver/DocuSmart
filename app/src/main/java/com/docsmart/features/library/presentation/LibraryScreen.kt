@@ -586,10 +586,19 @@ private fun AddFilesCard(
     showLinkFolder: Boolean,
     onLinkClick: () -> Unit,
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+    val shape = MaterialTheme.shapes.large
+    Box(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                // Mismo estilo que las pestañas y las filas de documentos: sombra y borde
+                // tintados con el color de acento, y un fondo con algo de transparencia
+                // para que se vean las formas decorativas detrás.
+                .accentShadow(shape = shape, elevation = 4.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f))
+                .accentBorder(shape = shape),
     ) {
         Column(
             // Con el enlace debajo, menos aire inferior: el propio botón ya trae su relleno.
