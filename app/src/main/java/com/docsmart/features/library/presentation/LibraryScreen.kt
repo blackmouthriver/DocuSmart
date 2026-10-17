@@ -195,22 +195,15 @@ fun LibraryScreen(
             )
         }
 
-        // 1.1.5: agrega fotos con el selector del sistema (sin permiso de medios).
+        // 1.1.5: agregar fotos/documentos con los selectores del sistema (sin permisos
+        // de medios) y, mientras no haya carpeta vinculada (fila 22 backlog UX), el
+        // enlace discreto para vincularla -- una vez vinculada, la carpeta ya se lista
+        // sola. Todo en un bloque para que el espacio entre ellos sea el justo.
         if (uiState.selectedTab == LibraryTab.DEVICE) {
-            item { AddFilesRow(pickActions) }
-        }
-
-        // ── Vincular Descargas (fila 22 backlog UX): solo en la pestaña
-        // Dispositivo y mientras no haya carpeta vinculada -- una vez vinculada,
-        // loadDocumentsFromLinkedFolder() ya trae PDF/Word/Excel/PowerPoint/
-        // Texto reales y esta tarjeta deja de tener sentido.
-        if (uiState.selectedTab == LibraryTab.DEVICE && linkedFolderUri == null) {
             item {
-                LinkFolderLink(
-                    onLinkClick = {
-                        linkFolderLauncher.launch(viewModel.downloadsFolderPickerInitialUri())
-                    },
-                )
+                AddFilesSection(pickActions, showLinkFolder = linkedFolderUri == null) {
+                    linkFolderLauncher.launch(viewModel.downloadsFolderPickerInitialUri())
+                }
             }
         }
 
@@ -541,7 +534,11 @@ private fun LinkFolderLink(onLinkClick: () -> Unit) {
     // 1.1.5: antes era una tarjeta grande; ahora que "Agregar documentos" cubre
     // el caso común, queda como un enlace discreto para quien tiene una carpeta
     // dedicada (la carpeta vinculada se sigue listando sola).
-    TextButton(onClick = onLinkClick, modifier = Modifier.padding(horizontal = 12.dp)) {
+    TextButton(
+        onClick = onLinkClick,
+        modifier = Modifier.padding(horizontal = 12.dp).heightIn(min = 36.dp),
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+    ) {
         Icon(
             imageVector = Icons.Rounded.CreateNewFolder,
             contentDescription = null,
@@ -584,16 +581,31 @@ private fun rememberPickActions(viewModel: LibraryViewModel): PickActions {
 // 1.1.5: los dos botones de la pestaña Dispositivo, en una fila.
 @Composable
 private fun AddFilesRow(actions: PickActions) {
+    // IntrinsicSize.Min + fillMaxHeight: si un texto se parte en dos líneas (idiomas más
+    // largos o fuente grande), los dos botones crecen juntos y quedan de la misma altura.
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min).padding(horizontal = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        OutlinedButton(onClick = actions.photos, modifier = Modifier.weight(1f)) {
+        OutlinedButton(onClick = actions.photos, modifier = Modifier.weight(1f).fillMaxHeight()) {
             Text(stringResource(R.string.library_add_photos), maxLines = 2, textAlign = TextAlign.Center)
         }
-        OutlinedButton(onClick = actions.documents, modifier = Modifier.weight(1f)) {
+        OutlinedButton(onClick = actions.documents, modifier = Modifier.weight(1f).fillMaxHeight()) {
             Text(stringResource(R.string.library_add_documents), maxLines = 2, textAlign = TextAlign.Center)
         }
+    }
+}
+
+// 1.1.5: los dos botones y, debajo y pegado, el enlace discreto de "Vincular carpeta".
+@Composable
+private fun AddFilesSection(
+    actions: PickActions,
+    showLinkFolder: Boolean,
+    onLinkClick: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+        AddFilesRow(actions)
+        if (showLinkFolder) LinkFolderLink(onLinkClick)
     }
 }
 
