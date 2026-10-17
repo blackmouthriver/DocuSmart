@@ -125,6 +125,17 @@ class TrashRepository
          */
         suspend fun moveToTrash(documentId: String): Boolean =
             withContext(Dispatchers.IO) {
+                // 1.1.5: una foto agregada con el selector del sistema solo existe
+                // en DocuSmart como una fila del historial + un permiso persistente
+                // (la original sigue en la galeria del usuario). Si pasara por la
+                // papelera, moveToTrash() la sacaria del historial y la Papelera --
+                // que cruza con el inventario -- ya no la encontraria: no se podria
+                // restaurar y el permiso quedaria ocupado para siempre. Se quita
+                // directamente (libera el permiso y limpia favorito/alias): la
+                // usuaria puede volver a agregarla con "Agregar fotos".
+                if (PickedMediaUris.isPickedReference(documentId)) {
+                    return@withContext removePickedPhoto(documentId)
+                }
                 try {
                     trashDao.insert(TrashEntry(documentId, System.currentTimeMillis()))
                     // Hallazgo real de la ronda 15: si remove() del historial
@@ -156,6 +167,12 @@ class TrashRepository
                     false
                 }
             }
+
+        private suspend fun removePickedPhoto(documentId: String): Boolean {
+            val removed = documentRepository.deleteDocument(documentId) is DocumentRepository.DeleteOutcome.Deleted
+            if (removed) documentIdentityMaintenance.onPermanentlyDeleted(documentId)
+            return removed
+        }
 
         /**
          * Saca un documento de la papelera sin tocar el archivo real.

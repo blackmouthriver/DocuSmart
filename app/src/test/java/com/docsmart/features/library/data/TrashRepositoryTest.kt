@@ -402,6 +402,35 @@ class TrashRepositoryTest {
         }
 
     @Test
+    fun `moveToTrash de una foto del selector la quita directo sin dejar fila huerfana en la papelera`() =
+        runTest {
+            val pickerId = "content://media/picker/0/com.android.providers.media.photopicker/media/1000157509"
+            historyDao.recordOpen(DocumentHistoryEntry(pickerId, 1000L))
+            mockkStatic(Uri::class)
+            try {
+                val mockUri = mockk<Uri>()
+                every { Uri.parse(pickerId) } returns mockUri
+                val resolver = mockk<ContentResolver>(relaxed = true)
+                every { context.contentResolver } returns resolver
+
+                val moved = repository.moveToTrash(pickerId)
+
+                assertTrue(moved)
+                // Sin papelera: no hay nada que restaurar y no queda fila huerfana.
+                assertTrue(trashDao.getAll().isEmpty())
+                // Se libera el permiso persistente, se limpia el historial y el favorito...
+                val readFlag = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                verify { resolver.releasePersistableUriPermission(mockUri, readFlag) }
+                assertTrue(historyDao.recentDocumentIds(10).isEmpty())
+                coVerify { favorites.removeFavorite(pickerId) }
+                // ...y la foto original de la galeria no se toca.
+                verify(exactly = 0) { resolver.delete(any(), any(), any()) }
+            } finally {
+                unmockkStatic(Uri::class)
+            }
+        }
+
+    @Test
     fun `deleteAllForever con una foto del selector la quita sin pedir borrar la original`() =
         runTest {
             val pickerId = "content://media/picker/0/com.android.providers.media.photopicker/media/1000157509"
