@@ -52,8 +52,9 @@
     <string name="library_tab_device">デバイス</string>
     <string name="library_tab_app_files">マイファイル</string>
     <string name="library_tab_file_count">%1$d件のファイル</string>
-    <string name="library_tab_device_description">端末内のドキュメントと、追加した写真</string>
+    <string name="library_tab_device_description">端末から追加した書類と写真</string>
     <string name="library_add_photos">写真を追加</string>
+    <string name="library_add_documents">書類を追加</string>
     <string name="viewer_image_no_access">この画像にアクセスできません。ライブラリ → 写真を追加 から、もう一度追加してください。</string>
     <string name="library_tab_app_files_description">DocuSmartで作成または変換した書類</string>
     <string name="library_no_permission_denied_title">権限が拒否されました</string>
@@ -1135,8 +1136,6 @@
     <string name="filepicker_no_library_files">ライブラリにファイルがまだありません</string>
 
     <!-- ── SAFによるダウンロードフォルダの連携(バックログUX 22行目) ── -->
-    <string name="library_link_downloads_title">もっとドキュメントを見る</string>
-    <string name="library_link_downloads_body">端末内のフォルダを選ぶと、そこにあるドキュメントもライブラリに表示されます</string>
     <string name="library_link_downloads_button">フォルダを連携</string>
     <string name="library_link_folder_error">フォルダを連携できませんでした。もう一度お試しください。</string>
 

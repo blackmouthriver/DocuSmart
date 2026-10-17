@@ -180,12 +180,12 @@ class LibraryScreenExtrasTest {
         val viewModel = buildViewModel(linkedFolder = null)
 
         setScreen { LibraryScreen(viewModel = viewModel) }
-        waitForText(text(R.string.library_link_downloads_title))
+        waitForText(text(R.string.library_link_downloads_button))
 
         composeRule.onNodeWithText(text(R.string.library_tab_app_files)).performClick()
 
         composeRule.waitUntilOrDump("CI_HANG_LibraryScreenExtrasTest") {
-            composeRule.onAllNodesWithText(text(R.string.library_link_downloads_title)).fetchSemanticsNodes().isEmpty()
+            composeRule.onAllNodesWithText(text(R.string.library_link_downloads_button)).fetchSemanticsNodes().isEmpty()
         }
     }
 
@@ -197,7 +197,7 @@ class LibraryScreenExtrasTest {
         setScreen(override = recording) { LibraryScreen(viewModel = viewModel) }
         waitForText("MisDocs")
 
-        composeRule.onAllNodesWithText(text(R.string.library_link_downloads_title)).assertCountEquals(0)
+        composeRule.onAllNodesWithText(text(R.string.library_link_downloads_button)).assertCountEquals(0)
         composeRule.onNodeWithText("MisDocs").performClick()
 
         assertEquals(1, recording.intents.size)

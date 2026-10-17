@@ -430,6 +430,69 @@ class TrashRepositoryTest {
             }
         }
 
+    // ── 1.1.5: documentos que solo viven del historial ────────────────────────
+    // `loadTrashedDocuments()` depende del inventario real (MediaStore), asi que se
+    // espia DocumentRepository y se fija el inventario vacio: lo que importa aqui es
+    // el camino nuevo, el de los documentos que solo existen en el historial.
+
+    private val safDocId = "content://com.android.providers.downloads.documents/document/msf%3A1000148335"
+
+    private fun withReadableSafDocument(block: suspend (TrashRepository) -> Unit) =
+        runTest {
+            mockkStatic(Uri::class)
+            try {
+                val mockUri = mockk<Uri>()
+                every { Uri.parse(safDocId) } returns mockUri
+                every { mockUri.toString() } returns safDocId
+                val cursor = mockk<Cursor>(relaxed = true)
+                every { cursor.moveToFirst() } returns true
+                every { cursor.getColumnIndex("_display_name") } returns 0
+                every { cursor.getColumnIndex("_size") } returns 1
+                every { cursor.getString(0) } returns "informe.pdf"
+                every { cursor.getLong(1) } returns 2048L
+                val resolver = mockk<ContentResolver>(relaxed = true)
+                every { resolver.query(mockUri, null, null, null, null) } returns cursor
+                every { resolver.getType(mockUri) } returns "application/pdf"
+                every { context.contentResolver } returns resolver
+                every { context.getString(any<Int>(), *anyVararg()) } returns "2 KB"
+
+                val spy = io.mockk.spyk(documentRepository)
+                coEvery { spy.loadAllDocumentsRaw() } returns emptyList()
+                val trash =
+                    TrashRepository(spy, trashDao, historyDao, mockk(relaxed = true), mockk(relaxed = true), context)
+                block(trash)
+            } finally {
+                unmockkStatic(Uri::class)
+            }
+        }
+
+    @Test
+    fun `un documento solo del historial sigue visible en la papelera tras eliminarlo`() =
+        withReadableSafDocument { trash ->
+            historyDao.recordOpen(DocumentHistoryEntry(safDocId, 1000L))
+
+            assertTrue(trash.moveToTrash(safDocId))
+            // moveToTrash lo saco del historial: ya no esta en ninguna otra fuente.
+            assertTrue(historyDao.recentDocumentIds(10).isEmpty())
+
+            val trashed = trash.loadTrashedDocuments()
+
+            assertEquals(listOf(safDocId), trashed.map { it.document.id })
+            assertEquals("informe.pdf", trashed.single().document.name)
+        }
+
+    @Test
+    fun `restaurar un documento solo del historial lo vuelve a registrar para que reaparezca`() =
+        withReadableSafDocument { trash ->
+            historyDao.recordOpen(DocumentHistoryEntry(safDocId, 1000L))
+            trash.moveToTrash(safDocId)
+
+            assertTrue(trash.restoreFromTrash(safDocId))
+
+            assertTrue(trashDao.getAll().isEmpty())
+            assertEquals(listOf(safDocId), historyDao.recentDocumentIds(10))
+        }
+
     @Test
     fun `deleteAllForever con una foto del selector la quita sin pedir borrar la original`() =
         runTest {

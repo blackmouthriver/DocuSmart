@@ -494,6 +494,60 @@ class DocumentRepositoryTest {
             assertEquals(listOf("content://media/picker/0/x/media/3"), historyDao.recentDocumentIds(10))
         }
 
+    // ── 1.1.5: documentos elegidos con el selector de archivos ────────────────
+
+    @Test
+    fun `addPickedDocuments toma lectura y escritura persistentes y registra en el historial`() =
+        runTest {
+            val uri = mockk<Uri>()
+            every { uri.toString() } returns "content://com.android.providers.downloads.documents/document/msf%3A1"
+            val resolver = mockk<ContentResolver>(relaxed = true)
+            every { context.contentResolver } returns resolver
+            val readWrite = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+
+            val persisted = repository.addPickedDocuments(listOf(uri))
+
+            assertEquals(1, persisted)
+            verify { resolver.takePersistableUriPermission(uri, readWrite) }
+            assertEquals(
+                listOf("content://com.android.providers.downloads.documents/document/msf%3A1"),
+                historyDao.recentDocumentIds(10),
+            )
+        }
+
+    @Test
+    fun `addPickedDocuments cae a solo lectura si el proveedor no concede escritura`() =
+        runTest {
+            val uri = mockk<Uri>()
+            every { uri.toString() } returns "content://docs/document/2"
+            val resolver = mockk<ContentResolver>(relaxed = true)
+            val read = Intent.FLAG_GRANT_READ_URI_PERMISSION
+            val readWrite = read or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            every { resolver.takePersistableUriPermission(uri, readWrite) } throws SecurityException("solo lectura")
+            every { context.contentResolver } returns resolver
+
+            val persisted = repository.addPickedDocuments(listOf(uri))
+
+            assertEquals(1, persisted)
+            verify { resolver.takePersistableUriPermission(uri, read) }
+            assertEquals(listOf("content://docs/document/2"), historyDao.recentDocumentIds(10))
+        }
+
+    @Test
+    fun `addPickedDocuments registra el documento aunque no haya acceso persistente`() =
+        runTest {
+            val uri = mockk<Uri>()
+            every { uri.toString() } returns "content://docs/document/3"
+            val resolver = mockk<ContentResolver>(relaxed = true)
+            every { resolver.takePersistableUriPermission(any(), any()) } throws SecurityException("no persistible")
+            every { context.contentResolver } returns resolver
+
+            val persisted = repository.addPickedDocuments(listOf(uri))
+
+            assertEquals(0, persisted)
+            assertEquals(listOf("content://docs/document/3"), historyDao.recentDocumentIds(10))
+        }
+
     // ── deleteDocument sobre documentos SAF (carpeta vinculada) ───────────────
 
     private fun stubSafUri(uriString: String): Uri {

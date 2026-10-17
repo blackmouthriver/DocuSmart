@@ -176,6 +176,38 @@ class DocumentRepository
             }
 
         /**
+         * 1.1.5: registra documentos elegidos con el selector de archivos del
+         * sistema ("Agregar documentos"). Intenta el permiso persistente de
+         * lectura y escritura (necesario para que "Eliminar" borre de verdad, como
+         * con "Abrir") y, si el proveedor solo concede lectura, se queda con
+         * lectura. Siempre los deja en el historial para que la Biblioteca los
+         * liste. Devuelve cuantos quedaron con acceso persistente.
+         */
+        suspend fun addPickedDocuments(uris: List<Uri>): Int =
+            withContext(Dispatchers.IO) {
+                val read = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                val readWrite = read or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                // Lambda local (no un metodo): DocumentRepository ya esta en el limite
+                // TooManyFunctions de detekt.
+                val takePersistable = { uri: Uri, flags: Int ->
+                    try {
+                        context.contentResolver.takePersistableUriPermission(uri, flags)
+                        true
+                    } catch (e: SecurityException) {
+                        Timber.w("takePersistable: el proveedor no concedio el acceso (${e.javaClass.simpleName})")
+                        false
+                    }
+                }
+                var persisted = 0
+                uris.forEach { uri ->
+                    if (takePersistable(uri, readWrite) || takePersistable(uri, read)) persisted++
+                    documentHistoryDao.recordOpen(DocumentHistoryEntry(uri.toString(), System.currentTimeMillis()))
+                }
+                Timber.d("addPickedDocuments: ${uris.size} elegidos, $persisted con acceso persistente")
+                persisted
+            }
+
+        /**
          * Excluye documentos en la papelera (RF-VIS-07) -- `TrashRepository`
          * mantiene la tabla `trash_entries` con lo que hay que ocultar acá; la
          * purga automática de lo vencido vive allá también (se ejecuta cuando
@@ -747,7 +779,9 @@ class DocumentRepository
             return documents
         }
 
-        private fun documentFromHistoryId(
+        // internal: la Papelera la usa para describir documentos que solo viven del
+        // historial (ver TrashRepository.loadTrashedDocuments).
+        internal fun documentFromHistoryId(
             id: String,
             lastOpenedAt: Long,
         ): DocumentUiModel? =

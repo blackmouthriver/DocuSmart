@@ -53,8 +53,9 @@
     <string name="library_tab_device">Dispositivo</string>
     <string name="library_tab_app_files">I miei file</string>
     <string name="library_tab_file_count">%1$d file</string>
-    <string name="library_tab_device_description">Documenti sul tuo dispositivo e le foto che aggiungi</string>
+    <string name="library_tab_device_description">Documenti e foto che aggiungi dal tuo dispositivo</string>
     <string name="library_add_photos">Aggiungi foto</string>
+    <string name="library_add_documents">Aggiungi documenti</string>
     <string name="viewer_image_no_access">Non abbiamo accesso a questa immagine. Aggiungila di nuovo da Libreria → Aggiungi foto.</string>
     <string name="library_tab_app_files_description">Documenti creati o convertiti all\'interno di DocuSmart</string>
     <string name="library_no_permission_denied_title">Permesso negato</string>
@@ -1146,8 +1147,6 @@
     <string name="filepicker_no_library_files">Non ci sono ancora file nella tua libreria</string>
 
     <!-- ── Collega cartella Download tramite SAF (riga 22 backlog UX) ── -->
-    <string name="library_link_downloads_title">Vedi altri documenti qui</string>
-    <string name="library_link_downloads_body">Scegli una cartella del tuo dispositivo per far sì che la Libreria mostri anche i documenti già presenti lì</string>
     <string name="library_link_downloads_button">Collega cartella</string>
     <string name="library_link_folder_error">Impossibile collegare la cartella. Riprova.</string>
 

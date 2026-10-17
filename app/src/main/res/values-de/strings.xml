@@ -53,8 +53,9 @@
     <string name="library_tab_device">Gerät</string>
     <string name="library_tab_app_files">Meine Dateien</string>
     <string name="library_tab_file_count">%1$d Dateien</string>
-    <string name="library_tab_device_description">Dokumente auf deinem Gerät und die Fotos, die du hinzufügst</string>
+    <string name="library_tab_device_description">Dokumente und Fotos, die du von deinem Gerät hinzufügst</string>
     <string name="library_add_photos">Fotos hinzufügen</string>
+    <string name="library_add_documents">Dokumente hinzufügen</string>
     <string name="viewer_image_no_access">Wir haben keinen Zugriff auf dieses Bild. Füge es erneut über Bibliothek → Fotos hinzufügen hinzu.</string>
     <string name="library_tab_app_files_description">Dokumente, die du in DocuSmart erstellt oder konvertiert hast</string>
     <string name="library_no_permission_denied_title">Berechtigung verweigert</string>
@@ -1139,8 +1140,6 @@
     <string name="filepicker_no_library_files">Du hast noch keine Dateien in deiner Bibliothek</string>
 
     <!-- ── Downloads-Ordner per SAF verknüpfen (UX-Backlog Zeile 22) ── -->
-    <string name="library_link_downloads_title">Mehr Dokumente hier sehen</string>
-    <string name="library_link_downloads_body">Wähle einen Ordner auf deinem Gerät, damit die Bibliothek auch die Dokumente zeigt, die du dort bereits hast</string>
     <string name="library_link_downloads_button">Ordner verknüpfen</string>
     <string name="library_link_folder_error">Der Ordner konnte nicht verknüpft werden. Versuche es erneut.</string>
 

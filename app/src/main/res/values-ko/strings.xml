@@ -52,8 +52,9 @@
     <string name="library_tab_device">기기</string>
     <string name="library_tab_app_files">내 파일</string>
     <string name="library_tab_file_count">파일 %1$d개</string>
-    <string name="library_tab_device_description">기기에 있는 문서와 추가한 사진</string>
+    <string name="library_tab_device_description">기기에서 추가한 문서와 사진</string>
     <string name="library_add_photos">사진 추가</string>
+    <string name="library_add_documents">문서 추가</string>
     <string name="viewer_image_no_access">이 이미지에 접근할 수 없습니다. 보관함 → 사진 추가에서 다시 추가해 주세요.</string>
     <string name="library_tab_app_files_description">DocuSmart에서 만들거나 변환한 문서</string>
     <string name="library_no_permission_denied_title">권한이 거부되었습니다</string>
@@ -1135,8 +1136,6 @@
     <string name="filepicker_no_library_files">아직 보관함에 파일이 없습니다</string>
 
     <!-- ── SAF를 통한 다운로드 폴더 연결 (UX 백로그 22번 항목) ── -->
-    <string name="library_link_downloads_title">여기에서 더 많은 문서 보기</string>
-    <string name="library_link_downloads_body">기기의 폴더를 선택하면 그 안에 있는 문서도 보관함에 표시됩니다</string>
     <string name="library_link_downloads_button">폴더 연결</string>
     <string name="library_link_folder_error">폴더를 연결할 수 없습니다. 다시 시도하세요.</string>
 

@@ -104,7 +104,7 @@ fun LibraryScreen(
             linkedFolderUri?.let { viewModel.linkedFolderDisplayName(it) }
         }
     // 1.1.5: selector de fotos del sistema (no requiere permiso).
-    val onPickPhotos = rememberPickPhotosAction(viewModel)
+    val pickActions = rememberPickActions(viewModel)
     val linkFolderLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.OpenDocumentTree(),
@@ -197,7 +197,7 @@ fun LibraryScreen(
 
         // 1.1.5: agrega fotos con el selector del sistema (sin permiso de medios).
         if (uiState.selectedTab == LibraryTab.DEVICE) {
-            item { AddPhotosButton(onClick = onPickPhotos) }
+            item { AddFilesRow(pickActions) }
         }
 
         // ── Vincular Descargas (fila 22 backlog UX): solo en la pestaña
@@ -206,7 +206,7 @@ fun LibraryScreen(
         // Texto reales y esta tarjeta deja de tener sentido.
         if (uiState.selectedTab == LibraryTab.DEVICE && linkedFolderUri == null) {
             item {
-                LinkDownloadsFolderCard(
+                LinkFolderLink(
                     onLinkClick = {
                         linkFolderLauncher.launch(viewModel.downloadsFolderPickerInitialUri())
                     },
@@ -537,82 +537,64 @@ private fun LibraryTabItem(
 // (sin pedir "acceso a todos los archivos") es que el usuario vincule la
 // carpeta una vez con el selector nativo de Android.
 @Composable
-private fun LinkDownloadsFolderCard(onLinkClick: () -> Unit) {
-    Card(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-        shape = MaterialTheme.shapes.large,
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-            ),
-    ) {
-        // Rediseño 2026-09-21: título y botón comparten fila y el texto se limita
-        // a dos líneas; antes apilados empujaban filtros y lista hacia abajo.
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.CreateNewFolder,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-                Text(
-                    text = stringResource(R.string.library_link_downloads_title),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                Button(
-                    onClick = onLinkClick,
-                    shape = MaterialTheme.shapes.medium,
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                ) {
-                    Text(text = stringResource(R.string.library_link_downloads_button), maxLines = 1)
-                }
-            }
-            Text(
-                text = stringResource(R.string.library_link_downloads_body),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
+private fun LinkFolderLink(onLinkClick: () -> Unit) {
+    // 1.1.5: antes era una tarjeta grande; ahora que "Agregar documentos" cubre
+    // el caso común, queda como un enlace discreto para quien tiene una carpeta
+    // dedicada (la carpeta vinculada se sigue listando sola).
+    TextButton(onClick = onLinkClick, modifier = Modifier.padding(horizontal = 12.dp)) {
+        Icon(
+            imageVector = Icons.Rounded.CreateNewFolder,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+        )
+        Text(
+            text = stringResource(R.string.library_link_downloads_button),
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(start = 6.dp),
+        )
     }
 }
 
-// 1.1.5: selector de fotos del sistema -- extraído de LibraryScreen para no
-// superar el umbral LongMethod de detekt. Devuelve la acción que lo abre.
+// 1.1.5: acciones de "Agregar" -- selector de fotos del sistema y selector de
+// archivos (documentos). Extraídas de LibraryScreen para no superar el umbral
+// LongMethod de detekt.
+private class PickActions(
+    val photos: () -> Unit,
+    val documents: () -> Unit,
+)
+
 @Composable
-private fun rememberPickPhotosAction(viewModel: LibraryViewModel): () -> Unit {
-    val launcher =
+private fun rememberPickActions(viewModel: LibraryViewModel): PickActions {
+    val photosLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickMultipleVisualMedia(),
         ) { uris -> viewModel.onPhotosPicked(uris) }
-    return {
-        launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-    }
+    val documentsLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartActivityForResult(),
+        ) { result -> viewModel.onDocumentsPicked(pickedUris(result.data)) }
+    return PickActions(
+        photos = {
+            photosLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        },
+        documents = { documentsLauncher.launch(documentPickerIntent()) },
+    )
 }
 
-// 1.1.5: botón de la pestaña Dispositivo.
+// 1.1.5: los dos botones de la pestaña Dispositivo, en una fila.
 @Composable
-private fun AddPhotosButton(onClick: () -> Unit) {
-    OutlinedButton(
-        onClick = onClick,
+private fun AddFilesRow(actions: PickActions) {
+    Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-    ) { Text(stringResource(R.string.library_add_photos)) }
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        OutlinedButton(onClick = actions.photos, modifier = Modifier.weight(1f)) {
+            Text(stringResource(R.string.library_add_photos), maxLines = 2, textAlign = TextAlign.Center)
+        }
+        OutlinedButton(onClick = actions.documents, modifier = Modifier.weight(1f)) {
+            Text(stringResource(R.string.library_add_documents), maxLines = 2, textAlign = TextAlign.Center)
+        }
+    }
 }
 
 // ── Sin permisos ──────────────────────────────────────────────────────────────

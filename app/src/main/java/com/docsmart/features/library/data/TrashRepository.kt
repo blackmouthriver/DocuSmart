@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import com.docsmart.core.data.DocumentIdentityMaintenance
 import com.docsmart.core.data.db.DocumentHistoryDao
+import com.docsmart.core.data.db.DocumentHistoryEntry
 import com.docsmart.core.data.db.TrashDao
 import com.docsmart.core.data.db.TrashEntry
 import com.docsmart.core.ui.components.DocumentUiModel
@@ -109,11 +110,24 @@ class TrashRepository
                     Timber.w("TrashRepository: fallo la purga automatica: ${e.javaClass.simpleName}")
                 }
                 val trashById = trashDao.getAll().associateBy { it.documentId }
-                documentRepository
-                    .loadAllDocumentsRaw()
-                    .filter { it.id in trashById }
-                    .map { doc -> TrashedDocumentUiModel(doc, trashById.getValue(doc.id).deletedAt) }
-                    .sortedByDescending { it.deletedAt }
+                val fromInventory =
+                    documentRepository
+                        .loadAllDocumentsRaw()
+                        .filter { it.id in trashById }
+                        .map { doc -> TrashedDocumentUiModel(doc, trashById.getValue(doc.id).deletedAt) }
+                // 1.1.5: un documento que solo vive del historial (agregado o abierto
+                // con el selector de archivos) deja de aparecer en el inventario al
+                // moverlo a la papelera, porque moveToTrash() lo saca del historial.
+                // Sin esto la Papelera salia vacia y no se podia restaurar.
+                val foundIds = fromInventory.mapTo(HashSet()) { it.document.id }
+                val fromHistoryOnly =
+                    trashById.values
+                        .filter { it.documentId !in foundIds }
+                        .mapNotNull { entry ->
+                            describeOrNull(entry.documentId, entry.deletedAt)
+                                ?.let { TrashedDocumentUiModel(it, entry.deletedAt) }
+                        }
+                (fromInventory + fromHistoryOnly).sortedByDescending { it.deletedAt }
             }
 
         /**
@@ -203,6 +217,11 @@ class TrashRepository
                     }
                     trashDao.remove(documentId)
                     clearPurgeCandidate(documentId)
+                    // 1.1.5: moveToTrash() lo saco del historial; si ese era su unico
+                    // origen, hay que volver a registrarlo o no reaparece en Biblioteca.
+                    if (isHistoryOnlyId(documentId)) {
+                        documentHistoryDao.recordOpen(DocumentHistoryEntry(documentId, System.currentTimeMillis()))
+                    }
                     true
                 } catch (e: CancellationException) {
                     throw e
@@ -411,6 +430,25 @@ class TrashRepository
         // MediaStore (pediria borrar la foto original de la galeria).
         private fun isMediaStoreId(documentId: String): Boolean =
             documentId.startsWith("content://media/") && !PickedMediaUris.isPickedReference(documentId)
+
+        // Describe un documento por su id sin pasar por el inventario; null si ya no se
+        // puede leer (archivo movido o borrado, permiso revocado).
+        private fun describeOrNull(
+            documentId: String,
+            atMs: Long,
+        ): DocumentUiModel? =
+            try {
+                documentRepository.documentFromHistoryId(documentId, atMs)
+            } catch (e: Exception) {
+                Timber.w("TrashRepository: no se pudo leer un documento de la papelera (${e.javaClass.simpleName})")
+                null
+            }
+
+        // Documentos SAF (content:// que no es de MediaStore): su unico origen puede
+        // ser el historial. Registrarlos de nuevo al restaurar es inocuo si tambien
+        // salen de otra fuente (se deduplican por id).
+        private fun isHistoryOnlyId(documentId: String): Boolean =
+            documentId.startsWith("content://") && !documentId.startsWith("content://media/")
 
         private fun clearPurgeCandidate(documentId: String) {
             purgeCandidatePrefs.edit().remove("candidate_$documentId").apply()
