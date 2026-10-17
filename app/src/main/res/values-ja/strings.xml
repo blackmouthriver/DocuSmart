@@ -52,7 +52,7 @@
     <string name="library_tab_device">デバイス</string>
     <string name="library_tab_app_files">マイファイル</string>
     <string name="library_tab_file_count">%1$d件のファイル</string>
-    <string name="library_tab_device_description">端末から追加した書類と写真</string>
+    <string name="library_tab_device_description">書類や写真をDocuSmartに取り込んで、思いどおりに管理しましょう</string>
     <string name="library_add_photos">写真を追加</string>
     <string name="library_add_documents">書類を追加</string>
     <string name="viewer_image_no_access">この画像にアクセスできません。ライブラリ → 写真を追加 から、もう一度追加してください。</string>

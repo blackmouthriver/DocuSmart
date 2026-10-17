@@ -53,7 +53,7 @@
     <string name="library_tab_device">Gailua</string>
     <string name="library_tab_app_files">Nire fitxategiak</string>
     <string name="library_tab_file_count">%1$d fitxategi</string>
-    <string name="library_tab_device_description">Zure gailutik gehitzen dituzun dokumentuak eta argazkiak</string>
+    <string name="library_tab_device_description">Ekarri zure dokumentuak eta argazkiak DocuSmartera eta kudeatu itzazu zure gustura</string>
     <string name="library_add_photos">Gehitu argazkiak</string>
     <string name="library_add_documents">Gehitu dokumentuak</string>
     <string name="viewer_image_no_access">Ez dugu irudi honetarako sarbiderik. Gehitu berriro Liburutegia → Gehitu argazkiak atalean.</string>

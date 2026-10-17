@@ -182,17 +182,16 @@ fun LibraryScreen(
         // una tercera línea dentro de cada tarjeta de LibraryTabItem (con
         // fuente "Grande"/"Muy grande" ya apenas entran 2 líneas ahí, ver
         // HU-UX-05).
-        item {
-            Text(
-                text =
-                    when (uiState.selectedTab) {
-                        LibraryTab.DEVICE -> stringResource(R.string.library_tab_device_description)
-                        LibraryTab.APP_FILES -> stringResource(R.string.library_tab_app_files_description)
-                    },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 20.dp),
-            )
+        // (En Dispositivo ese texto es el encabezado de la tarjeta "Agregar", más abajo.)
+        if (uiState.selectedTab == LibraryTab.APP_FILES) {
+            item {
+                Text(
+                    text = stringResource(R.string.library_tab_app_files_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                )
+            }
         }
 
         // 1.1.5: agregar fotos/documentos con los selectores del sistema (sin permisos
@@ -201,7 +200,7 @@ fun LibraryScreen(
         // sola. Todo en un bloque para que el espacio entre ellos sea el justo.
         if (uiState.selectedTab == LibraryTab.DEVICE) {
             item {
-                AddFilesSection(pickActions, showLinkFolder = linkedFolderUri == null) {
+                AddFilesCard(pickActions, showLinkFolder = linkedFolderUri == null) {
                     linkFolderLauncher.launch(viewModel.downloadsFolderPickerInitialUri())
                 }
             }
@@ -536,7 +535,7 @@ private fun LinkFolderLink(onLinkClick: () -> Unit) {
     // dedicada (la carpeta vinculada se sigue listando sola).
     TextButton(
         onClick = onLinkClick,
-        modifier = Modifier.padding(horizontal = 12.dp).heightIn(min = 36.dp),
+        modifier = Modifier.offset(x = (-8).dp).heightIn(min = 36.dp),
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
     ) {
         Icon(
@@ -578,34 +577,49 @@ private fun rememberPickActions(viewModel: LibraryViewModel): PickActions {
     )
 }
 
-// 1.1.5: los dos botones de la pestaña Dispositivo, en una fila.
+// 1.1.5: tarjeta de "Agregar" de la pestaña Dispositivo. Un encabezado que invita a
+// traer documentos y fotos, los dos botones y, debajo, el enlace discreto de
+// "Vincular carpeta" (solo mientras no haya una carpeta vinculada).
 @Composable
-private fun AddFilesRow(actions: PickActions) {
-    // IntrinsicSize.Min + fillMaxHeight: si un texto se parte en dos líneas (idiomas más
-    // largos o fuente grande), los dos botones crecen juntos y quedan de la misma altura.
-    Row(
-        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min).padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        OutlinedButton(onClick = actions.photos, modifier = Modifier.weight(1f).fillMaxHeight()) {
-            Text(stringResource(R.string.library_add_photos), maxLines = 2, textAlign = TextAlign.Center)
-        }
-        OutlinedButton(onClick = actions.documents, modifier = Modifier.weight(1f).fillMaxHeight()) {
-            Text(stringResource(R.string.library_add_documents), maxLines = 2, textAlign = TextAlign.Center)
-        }
-    }
-}
-
-// 1.1.5: los dos botones y, debajo y pegado, el enlace discreto de "Vincular carpeta".
-@Composable
-private fun AddFilesSection(
+private fun AddFilesCard(
     actions: PickActions,
     showLinkFolder: Boolean,
     onLinkClick: () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-        AddFilesRow(actions)
-        if (showLinkFolder) LinkFolderLink(onLinkClick)
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+    ) {
+        Column(
+            // Con el enlace debajo, menos aire inferior: el propio botón ya trae su relleno.
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = if (showLinkFolder) 4.dp else 14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.library_tab_device_description),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+            // IntrinsicSize.Min + fillMaxHeight: si un texto se parte en dos líneas (idiomas
+            // más largos o fuente grande), los dos botones crecen juntos y quedan iguales.
+            Row(
+                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Button(onClick = actions.photos, modifier = Modifier.weight(1f).fillMaxHeight()) {
+                    Text(stringResource(R.string.library_add_photos), maxLines = 2, textAlign = TextAlign.Center)
+                }
+                Button(onClick = actions.documents, modifier = Modifier.weight(1f).fillMaxHeight()) {
+                    Text(stringResource(R.string.library_add_documents), maxLines = 2, textAlign = TextAlign.Center)
+                }
+            }
+            if (showLinkFolder) LinkFolderLink(onLinkClick)
+        }
     }
 }
 

@@ -55,7 +55,7 @@
     <string name="library_tab_device">Устройство</string>
     <string name="library_tab_app_files">Мои файлы</string>
     <string name="library_tab_file_count">Файлов: %1$d</string>
-    <string name="library_tab_device_description">Документы и фото, добавленные вами с устройства</string>
+    <string name="library_tab_device_description">Добавьте документы и фото в DocuSmart и управляйте ими так, как удобно вам</string>
     <string name="library_add_photos">Добавить фото</string>
     <string name="library_add_documents">Добавить документы</string>
     <string name="viewer_image_no_access">У нас нет доступа к этому изображению. Добавьте его снова: Библиотека → Добавить фото.</string>

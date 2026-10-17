@@ -53,7 +53,7 @@
     <string name="library_tab_device">Gerät</string>
     <string name="library_tab_app_files">Meine Dateien</string>
     <string name="library_tab_file_count">%1$d Dateien</string>
-    <string name="library_tab_device_description">Dokumente und Fotos, die du von deinem Gerät hinzufügst</string>
+    <string name="library_tab_device_description">Hol deine Dokumente und Fotos in DocuSmart und verwalte sie, wie du möchtest</string>
     <string name="library_add_photos">Fotos hinzufügen</string>
     <string name="library_add_documents">Dokumente hinzufügen</string>
     <string name="viewer_image_no_access">Wir haben keinen Zugriff auf dieses Bild. Füge es erneut über Bibliothek → Fotos hinzufügen hinzu.</string>
