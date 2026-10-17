@@ -2,7 +2,7 @@
 
 > **Estado:** implementación lista en la rama `claude/selector-fotos-1-1-5`. **Sin subir de versión todavía** (`versionCode`/`versionName` siguen en 10 / 1.1.4): el bump se hace en un PR aparte cuando el propietario lo apruebe.
 
-Sucede a la **1.1.4 (versionCode 10)**, que solo corrigió el requisito de 16 kB de Google Play. Esta versión quita el permiso `READ_MEDIA_IMAGES` y lo reemplaza por el selector de fotos del sistema.
+Sucede a la **1.1.4 (versionCode 10)**, que solo corrigió el requisito de 16 kB de Google Play. Esta versión quita el permiso `READ_MEDIA_IMAGES`, lo reemplaza por el selector de fotos del sistema y suma «Agregar documentos», una papelera que ahora sí restaura documentos agregados y «Vincular carpeta» más discreto.
 
 ## Por qué
 
@@ -19,6 +19,9 @@ Una prueba corta (2026-10-14, Edge 30 Neo, Android 14) demostró que el selector
 | Biblioteca | Ya no se bloquea con «Sin permisos» en Android 13+; deja de listar automáticamente la galería de otras apps |
 | «Eliminar» sobre una foto agregada | Solo la quita de DocuSmart (libera el permiso persistente y la saca del historial). **Nunca** pide borrar la foto original de la galería |
 | Visor | Si una foto ya no es accesible (p. ej. una foto de galería guardada en Recientes antes de este cambio), muestra «No tenemos acceso a esta imagen. Vuelve a agregarla desde Biblioteca → Agregar fotos» en vez del error genérico |
+| **Agregar documentos** | Segundo botón, en la misma fila que «Agregar fotos»: selector de archivos del sistema, multi-selección (PDF, Word, Excel, PowerPoint, texto y zip), sin ningún permiso. Los documentos quedan en la Biblioteca con acceso persistente de lectura y escritura (cae a solo lectura si el proveedor no concede escritura) |
+| **Papelera real para documentos** | Un documento agregado o abierto con «Abrir» ahora aparece en la Papelera tras «Eliminar» y se puede **restaurar**. Antes la Papelera salía vacía |
+| **Vincular carpeta** | Se conserva, pero pasa de tarjeta grande a un enlace pequeño bajo los botones; se agregan eventos de analítica para decidir con datos si se mantiene |
 | Textos | Botón, mensaje del Visor y la descripción de la pestaña Dispositivo, en los 12 idiomas |
 
 ## Qué se ve distinto (hay que decirlo en las notas de versión)
@@ -32,6 +35,10 @@ Una prueba corta (2026-10-14, Edge 30 Neo, Android 14) demostró que el selector
 - `PickedMediaUris.isPickedReference(id)`: los ids `content://media/picker...` son referencias de solo lectura. `DocumentRepository.deleteDocument` las quita sin tocar la original, y `TrashRepository.isMediaStoreId` las excluye del pedido de borrado en lote de MediaStore (`createDeleteRequest`), que habría pedido borrar las fotos reales.
 - `ImageViewerContent`: distingue `SecurityException` (sin acceso) de otros fallos de carga.
 - Límite del sistema: 5 000 concesiones de medios por app (el sistema quita la más antigua al superarlo).
+- `DocumentRepository.addPickedDocuments(uris)`: intenta `takePersistableUriPermission` de lectura y escritura y cae a solo lectura; siempre registra en `document_history`.
+- `TrashRepository.loadTrashedDocuments` describe (nombre, tamaño, tipo) por su id los documentos que **solo viven del historial** y que `moveToTrash` sacó de él; `restoreFromTrash` los vuelve a registrar en el historial. Para las fotos del selector no hay papelera: «Eliminar» las quita directo y libera el permiso.
+- `DocuSmartAnalytics`: `library_files_added` (tipo y cantidad) y `library_folder_linked`.
+- Se quitaron las cadenas de la tarjeta grande de «Vincular carpeta» (`library_link_downloads_title` y `_body`).
 
 ## Verificación
 
@@ -50,6 +57,11 @@ Una prueba corta (2026-10-14, Edge 30 Neo, Android 14) demostró que el selector
 | Convertir una foto agregada a PDF | OK (`DocuSmart_…pdf`, 63 KB, 0 cierres) |
 | Foto vieja de galería abierta en el Visor | Mensaje nuevo «No tenemos acceso a esta imagen…», 0 cierres |
 | «Eliminar» una foto agregada: la original no se toca, el permiso se libera | OK tras la corrección (galería sin cambios, original presente, permiso liberado) |
+| Agregar 3 documentos con el selector (modo `0x3`, persistidos) | OK |
+| Eliminar → Papelera lista el documento → Restaurar → reaparece en Biblioteca | OK |
+| «Eliminar ahora» borra el archivo real (solo el de prueba); los demás quedan intactos | OK |
+| Unitarias `features.library` con los cambios de documentos | 133/133 (7 nuevas); instrumentadas `features.library` 85/85 en Edge y E22 (incluye `DocumentPickingTest`) |
+| Suite instrumentada completa con los cambios de documentos | **pendiente** (se corre al cerrar los ajustes de la 1.1.5) |
 | Compartir desde una foto agregada | **pendiente (manual)** |
 | Fotos en la nube (Google Fotos remoto) | **pendiente (manual)** |
 
@@ -66,3 +78,6 @@ Corrección: para `content://media/picker...`, `moveToTrash` la quita directo (l
 - Acceso por foto: si el usuario mueve o borra el original en su galería, el acceso se pierde («No tenemos acceso a esta imagen…»).
 - En dispositivos sin el selector del sistema, la librería cae a `ACTION_OPEN_DOCUMENT` (URI distinta: se mantiene el borrado previo de documentos SAF).
 - La declaración de fotos y vídeos de Play Console deja de ser necesaria cuando esta versión reemplace a la 1.1.4 en producción.
+- «Eliminar ahora» sobre un documento agregado borra el archivo real de su carpeta (es lo que ya hacía con «Abrir»); la confirmación lo advierte. Si el proveedor solo concedió lectura, el borrado falla y el documento se queda en la Papelera.
+- La multi-selección del selector de archivos del sistema exige mantener pulsado un archivo para empezar a seleccionar; si el usuario toca uno a uno se agregan de a uno.
+- Los nombres de las fotos agregadas aparecen como el identificador del selector (p. ej. `1000158199.jpg`), no con su nombre original: el selector de fotos los anonimiza. Los documentos conservan su nombre.
