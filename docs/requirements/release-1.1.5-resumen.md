@@ -38,12 +38,28 @@ Una prueba corta (2026-10-14, Edge 30 Neo, Android 14) demostró que el selector
 | Comprobación | Resultado |
 |---|---|
 | Prueba corta del selector en el Edge (persistencia, reinicio, Visor) | OK, 0 cierres |
-| Unitarias de Biblioteca (`features.library.*`) | 123/123 OK (9 nuevas) |
-| detekt, ktlint, lint, suite unitaria completa | ver resultado del PR |
-| Suite instrumentada completa en dos teléfonos reales | **pendiente** |
-| Android 12 (Moto E22): botón, elegir fotos, abrir en Visor, quitar | **pendiente** |
-| Convertir a PDF y compartir desde una foto agregada | **pendiente** |
-| Fotos en la nube (Google Fotos remoto) | **pendiente** |
+| Unitarias completas | 1 559/1 559 + 3 nuevas (ViewModel y papelera); `features.library` 126/126 |
+| detekt, ktlint, lint | OK |
+| SonarCloud | Fallaba solo por cobertura del código nuevo (73 % < 80 %); se agregaron pruebas de `onPhotosPicked` |
+| Manifiesto final de release | Sin ningún `<uses-permission>` de `READ_MEDIA_*` (las coincidencias de texto son comentarios) |
+| **Suite instrumentada, Moto E22 (Android 12)** | **8/8 fragmentos OK, 800 pruebas** |
+| **Suite instrumentada, Edge 30 Neo (Android 14)** | 7/8 OK; el único fallo (`ViewerDocumentTypesTest.excel_muestraHojasConPestanasYCambiaDeHoja`, «must have a looper») pasó 3/3 sola y la clase completa dio 23/23: intermitencia preexistente, ajena a este cambio |
+| Biblioteca y Visor con el APK corregido (Edge) | `features.library` 81/81; `features.viewer` 98/98 (dos veces; un cierre de proceso en la primera corrida, flake conocido de Compose en el Visor) |
+| Instalación limpia, sin diálogo de permisos | OK |
+| Agregar fotos con el selector, 3 + 2 fotos, todas con acceso persistente | OK |
+| Convertir una foto agregada a PDF | OK (`DocuSmart_…pdf`, 63 KB, 0 cierres) |
+| Foto vieja de galería abierta en el Visor | Mensaje nuevo «No tenemos acceso a esta imagen…», 0 cierres |
+| «Eliminar» una foto agregada: la original no se toca, el permiso se libera | OK tras la corrección (galería sin cambios, original presente, permiso liberado) |
+| Compartir desde una foto agregada | **pendiente (manual)** |
+| Fotos en la nube (Google Fotos remoto) | **pendiente (manual)** |
+
+## Hallazgo de la prueba manual (corregido en este PR)
+
+Al «Eliminar» una foto agregada, desaparecía de la Biblioteca pero la **Papelera salía vacía**. Causa: `TrashRepository.moveToTrash` inserta en `trash_entries` **y borra la foto del historial**, y la Biblioteca de estas fotos vive *solo* del historial; la Papelera cruza con el inventario y ya no la encontraba. Consecuencias: no se podía restaurar, la fila quedaba huérfana y el permiso persistente seguía ocupado. La foto original nunca se tocó.
+
+Corrección: para `content://media/picker...`, `moveToTrash` la quita directo (libera el permiso persistente, limpia historial y favorito/alias vía `onPermanentlyDeleted`) y no inserta en la papelera, porque no hay nada que restaurar: se vuelve a agregar con «Agregar fotos». Prueba unitaria nueva en `TrashRepositoryTest`.
+
+**Lección:** las pruebas unitarias cubrían `deleteDocument` y «Borrar todo» pero no `moveToTrash`; solo la prueba en el teléfono encontró este camino.
 
 ## Riesgos y límites conocidos
 
