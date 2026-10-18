@@ -67,7 +67,16 @@ Una prueba corta (2026-10-14, Edge 30 Neo, Android 14) demostró que el selector
 | Compartir desde una foto agregada | **pendiente (manual)** |
 | Fotos en la nube (Google Fotos remoto) | **pendiente (manual)** |
 
-## Hallazgo de la prueba manual (corregido en este PR)
+## Hallazgo: «Borrar todo» y «Eliminar ahora» no borraban archivos propios (corregido en este PR)
+
+Reportado por el propietario y reproducido en el Edge (Android 14) con 5 archivos que la propia app había guardado en Descargas (4 `.txt` y 1 PDF): «Borrar todo» confirmaba y **no pasaba nada**, los archivos seguían en disco y no había ningún aviso. Es un defecto **anterior a este PR**, no una regresión.
+
+- **Causa:** en Android 11+ `DocumentRepository.deleteDocument` solo pedía el borrado con `MediaStore.createDeleteRequest()`, que **solo acepta imagen, vídeo y audio** y rechaza un PDF o un `.txt` «pase lo que pase» (`IllegalArgumentException`, ya documentado en `MediaDeletePermission`). Nunca se intentaba el borrado directo, que sí funciona para filas propias de la app. Además `deleteAllForever` devolvía «Hecho» aunque todo hubiera fallado.
+- **Corrección:** `MediaDeletePermission.deleteOwned()` borra directo; `deleteDocument` y `deleteAllForever` lo intentan primero y solo piden el diálogo del sistema para lo ajeno; si nada se pudo borrar devuelven el nuevo `BulkDeleteOutcome.Failed` y la pantalla muestra «No se pudo eliminar el archivo».
+- **Verificación:** mismos 5 archivos en el Edge: 5 de 5 borrados del disco, Papelera vacía, el resto de Descargas intacto, 0 cierres. Cuatro pruebas unitarias nuevas que no compilaban sin el arreglo; `features.library` 137/137 unitarias y 85/85 instrumentadas en Edge y E22.
+- **Límite:** los documentos que **no** son de la app y no son imagen/vídeo/audio (p. ej. un PDF que dejó el navegador) siguen sin poder borrarse desde la Papelera en Android 11+: Android no lo permite sin acceso a todos los archivos. Ahora al menos avisa.
+
+## Hallazgo de la prueba manual de fotos (corregido en este PR)
 
 Al «Eliminar» una foto agregada, desaparecía de la Biblioteca pero la **Papelera salía vacía**. Causa: `TrashRepository.moveToTrash` inserta en `trash_entries` **y borra la foto del historial**, y la Biblioteca de estas fotos vive *solo* del historial; la Papelera cruza con el inventario y ya no la encontraba. Consecuencias: no se podía restaurar, la fila quedaba huérfana y el permiso persistente seguía ocupado. La foto original nunca se tocó.
 
