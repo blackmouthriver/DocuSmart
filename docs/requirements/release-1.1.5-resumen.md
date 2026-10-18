@@ -1,6 +1,6 @@
-# Release 1.1.5 — resumen (en preparación)
+# Release 1.1.5 (versionCode 11) — resumen
 
-> **Estado:** implementación lista en la rama `claude/selector-fotos-1-1-5`. **Sin subir de versión todavía** (`versionCode`/`versionName` siguen en 10 / 1.1.4): el bump se hace en un PR aparte cuando el propietario lo apruebe.
+> **Estado:** versión preparada: `versionCode 11` / `versionName 1.1.5` (PR de bump apilado sobre #150). Falta fusionar #150, generar el `.aab` y subirlo a **todos** los canales donde esté el código 10.
 
 Sucede a la **1.1.4 (versionCode 10)**, que solo corrigió el requisito de 16 kB de Google Play. Esta versión quita el permiso `READ_MEDIA_IMAGES`, lo reemplaza por el selector de fotos del sistema y suma «Agregar documentos», una papelera que ahora sí restaura documentos agregados y «Vincular carpeta» más discreto.
 
@@ -92,3 +92,21 @@ Corrección: para `content://media/picker...`, `moveToTrash` la quita directo (l
 - «Eliminar ahora» sobre un documento agregado borra el archivo real de su carpeta (es lo que ya hacía con «Abrir»); la confirmación lo advierte. Si el proveedor solo concedió lectura, el borrado falla y el documento se queda en la Papelera.
 - La multi-selección del selector de archivos del sistema exige mantener pulsado un archivo para empezar a seleccionar; si el usuario toca uno a uno se agregan de a uno.
 - Los nombres de las fotos agregadas aparecen como el identificador del selector (p. ej. `1000158199.jpg`), no con su nombre original: el selector de fotos los anonimiza. Los documentos conservan su nombre.
+
+## Notas de versión sugeridas (Play Console, «Novedades»)
+
+**Español**
+> Ahora traes tus archivos a DocuSmart tú mismo: en Biblioteca, toca «Agregar fotos» o «Agregar documentos» y elige lo que quieras gestionar. DocuSmart ya no pide acceso a toda tu galería: solo ve lo que tú eliges.
+> La Papelera ahora restaura tus documentos y «Borrar todo» elimina de verdad los archivos que DocuSmart guardó en Descargas.
+> Nota: las fotos de tu galería ya no aparecen solas en Biblioteca; agrégalas con «Agregar fotos».
+
+(Las demás lenguas se redactan a partir de este texto; el límite de Play es de 500 caracteres por idioma.)
+
+## Despliegue
+
+1. Fusionar #150 y este bump; generar el `.aab` (`./gradlew bundleRelease`, 10–50 min con poca RAM) y verificar `versionCode 11`, firma y que las `.so` de 64 bits sigan en 16 kB.
+2. Subirlo a **todos** los canales donde esté el código 10 (Producción, Prueba cerrada y Prueba abierta si la hay): Google exige que ningún código de versión declare `READ_MEDIA_IMAGES`.
+3. En «Ver app bundles» confirmar 16 kB y que el aviso de fotos y vídeos desaparezca de «Estado según las políticas».
+4. La declaración de permisos de fotos y vídeos deja de ser necesaria.
+5. Despliegue gradual (10–20 %) y vigilar Crashlytics 24–48 h.
+6. Después, la oferta de prueba gratuita de 7 días en Play Console (sin cambios de código).
