@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import com.docsmart.core.data.DocumentIdentityMaintenance
 import com.docsmart.core.data.db.DocumentHistoryDao
+import com.docsmart.core.data.db.DocumentHistoryEntry
 import com.docsmart.core.data.db.TrashDao
 import com.docsmart.core.data.db.TrashEntry
 import com.docsmart.core.ui.components.DocumentUiModel
@@ -109,11 +110,24 @@ class TrashRepository
                     Timber.w("TrashRepository: fallo la purga automatica: ${e.javaClass.simpleName}")
                 }
                 val trashById = trashDao.getAll().associateBy { it.documentId }
-                documentRepository
-                    .loadAllDocumentsRaw()
-                    .filter { it.id in trashById }
-                    .map { doc -> TrashedDocumentUiModel(doc, trashById.getValue(doc.id).deletedAt) }
-                    .sortedByDescending { it.deletedAt }
+                val fromInventory =
+                    documentRepository
+                        .loadAllDocumentsRaw()
+                        .filter { it.id in trashById }
+                        .map { doc -> TrashedDocumentUiModel(doc, trashById.getValue(doc.id).deletedAt) }
+                // 1.1.5: un documento que solo vive del historial (agregado o abierto
+                // con el selector de archivos) deja de aparecer en el inventario al
+                // moverlo a la papelera, porque moveToTrash() lo saca del historial.
+                // Sin esto la Papelera salia vacia y no se podia restaurar.
+                val foundIds = fromInventory.mapTo(HashSet()) { it.document.id }
+                val fromHistoryOnly =
+                    trashById.values
+                        .filter { it.documentId !in foundIds }
+                        .mapNotNull { entry ->
+                            describeOrNull(entry.documentId, entry.deletedAt)
+                                ?.let { TrashedDocumentUiModel(it, entry.deletedAt) }
+                        }
+                (fromInventory + fromHistoryOnly).sortedByDescending { it.deletedAt }
             }
 
         /**
@@ -125,6 +139,17 @@ class TrashRepository
          */
         suspend fun moveToTrash(documentId: String): Boolean =
             withContext(Dispatchers.IO) {
+                // 1.1.5: una foto agregada con el selector del sistema solo existe
+                // en DocuSmart como una fila del historial + un permiso persistente
+                // (la original sigue en la galeria del usuario). Si pasara por la
+                // papelera, moveToTrash() la sacaria del historial y la Papelera --
+                // que cruza con el inventario -- ya no la encontraria: no se podria
+                // restaurar y el permiso quedaria ocupado para siempre. Se quita
+                // directamente (libera el permiso y limpia favorito/alias): la
+                // usuaria puede volver a agregarla con "Agregar fotos".
+                if (PickedMediaUris.isPickedReference(documentId)) {
+                    return@withContext removePickedPhoto(documentId)
+                }
                 try {
                     trashDao.insert(TrashEntry(documentId, System.currentTimeMillis()))
                     // Hallazgo real de la ronda 15: si remove() del historial
@@ -157,6 +182,12 @@ class TrashRepository
                 }
             }
 
+        private suspend fun removePickedPhoto(documentId: String): Boolean {
+            val removed = documentRepository.deleteDocument(documentId) is DocumentRepository.DeleteOutcome.Deleted
+            if (removed) documentIdentityMaintenance.onPermanentlyDeleted(documentId)
+            return removed
+        }
+
         /**
          * Saca un documento de la papelera sin tocar el archivo real.
          *
@@ -186,6 +217,11 @@ class TrashRepository
                     }
                     trashDao.remove(documentId)
                     clearPurgeCandidate(documentId)
+                    // 1.1.5: moveToTrash() lo saco del historial; si ese era su unico
+                    // origen, hay que volver a registrarlo o no reaparece en Biblioteca.
+                    if (isHistoryOnlyId(documentId)) {
+                        documentHistoryDao.recordOpen(DocumentHistoryEntry(documentId, System.currentTimeMillis()))
+                    }
                     true
                 } catch (e: CancellationException) {
                     throw e
@@ -257,6 +293,10 @@ class TrashRepository
             ) : BulkDeleteOutcome
 
             data object PartialNeedsPermission : BulkDeleteOutcome
+
+            /** 1.1.5: no se pudo borrar nada de lo pendiente (ni directo ni con el diálogo del
+             *  sistema): antes se devolvía «Hecho» sin avisar y «Borrar todo» parecía no hacer nada. */
+            data object Failed : BulkDeleteOutcome
         }
 
         /**
@@ -288,27 +328,38 @@ class TrashRepository
                     }
                 }
 
-                if (mediaFiles.isEmpty()) return@withContext BulkDeleteOutcome.Done
+                // 1.1.5: lo que la propia app guardó en MediaStore (PDF, Word, texto...) se borra
+                // directo, sin diálogo. Solo lo ajeno pasa por el pedido del sistema.
+                val notOwned =
+                    mediaFiles.filterNot { id ->
+                        val gone = mediaDeletePermission.deleteOwned(android.net.Uri.parse(id))
+                        if (gone) finishPermanentDelete(id)
+                        gone
+                    }
+                if (notOwned.isEmpty()) return@withContext BulkDeleteOutcome.Done
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    val uris = mediaFiles.map { android.net.Uri.parse(it) }
+                    val uris = notOwned.map { android.net.Uri.parse(it) }
                     val intentSender = mediaDeletePermission.createBulkDeleteRequest(uris)
-                    if (intentSender != null) return@withContext BulkDeleteOutcome.NeedsPermission(intentSender, mediaFiles)
+                    if (intentSender != null) {
+                        return@withContext BulkDeleteOutcome.NeedsPermission(intentSender, notOwned)
+                    }
                 }
 
                 var pendingPermission = false
-                mediaFiles.forEach { id ->
+                var failed = false
+                notOwned.forEach { id ->
                     when (documentRepository.deleteDocument(id)) {
-                        is DocumentRepository.DeleteOutcome.Deleted -> {
-                            trashDao.remove(id)
-                            clearPurgeCandidate(id)
-                            documentIdentityMaintenance.onPermanentlyDeleted(id)
-                        }
+                        is DocumentRepository.DeleteOutcome.Deleted -> finishPermanentDelete(id)
                         is DocumentRepository.DeleteOutcome.NeedsPermission -> pendingPermission = true
-                        DocumentRepository.DeleteOutcome.Failed -> Unit
+                        DocumentRepository.DeleteOutcome.Failed -> failed = true
                     }
                 }
-                if (pendingPermission) BulkDeleteOutcome.PartialNeedsPermission else BulkDeleteOutcome.Done
+                when {
+                    pendingPermission -> BulkDeleteOutcome.PartialNeedsPermission
+                    failed -> BulkDeleteOutcome.Failed
+                    else -> BulkDeleteOutcome.Done
+                }
             }
 
         /**
@@ -389,7 +440,37 @@ class TrashRepository
 
         // Los ids de MediaStore real siempre son content://media/...; cualquier
         // otro content:// es un documento SAF (ver DocumentRepository).
-        private fun isMediaStoreId(documentId: String): Boolean = documentId.startsWith("content://media/")
+        // Limpieza común tras un borrado definitivo confirmado.
+        private suspend fun finishPermanentDelete(documentId: String) {
+            trashDao.remove(documentId)
+            clearPurgeCandidate(documentId)
+            documentIdentityMaintenance.onPermanentlyDeleted(documentId)
+        }
+
+        // 1.1.5: las fotos del selector del sistema (content://media/picker...)
+        // son referencias de solo lectura -- NO van al pedido de borrado de
+        // MediaStore (pediria borrar la foto original de la galeria).
+        private fun isMediaStoreId(documentId: String): Boolean =
+            documentId.startsWith("content://media/") && !PickedMediaUris.isPickedReference(documentId)
+
+        // Describe un documento por su id sin pasar por el inventario; null si ya no se
+        // puede leer (archivo movido o borrado, permiso revocado).
+        private fun describeOrNull(
+            documentId: String,
+            atMs: Long,
+        ): DocumentUiModel? =
+            try {
+                documentRepository.documentFromHistoryId(documentId, atMs)
+            } catch (e: Exception) {
+                Timber.w("TrashRepository: no se pudo leer un documento de la papelera (${e.javaClass.simpleName})")
+                null
+            }
+
+        // Documentos SAF (content:// que no es de MediaStore): su unico origen puede
+        // ser el historial. Registrarlos de nuevo al restaurar es inocuo si tambien
+        // salen de otra fuente (se deduplican por id).
+        private fun isHistoryOnlyId(documentId: String): Boolean =
+            documentId.startsWith("content://") && !documentId.startsWith("content://media/")
 
         private fun clearPurgeCandidate(documentId: String) {
             purgeCandidatePrefs.edit().remove("candidate_$documentId").apply()

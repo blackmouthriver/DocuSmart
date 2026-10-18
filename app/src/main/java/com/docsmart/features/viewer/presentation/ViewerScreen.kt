@@ -702,6 +702,9 @@ private fun ImageViewerContent(
     val context = LocalContext.current
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var loadFailed by remember { mutableStateOf(false) }
+    // 1.1.5: SecurityException = ya no tenemos acceso a esa foto (p. ej. una foto
+    // de galeria guardada en Recientes antes de quitar READ_MEDIA_IMAGES).
+    var noAccess by remember { mutableStateOf(false) }
     var scale by remember { mutableFloatStateOf(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
@@ -714,6 +717,10 @@ private fun ImageViewerContent(
                     context.contentResolver.openInputStream(uri)?.use { stream ->
                         BitmapFactory.decodeStream(stream)
                     }
+                } catch (e: SecurityException) {
+                    Timber.w("Sin acceso a la imagen: ${e.javaClass.simpleName}")
+                    noAccess = true
+                    null
                 } catch (e: Exception) {
                     Timber.e("Error cargando imagen: ${e.javaClass.simpleName}")
                     null
@@ -727,9 +734,10 @@ private fun ImageViewerContent(
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             if (loadFailed) {
                 Text(
-                    text = stringResource(R.string.viewer_error),
+                    text = stringResource(if (noAccess) R.string.viewer_image_no_access else R.string.viewer_error),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 32.dp),
                 )
             } else {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)

@@ -11,6 +11,7 @@ import com.docsmart.R
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.data.canonicalMediaUri
 import com.docsmart.core.data.db.DocumentHistoryDao
+import com.docsmart.core.data.db.DocumentHistoryEntry
 import com.docsmart.core.data.db.TrashDao
 import com.docsmart.core.ui.components.DocumentType
 import com.docsmart.core.ui.components.DocumentUiModel
@@ -149,6 +150,64 @@ class DocumentRepository
         }
 
         /**
+         * 1.1.5: registra fotos elegidas con el selector de fotos
+         * del sistema. Toma el permiso de URI persistente (la documentación del
+         * selector lo admite, hasta 5000 concesiones) y las deja en el historial
+         * para que la Biblioteca las liste. Devuelve cuántas quedaron con acceso
+         * persistente realmente concedido.
+         */
+        suspend fun addPickedImages(uris: List<Uri>): Int =
+            withContext(Dispatchers.IO) {
+                var persisted = 0
+                uris.forEach { uri ->
+                    try {
+                        context.contentResolver.takePersistableUriPermission(
+                            uri,
+                            android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                        )
+                        persisted++
+                    } catch (e: SecurityException) {
+                        Timber.w("addPickedImages: sin acceso persistente (${e.javaClass.simpleName})")
+                    }
+                    documentHistoryDao.recordOpen(DocumentHistoryEntry(uri.toString(), System.currentTimeMillis()))
+                }
+                Timber.d("addPickedImages: ${uris.size} elegidas, $persisted con acceso persistente")
+                persisted
+            }
+
+        /**
+         * 1.1.5: registra documentos elegidos con el selector de archivos del
+         * sistema ("Agregar documentos"). Intenta el permiso persistente de
+         * lectura y escritura (necesario para que "Eliminar" borre de verdad, como
+         * con "Abrir") y, si el proveedor solo concede lectura, se queda con
+         * lectura. Siempre los deja en el historial para que la Biblioteca los
+         * liste. Devuelve cuantos quedaron con acceso persistente.
+         */
+        suspend fun addPickedDocuments(uris: List<Uri>): Int =
+            withContext(Dispatchers.IO) {
+                val read = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                val readWrite = read or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                // Lambda local (no un metodo): DocumentRepository ya esta en el limite
+                // TooManyFunctions de detekt.
+                val takePersistable = { uri: Uri, flags: Int ->
+                    try {
+                        context.contentResolver.takePersistableUriPermission(uri, flags)
+                        true
+                    } catch (e: SecurityException) {
+                        Timber.w("takePersistable: el proveedor no concedio el acceso (${e.javaClass.simpleName})")
+                        false
+                    }
+                }
+                var persisted = 0
+                uris.forEach { uri ->
+                    if (takePersistable(uri, readWrite) || takePersistable(uri, read)) persisted++
+                    documentHistoryDao.recordOpen(DocumentHistoryEntry(uri.toString(), System.currentTimeMillis()))
+                }
+                Timber.d("addPickedDocuments: ${uris.size} elegidos, $persisted con acceso persistente")
+                persisted
+            }
+
+        /**
          * Excluye documentos en la papelera (RF-VIS-07) -- `TrashRepository`
          * mantiene la tabla `trash_entries` con lo que hay que ocultar acá; la
          * purga automática de lo vencido vive allá también (se ejecuta cuando
@@ -244,6 +303,12 @@ class DocumentRepository
          */
         suspend fun deleteDocument(documentId: String): DeleteOutcome =
             withContext(Dispatchers.IO) {
+                // 1.1.5: una foto agregada con el selector del sistema es una
+                // referencia de solo lectura, no una fila propia de MediaStore --
+                // se quita de DocuSmart, nunca se borra la foto original.
+                if (PickedMediaUris.isPickedReference(documentId)) {
+                    return@withContext removePickedReference(documentId)
+                }
                 // Fila 22 del backlog UX: un documento de la carpeta vinculada por
                 // SAF también empieza con "content://" pero NO es un Uri de
                 // MediaStore -- MediaStore.createDeleteRequest() lanza
@@ -256,6 +321,12 @@ class DocumentRepository
                     return@withContext deleteSafDocument(uri, documentId)
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && documentId.startsWith("content://")) {
+                    // 1.1.5: lo propio se borra directo; createDeleteRequest rechaza todo lo que no
+                    // sea imagen/video/audio (un PDF o un .txt propios nunca se podian borrar).
+                    if (mediaDeletePermission.deleteOwned(Uri.parse(documentId))) {
+                        documentHistoryDao.remove(documentId)
+                        return@withContext DeleteOutcome.Deleted
+                    }
                     val intentSender = mediaDeletePermission.createBulkDeleteRequest(listOf(Uri.parse(documentId)))
                     return@withContext if (intentSender != null) {
                         DeleteOutcome.NeedsPermission(intentSender)
@@ -265,6 +336,22 @@ class DocumentRepository
                 }
                 deleteLegacyDocument(documentId)
             }
+
+        // Quita una foto del selector de DocuSmart sin tocar la original: libera
+        // el permiso persistente (devuelve el cupo del sistema) y borra su fila
+        // del historial. Un fallo al liberar no impide quitarla de la Biblioteca.
+        private suspend fun removePickedReference(documentId: String): DeleteOutcome {
+            try {
+                context.contentResolver.releasePersistableUriPermission(
+                    Uri.parse(documentId),
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+            } catch (e: SecurityException) {
+                Timber.w("removePickedReference: sin permiso que liberar (${e.javaClass.simpleName})")
+            }
+            documentHistoryDao.remove(documentId)
+            return DeleteOutcome.Deleted
+        }
 
         // Hallazgo real de la auditoría de la capa de persistencia (Media, catch
         // de CancellationException agregado): extraída de deleteDocument() para
@@ -698,7 +785,9 @@ class DocumentRepository
             return documents
         }
 
-        private fun documentFromHistoryId(
+        // internal: la Papelera la usa para describir documentos que solo viven del
+        // historial (ver TrashRepository.loadTrashedDocuments).
+        internal fun documentFromHistoryId(
             id: String,
             lastOpenedAt: Long,
         ): DocumentUiModel? =

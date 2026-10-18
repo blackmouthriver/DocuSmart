@@ -134,6 +134,26 @@ object DocuSmartAnalytics {
     }
 
     // ── Estudio ───────────────────────────────────────────────────────────────
+    // ── Biblioteca (1.1.5): fotos/documentos agregados y carpeta vinculada ──
+    // `library_folder_linked` mide si "Vincular carpeta" se usa de verdad, para
+    // decidir con datos si se conserva.
+    fun logFilesAdded(
+        kind: String,
+        count: Int,
+    ) = safely {
+        val bundle =
+            Bundle().apply {
+                putString("kind", kind)
+                putInt("count", count)
+            }
+        analytics.logEvent("library_files_added", bundle)
+    }
+
+    fun logFolderLinked() =
+        safely {
+            analytics.logEvent("library_folder_linked", null)
+        }
+
     fun logStudySessionStarted() =
         safely {
             analytics.logEvent("study_session_started", null)
