@@ -57,7 +57,8 @@ class LibraryScreenTest {
     val permissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             *if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+                // Android 13+: la Biblioteca ya no pide ningún permiso de medios.
+                emptyArray<String>()
             } else {
                 arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
             },
@@ -197,6 +198,28 @@ class LibraryScreenTest {
 
         composeRule.onNodeWithText("Foto.jpg").assertIsDisplayed()
         composeRule.onAllNodesWithText("Informe.docx").assertCountEquals(0)
+    }
+
+    @Test
+    fun pestanaDispositivo_ofreceAgregarFotosYDocumentos_yMisArchivosNo() {
+        // 1.1.5: sin READ_MEDIA_IMAGES, las fotos entran por el selector del
+        // sistema y los documentos por el selector de archivos -- los botones
+        // viven solo en la pestana Dispositivo.
+        val viewModel = buildViewModel(listOf(deviceDoc("Foto.jpg"), appDoc("Archivo.pdf")))
+
+        setContentWithLocale { LibraryScreen(viewModel = viewModel) }
+        waitForText("Foto.jpg")
+
+        composeRule.onNodeWithText("Agregar fotos").assertExists()
+        composeRule.onNodeWithText("Agregar documentos").assertExists()
+        composeRule.onNodeWithText("Vincular carpeta").assertExists()
+
+        composeRule.onNodeWithText("Mis archivos").performClick()
+        waitForText("Archivo.pdf")
+
+        composeRule.onAllNodesWithText("Agregar fotos").assertCountEquals(0)
+        composeRule.onAllNodesWithText("Agregar documentos").assertCountEquals(0)
+        composeRule.onAllNodesWithText("Vincular carpeta").assertCountEquals(0)
     }
 
     @Test

@@ -55,7 +55,10 @@
     <string name="library_tab_device">Устройство</string>
     <string name="library_tab_app_files">Мои файлы</string>
     <string name="library_tab_file_count">Файлов: %1$d</string>
-    <string name="library_tab_device_description">Фото и документы, которые уже были сохранены на вашем устройстве</string>
+    <string name="library_tab_device_description">Добавьте документы и фото в DocuSmart и управляйте ими так, как удобно вам</string>
+    <string name="library_add_photos">Добавить фото</string>
+    <string name="library_add_documents">Добавить документы</string>
+    <string name="viewer_image_no_access">У нас нет доступа к этому изображению. Добавьте его снова: Библиотека → Добавить фото.</string>
     <string name="library_tab_app_files_description">Документы, созданные или преобразованные в DocuSmart</string>
     <string name="library_no_permission_denied_title">Доступ запрещён</string>
     <string name="library_no_permission_required_title">Требуется доступ к файлам</string>
@@ -1153,8 +1156,6 @@
     <string name="filepicker_no_library_files">В вашей библиотеке пока нет файлов</string>
 
     <!-- ── Привязка папки Загрузки через SAF (пункт 22 бэклога UX) ── -->
-    <string name="library_link_downloads_title">Смотрите больше документов здесь</string>
-    <string name="library_link_downloads_body">Выберите папку на устройстве, чтобы Библиотека также показывала документы, которые уже есть там</string>
     <string name="library_link_downloads_button">Привязать папку</string>
     <string name="library_link_folder_error">Не удалось привязать папку. Попробуйте ещё раз.</string>
 

@@ -56,7 +56,8 @@ class LibraryScreenExtrasTest {
     val permissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             *if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+                // Android 13+: la Biblioteca ya no pide ningún permiso de medios.
+                emptyArray<String>()
             } else {
                 arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
             },
@@ -179,12 +180,12 @@ class LibraryScreenExtrasTest {
         val viewModel = buildViewModel(linkedFolder = null)
 
         setScreen { LibraryScreen(viewModel = viewModel) }
-        waitForText(text(R.string.library_link_downloads_title))
+        waitForText(text(R.string.library_link_downloads_button))
 
         composeRule.onNodeWithText(text(R.string.library_tab_app_files)).performClick()
 
         composeRule.waitUntilOrDump("CI_HANG_LibraryScreenExtrasTest") {
-            composeRule.onAllNodesWithText(text(R.string.library_link_downloads_title)).fetchSemanticsNodes().isEmpty()
+            composeRule.onAllNodesWithText(text(R.string.library_link_downloads_button)).fetchSemanticsNodes().isEmpty()
         }
     }
 
@@ -196,7 +197,7 @@ class LibraryScreenExtrasTest {
         setScreen(override = recording) { LibraryScreen(viewModel = viewModel) }
         waitForText("MisDocs")
 
-        composeRule.onAllNodesWithText(text(R.string.library_link_downloads_title)).assertCountEquals(0)
+        composeRule.onAllNodesWithText(text(R.string.library_link_downloads_button)).assertCountEquals(0)
         composeRule.onNodeWithText("MisDocs").performClick()
 
         assertEquals(1, recording.intents.size)

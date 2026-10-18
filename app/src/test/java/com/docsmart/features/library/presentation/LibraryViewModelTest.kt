@@ -146,6 +146,51 @@ class LibraryViewModelTest {
         assertEquals(3, state.allDocuments.size)
     }
 
+    // ── 1.1.5: fotos elegidas con el selector del sistema ─────────────────────
+
+    @Test
+    fun `onPhotosPicked con fotos las registra y recarga la lista`() {
+        val uris = listOf(mockk<Uri>(), mockk<Uri>())
+        coEvery { repository.addPickedImages(uris) } returns 2
+        val viewModel = buildViewModel()
+
+        viewModel.onPhotosPicked(uris)
+
+        coVerify { repository.addPickedImages(uris) }
+        // Una carga al iniciar y otra tras agregar las fotos.
+        coVerify(atLeast = 2) { repository.loadAllDocuments() }
+    }
+
+    @Test
+    fun `onDocumentsPicked con documentos los registra y recarga la lista`() {
+        val uris = listOf(mockk<Uri>(), mockk<Uri>())
+        coEvery { repository.addPickedDocuments(uris) } returns 2
+        val viewModel = buildViewModel()
+
+        viewModel.onDocumentsPicked(uris)
+
+        coVerify { repository.addPickedDocuments(uris) }
+        coVerify(atLeast = 2) { repository.loadAllDocuments() }
+    }
+
+    @Test
+    fun `onDocumentsPicked sin documentos no toca el repositorio`() {
+        val viewModel = buildViewModel()
+
+        viewModel.onDocumentsPicked(emptyList())
+
+        coVerify(exactly = 0) { repository.addPickedDocuments(any()) }
+    }
+
+    @Test
+    fun `onPhotosPicked sin fotos no toca el repositorio`() {
+        val viewModel = buildViewModel()
+
+        viewModel.onPhotosPicked(emptyList())
+
+        coVerify(exactly = 0) { repository.addPickedImages(any()) }
+    }
+
     @Test
     fun `la busqueda filtra por nombre sin distinguir mayusculas dentro de la pestana actual`() {
         val viewModel = buildViewModel()

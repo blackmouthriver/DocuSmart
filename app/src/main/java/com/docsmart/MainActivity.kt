@@ -360,33 +360,17 @@ class MainActivity : AppCompatActivity() {
     // ningún tipo de video, no hay reproductor ni importador) -- pedir un
     // permiso que no se usa viola la política de Google de fotos/video y
     // no había forma honesta de justificarlo en el formulario.
+    //
+    // 2026-10-14: en Android 13+ ya no se pide ningún permiso de medios (Play
+    // Console rechazó READ_MEDIA_IMAGES: las fotos entran por el selector del
+    // sistema). Solo Android 12 o menor pide READ_EXTERNAL_STORAGE.
     private fun requestStoragePermissions() {
-        val permissions = mutableListOf<String>()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                if (ContextCompat.checkSelfPermission(
-                        this, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED,
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    permissions.add(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
-                }
-            }
-            if (ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.READ_MEDIA_IMAGES,
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
-            }
-        } else {
-            if (ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.READ_EXTERNAL_STORAGE,
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
-            }
-        }
-        if (permissions.isNotEmpty()) {
-            permissionLauncher.launch(permissions.toTypedArray())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return
+        if (ContextCompat.checkSelfPermission(
+                this, Manifest.permission.READ_EXTERNAL_STORAGE,
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            permissionLauncher.launch(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE))
         }
     }
 

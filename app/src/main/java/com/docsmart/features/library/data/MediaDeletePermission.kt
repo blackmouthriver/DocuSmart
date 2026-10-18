@@ -37,6 +37,24 @@ class MediaDeletePermission
             (e as? RecoverableSecurityException)?.userAction?.actionIntent?.intentSender
 
         /**
+         * 1.1.5: borrado directo de un archivo que la propia app guardó en MediaStore
+         * (p. ej. "Guardar en Descargas": PDF, Word, texto...). No necesita ningún
+         * diálogo del sistema. `createDeleteRequest()` SOLO acepta imagen/vídeo/audio
+         * (ver arriba), así que sin este paso un PDF o un .txt propio nunca se podía
+         * borrar de la Papelera en Android 11+: «Borrar todo» no hacía nada.
+         * Devuelve `false` si la fila no es de la app (SecurityException: el llamador
+         * cae al diálogo del sistema) o si ya no existe.
+         */
+        @Suppress("TooGenericExceptionCaught")
+        fun deleteOwned(uri: Uri): Boolean =
+            try {
+                context.contentResolver.delete(uri, null, null) > 0
+            } catch (e: Exception) {
+                Timber.d("deleteOwned: no es un archivo propio o no se pudo borrar directo (${e.javaClass.simpleName})")
+                false
+            }
+
+        /**
          * Bug real (2026-09-12, verificado en dispositivo): un Uri traído desde
          * Carpeta Segura vía el picker genérico de Android puede venir con la
          * forma `content://media/external/file/<id>` (la tabla genérica "Files"

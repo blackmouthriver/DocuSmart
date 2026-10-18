@@ -19,19 +19,16 @@
         android:maxSdkVersion="29"
         tools:ignore="ScopedStorage" />
 
-    <!-- ── Medios — Android 13+ (API 33+) ───────────── -->
-    <!-- READ_MEDIA_VIDEO y READ_MEDIA_AUDIO removidos 2026-09-10 (hallazgo
-         real al preparar la declaración de permisos de Play Console):
-         estaban declarados acá pero nunca solicitados ni verificados en
-         ningún lugar del código Kotlin. DocuSmart no tiene ninguna función
-         que use video ni audio de archivos (el dictado de voz usa
-         RecognizerIntent del sistema, no lee archivos de audio). Pedir
-         permisos que la app nunca usa viola la política de Google de
-         fotos/video y no había forma honesta de justificarlos. -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission
-        android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
-        android:minSdkVersion="34" />
+    <!-- ── Medios — Android 13+ (API 33+): NINGÚN permiso de medios ── -->
+    <!-- READ_MEDIA_VIDEO y READ_MEDIA_AUDIO removidos 2026-09-10 y
+         READ_MEDIA_IMAGES / READ_MEDIA_VISUAL_USER_SELECTED removidos
+         2026-10-14: la revisión de producción de Play Console los marcó
+         ("Usar selectores de sistema alternativos para fotos o vídeos").
+         DocuSmart no es una galería ni un editor de fotos: las imágenes
+         entran siempre por el selector del sistema (OpenDocument /
+         PickVisualMedia), que no necesita permiso. La Biblioteca ya no
+         lista las fotos de la galería; sí sigue mostrando lo que genera
+         la app (MediaStore devuelve las filas propias sin permiso). -->
     <!-- android.permission.READ_MEDIA_DOCUMENTS — ELIMINADO 2026-09-03:
          no existe como permiso real de Android (confirmado). Documentos
          (PDF/Word/Excel/PowerPoint/Texto) de otras apps en Descargas no
