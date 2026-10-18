@@ -26,6 +26,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -613,6 +614,8 @@ private fun AddFilesCard(
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
             )
             // IntrinsicSize.Min + fillMaxHeight: si un texto se parte en dos líneas (idiomas
             // más largos o fuente grande), los dos botones crecen juntos y quedan iguales.
@@ -620,10 +623,18 @@ private fun AddFilesCard(
                 modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Button(onClick = actions.photos, modifier = Modifier.weight(1f).fillMaxHeight()) {
+                Button(
+                    onClick = actions.photos,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    shape = RectangleShape,
+                ) {
                     Text(stringResource(R.string.library_add_photos), maxLines = 2, textAlign = TextAlign.Center)
                 }
-                Button(onClick = actions.documents, modifier = Modifier.weight(1f).fillMaxHeight()) {
+                Button(
+                    onClick = actions.documents,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    shape = RectangleShape,
+                ) {
                     Text(stringResource(R.string.library_add_documents), maxLines = 2, textAlign = TextAlign.Center)
                 }
             }

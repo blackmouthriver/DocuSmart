@@ -53,7 +53,7 @@
     <string name="library_tab_device">Device</string>
     <string name="library_tab_app_files">My files</string>
     <string name="library_tab_file_count">%1$d files</string>
-    <string name="library_tab_device_description">Bring your documents and photos into DocuSmart and manage them your way</string>
+    <string name="library_tab_device_description">Bring your documents and photos from your phone into DocuSmart and manage them your way</string>
     <string name="library_add_photos">Add photos</string>
     <string name="library_add_documents">Add documents</string>
     <string name="viewer_image_no_access">We can\'t access this image. Add it again from Library → Add photos.</string>

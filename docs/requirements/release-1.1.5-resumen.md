@@ -19,7 +19,7 @@ Una prueba corta (2026-10-14, Edge 30 Neo, Android 14) demostró que el selector
 | Biblioteca | Ya no se bloquea con «Sin permisos» en Android 13+; deja de listar automáticamente la galería de otras apps |
 | «Eliminar» sobre una foto agregada | Solo la quita de DocuSmart (libera el permiso persistente y la saca del historial). **Nunca** pide borrar la foto original de la galería |
 | Visor | Si una foto ya no es accesible (p. ej. una foto de galería guardada en Recientes antes de este cambio), muestra «No tenemos acceso a esta imagen. Vuelve a agregarla desde Biblioteca → Agregar fotos» en vez del error genérico |
-| **Agregar documentos** | Segundo botón, en una **tarjeta** con el encabezado «Trae tus documentos y fotos a DocuSmart y gestiónalos a tu gusto» (12 idiomas), junto a «Agregar fotos» y de la misma altura: selector de archivos del sistema, multi-selección (PDF, Word, Excel, PowerPoint, texto y zip), sin ningún permiso. Los documentos quedan en la Biblioteca con acceso persistente de lectura y escritura (cae a solo lectura si el proveedor no concede escritura) |
+| **Agregar documentos** | Segundo botón, en una **tarjeta** con el encabezado centrado «Trae tus documentos y fotos desde tu celular a DocuSmart y gestiónalos a tu gusto» (12 idiomas) y botones de esquinas rectas, junto a «Agregar fotos» y de la misma altura: selector de archivos del sistema, multi-selección (PDF, Word, Excel, PowerPoint, texto y zip), sin ningún permiso. Los documentos quedan en la Biblioteca con acceso persistente de lectura y escritura (cae a solo lectura si el proveedor no concede escritura) |
 | **Papelera real para documentos** | Un documento agregado o abierto con «Abrir» ahora aparece en la Papelera tras «Eliminar» y se puede **restaurar**. Antes la Papelera salía vacía |
 | **Vincular carpeta** | Se conserva, pero pasa de tarjeta grande a un enlace pequeño dentro de la tarjeta «Agregar», bajo los botones; se agregan eventos de analítica para decidir con datos si se mantiene |
 | Textos | Botón, mensaje del Visor y la descripción de la pestaña Dispositivo, en los 12 idiomas |
@@ -64,8 +64,8 @@ Una prueba corta (2026-10-14, Edge 30 Neo, Android 14) demostró que el selector
 | **Suite instrumentada completa con todos los cambios (commit `84ada52`), Edge 30 Neo (Android 14)** | **8/8 fragmentos OK.** Un cierre de proceso conocido del Visor en el fragmento 3 (`powerPointCorrupto…`), resuelto por el reintento automático |
 | **Suite instrumentada completa con todos los cambios, Moto E22 (Android 12)** | **8/8 fragmentos OK.** El fragmento 0 falló una vez con 11/117 (todas «No compose hierarchies found», en componentes sin relación con este PR, y tardó 547 s) y **repetido pasó 117/117** en 403 s: tropiezo del arranque, no del código |
 | **Unitarias completas** | **1 569 en 158 clases, 0 fallas** (mínimo de la guardia: 1 400) |
-| Compartir desde una foto agregada | **pendiente (manual)** |
-| Fotos en la nube (Google Fotos remoto) | **pendiente (manual)** |
+| Compartir desde una foto agregada | OK (probado a mano por el propietario, 2026-10-18) |
+| Traer fotos y documentos desde Google Drive con los selectores del sistema | OK (probado a mano por el propietario, 2026-10-18). Fotos de Google Fotos remoto: sin probar por separado |
 
 ## Hallazgo: «Borrar todo» y «Eliminar ahora» no borraban archivos propios (corregido en este PR)
 

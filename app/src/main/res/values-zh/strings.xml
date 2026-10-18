@@ -52,7 +52,7 @@
     <string name="library_tab_device">设备</string>
     <string name="library_tab_app_files">我的文件</string>
     <string name="library_tab_file_count">%1$d 个文件</string>
-    <string name="library_tab_device_description">把你的文档和照片带入 DocuSmart，按自己的方式管理</string>
+    <string name="library_tab_device_description">把手机里的文档和照片带入 DocuSmart，按自己的方式管理</string>
     <string name="library_add_photos">添加照片</string>
     <string name="library_add_documents">添加文档</string>
     <string name="viewer_image_no_access">无法访问此图片。请在 资料库 → 添加照片 中重新添加。</string>

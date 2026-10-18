@@ -52,7 +52,7 @@
     <string name="library_tab_device">기기</string>
     <string name="library_tab_app_files">내 파일</string>
     <string name="library_tab_file_count">파일 %1$d개</string>
-    <string name="library_tab_device_description">문서와 사진을 DocuSmart로 가져와 원하는 대로 관리하세요</string>
+    <string name="library_tab_device_description">휴대폰의 문서와 사진을 DocuSmart로 가져와 원하는 대로 관리하세요</string>
     <string name="library_add_photos">사진 추가</string>
     <string name="library_add_documents">문서 추가</string>
     <string name="viewer_image_no_access">이 이미지에 접근할 수 없습니다. 보관함 → 사진 추가에서 다시 추가해 주세요.</string>
