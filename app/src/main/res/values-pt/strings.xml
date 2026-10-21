@@ -53,7 +53,10 @@
     <string name="library_tab_device">Dispositivo</string>
     <string name="library_tab_app_files">Meus arquivos</string>
     <string name="library_tab_file_count">%1$d arquivos</string>
-    <string name="library_tab_device_description">Fotos e documentos que você já tinha salvos no dispositivo</string>
+    <string name="library_tab_device_description">Traga seus documentos e fotos do seu celular para o DocuSmart e gerencie do seu jeito</string>
+    <string name="library_add_photos">Adicionar fotos</string>
+    <string name="library_add_documents">Adicionar documentos</string>
+    <string name="viewer_image_no_access">Não temos acesso a esta imagem. Adicione-a novamente em Biblioteca → Adicionar fotos.</string>
     <string name="library_tab_app_files_description">Documentos que você criou ou converteu dentro do DocuSmart</string>
     <string name="library_no_permission_denied_title">Permissão negada</string>
     <string name="library_no_permission_required_title">Acesso a arquivos necessário</string>
@@ -1137,8 +1140,6 @@
     <string name="filepicker_no_library_files">Você ainda não tem arquivos na sua biblioteca</string>
 
     <!-- ── Vincular pasta de Downloads via SAF (item 22 do backlog UX) ── -->
-    <string name="library_link_downloads_title">Veja mais documentos aqui</string>
-    <string name="library_link_downloads_body">Escolha uma pasta do seu dispositivo para que a Biblioteca também mostre os documentos que você já tem lá</string>
     <string name="library_link_downloads_button">Vincular pasta</string>
     <string name="library_link_folder_error">Não foi possível vincular a pasta. Tente novamente.</string>
 

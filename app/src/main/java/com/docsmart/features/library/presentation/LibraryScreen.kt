@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,6 +26,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -102,6 +104,8 @@ fun LibraryScreen(
         remember(linkedFolderUri) {
             linkedFolderUri?.let { viewModel.linkedFolderDisplayName(it) }
         }
+    // 1.1.5: selector de fotos del sistema (no requiere permiso).
+    val pickActions = rememberPickActions(viewModel)
     val linkFolderLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.OpenDocumentTree(),
@@ -179,30 +183,27 @@ fun LibraryScreen(
         // una tercera línea dentro de cada tarjeta de LibraryTabItem (con
         // fuente "Grande"/"Muy grande" ya apenas entran 2 líneas ahí, ver
         // HU-UX-05).
-        item {
-            Text(
-                text =
-                    when (uiState.selectedTab) {
-                        LibraryTab.DEVICE -> stringResource(R.string.library_tab_device_description)
-                        LibraryTab.APP_FILES -> stringResource(R.string.library_tab_app_files_description)
-                    },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 20.dp),
-            )
+        // (En Dispositivo ese texto es el encabezado de la tarjeta "Agregar", más abajo.)
+        if (uiState.selectedTab == LibraryTab.APP_FILES) {
+            item {
+                Text(
+                    text = stringResource(R.string.library_tab_app_files_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                )
+            }
         }
 
-        // ── Vincular Descargas (fila 22 backlog UX): solo en la pestaña
-        // Dispositivo y mientras no haya carpeta vinculada -- una vez vinculada,
-        // loadDocumentsFromLinkedFolder() ya trae PDF/Word/Excel/PowerPoint/
-        // Texto reales y esta tarjeta deja de tener sentido.
-        if (uiState.selectedTab == LibraryTab.DEVICE && linkedFolderUri == null) {
+        // 1.1.5: agregar fotos/documentos con los selectores del sistema (sin permisos
+        // de medios) y, mientras no haya carpeta vinculada (fila 22 backlog UX), el
+        // enlace discreto para vincularla -- una vez vinculada, la carpeta ya se lista
+        // sola. Todo en un bloque para que el espacio entre ellos sea el justo.
+        if (uiState.selectedTab == LibraryTab.DEVICE) {
             item {
-                LinkDownloadsFolderCard(
-                    onLinkClick = {
-                        linkFolderLauncher.launch(viewModel.downloadsFolderPickerInitialUri())
-                    },
-                )
+                AddFilesCard(pickActions, showLinkFolder = linkedFolderUri == null) {
+                    linkFolderLauncher.launch(viewModel.downloadsFolderPickerInitialUri())
+                }
             }
         }
 
@@ -529,58 +530,115 @@ private fun LibraryTabItem(
 // (sin pedir "acceso a todos los archivos") es que el usuario vincule la
 // carpeta una vez con el selector nativo de Android.
 @Composable
-private fun LinkDownloadsFolderCard(onLinkClick: () -> Unit) {
-    Card(
+private fun LinkFolderLink(onLinkClick: () -> Unit) {
+    // 1.1.5: antes era una tarjeta grande; ahora que "Agregar documentos" cubre
+    // el caso común, queda como un enlace discreto para quien tiene una carpeta
+    // dedicada (la carpeta vinculada se sigue listando sola).
+    TextButton(
+        onClick = onLinkClick,
+        modifier = Modifier.offset(x = (-8).dp).heightIn(min = 36.dp),
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.CreateNewFolder,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+        )
+        Text(
+            text = stringResource(R.string.library_link_downloads_button),
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(start = 6.dp),
+        )
+    }
+}
+
+// 1.1.5: acciones de "Agregar" -- selector de fotos del sistema y selector de
+// archivos (documentos). Extraídas de LibraryScreen para no superar el umbral
+// LongMethod de detekt.
+private class PickActions(
+    val photos: () -> Unit,
+    val documents: () -> Unit,
+)
+
+@Composable
+private fun rememberPickActions(viewModel: LibraryViewModel): PickActions {
+    val photosLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.PickMultipleVisualMedia(),
+        ) { uris -> viewModel.onPhotosPicked(uris) }
+    val documentsLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartActivityForResult(),
+        ) { result -> viewModel.onDocumentsPicked(pickedUris(result.data)) }
+    return PickActions(
+        photos = {
+            photosLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        },
+        documents = { documentsLauncher.launch(documentPickerIntent()) },
+    )
+}
+
+// 1.1.5: tarjeta de "Agregar" de la pestaña Dispositivo. Un encabezado que invita a
+// traer documentos y fotos, los dos botones y, debajo, el enlace discreto de
+// "Vincular carpeta" (solo mientras no haya una carpeta vinculada).
+@Composable
+private fun AddFilesCard(
+    actions: PickActions,
+    showLinkFolder: Boolean,
+    onLinkClick: () -> Unit,
+) {
+    val shape = MaterialTheme.shapes.large
+    Box(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-        shape = MaterialTheme.shapes.large,
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-            ),
+                .padding(horizontal = 20.dp)
+                // Mismo estilo que las pestañas y las filas de documentos: sombra y borde
+                // tintados con el color de acento, y un fondo con algo de transparencia
+                // para que se vean las formas decorativas detrás.
+                .accentShadow(shape = shape, elevation = 4.dp)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f))
+                .accentBorder(shape = shape),
     ) {
-        // Rediseño 2026-09-21: título y botón comparten fila y el texto se limita
-        // a dos líneas; antes apilados empujaban filtros y lista hacia abajo.
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            // Con el enlace debajo, menos aire inferior: el propio botón ya trae su relleno.
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = if (showLinkFolder) 4.dp else 14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(
+            Text(
+                text = stringResource(R.string.library_tab_device_description),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            )
+            // IntrinsicSize.Min + fillMaxHeight: si un texto se parte en dos líneas (idiomas
+            // más largos o fuente grande), los dos botones crecen juntos y quedan iguales.
+            Row(
+                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Icon(
-                    imageVector = Icons.Rounded.CreateNewFolder,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-                Text(
-                    text = stringResource(R.string.library_link_downloads_title),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
                 Button(
-                    onClick = onLinkClick,
-                    shape = MaterialTheme.shapes.medium,
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                    onClick = actions.photos,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    shape = RectangleShape,
                 ) {
-                    Text(text = stringResource(R.string.library_link_downloads_button), maxLines = 1)
+                    Text(stringResource(R.string.library_add_photos), maxLines = 2, textAlign = TextAlign.Center)
+                }
+                Button(
+                    onClick = actions.documents,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    shape = RectangleShape,
+                ) {
+                    Text(stringResource(R.string.library_add_documents), maxLines = 2, textAlign = TextAlign.Center)
                 }
             }
-            Text(
-                text = stringResource(R.string.library_link_downloads_body),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+            if (showLinkFolder) LinkFolderLink(onLinkClick)
         }
     }
 }
@@ -646,21 +704,21 @@ internal fun NoPermissionContent(
 }
 
 // ── Helpers de permisos ───────────────────────────────────────────────────────
-// READ_MEDIA_VIDEO removido 2026-09-10: DocuSmart no tiene ninguna función
-// que use contenido de video, ver comentario en MainActivity.kt.
+// 2026-10-14: en Android 13+ la Biblioteca no necesita ningún permiso de medios
+// (se quitó READ_MEDIA_IMAGES por la política de fotos y vídeos de Play): lo
+// que genera la app y la carpeta vinculada por SAF se leen sin permiso. Solo
+// Android 12 o menor usa READ_EXTERNAL_STORAGE para ver Descargas de otras apps.
 private fun getRequiredPermissions(): Array<String> =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+        emptyArray()
     } else {
         arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
     }
 
 private fun checkStoragePermission(context: android.content.Context): Boolean =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES) == PermissionChecker.PERMISSION_GRANTED
-    } else {
-        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PermissionChecker.PERMISSION_GRANTED
-    }
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ||
+        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) ==
+        PermissionChecker.PERMISSION_GRANTED
 
 // Atajo a la carpeta vinculada por SAF (fila 22 backlog UX): delega en
 // cualquier app que sepa abrir un árbol de documentos (normalmente el

@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.docsmart.R
 import com.docsmart.core.ads.AdManager
+import com.docsmart.core.analytics.DocuSmartAnalytics
 import com.docsmart.core.data.FavoritesRepository
 import com.docsmart.core.media.SoundEffectPlayer
 import com.docsmart.core.ui.components.DocumentType
@@ -77,8 +78,30 @@ class LibraryViewModel
             val linked = downloadsAccessManager.onFolderPicked(uri)
             if (!linked) {
                 _uiState.update { it.copy(linkFolderError = context.getString(R.string.library_link_folder_error)) }
+            } else {
+                DocuSmartAnalytics.logFolderLinked()
             }
             loadDocuments()
+        }
+
+        // 1.1.5: fotos elegidas con el selector del sistema (acceso persistente).
+        fun onPhotosPicked(uris: List<Uri>) {
+            if (uris.isEmpty()) return
+            viewModelScope.launch {
+                repository.addPickedImages(uris)
+                DocuSmartAnalytics.logFilesAdded("photo", uris.size)
+                loadDocuments()
+            }
+        }
+
+        // 1.1.5: documentos elegidos con el selector de archivos del sistema.
+        fun onDocumentsPicked(uris: List<Uri>) {
+            if (uris.isEmpty()) return
+            viewModelScope.launch {
+                repository.addPickedDocuments(uris)
+                DocuSmartAnalytics.logFilesAdded("document", uris.size)
+                loadDocuments()
+            }
         }
 
         fun dismissLinkFolderError() {

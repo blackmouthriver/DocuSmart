@@ -53,7 +53,10 @@
     <string name="library_tab_device">Dispositiu</string>
     <string name="library_tab_app_files">Els meus arxius</string>
     <string name="library_tab_file_count">%1$d arxius</string>
-    <string name="library_tab_device_description">Fotos i documents que ja tenies desats al teu dispositiu</string>
+    <string name="library_tab_device_description">Porta els teus documents i fotos des del teu mòbil a DocuSmart i gestiona\'ls al teu gust</string>
+    <string name="library_add_photos">Afegeix fotos</string>
+    <string name="library_add_documents">Afegeix documents</string>
+    <string name="viewer_image_no_access">No tenim accés a aquesta imatge. Torna a afegir-la des de Biblioteca → Afegeix fotos.</string>
     <string name="library_tab_app_files_description">Documents que has creat o convertit dins de DocuSmart</string>
     <string name="library_no_permission_denied_title">Permís denegat</string>
     <string name="library_no_permission_required_title">Cal accés als fitxers</string>
@@ -1171,8 +1174,6 @@
     <string name="filepicker_no_library_files">Encara no hi ha arxius a la teva biblioteca</string>
 
     <!-- ── Vincular carpeta de Descargas por SAF (fila 22 backlog UX) ── -->
-    <string name="library_link_downloads_title">Veure més documents aquí</string>
-    <string name="library_link_downloads_body">Tria una carpeta del teu dispositiu perquè Biblioteca també mostri els documents que ja hi tens</string>
     <string name="library_link_downloads_button">Vincular carpeta</string>
     <string name="library_link_folder_error">No s\'ha pogut vincular la carpeta. Torna-ho a provar.</string>
 

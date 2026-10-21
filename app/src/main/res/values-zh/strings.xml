@@ -52,7 +52,10 @@
     <string name="library_tab_device">设备</string>
     <string name="library_tab_app_files">我的文件</string>
     <string name="library_tab_file_count">%1$d 个文件</string>
-    <string name="library_tab_device_description">你设备上已有的照片和文档</string>
+    <string name="library_tab_device_description">把手机里的文档和照片带入 DocuSmart，按自己的方式管理</string>
+    <string name="library_add_photos">添加照片</string>
+    <string name="library_add_documents">添加文档</string>
+    <string name="viewer_image_no_access">无法访问此图片。请在 资料库 → 添加照片 中重新添加。</string>
     <string name="library_tab_app_files_description">你在 DocuSmart 中创建或转换的文档</string>
     <string name="library_no_permission_denied_title">权限被拒绝</string>
     <string name="library_no_permission_required_title">需要文件访问权限</string>
@@ -1133,8 +1136,6 @@
     <string name="filepicker_no_library_files">你的资料库中还没有文件</string>
 
     <!-- ── 通过 SAF 关联下载文件夹（UX 待办第 22 行） ── -->
-    <string name="library_link_downloads_title">在这里查看更多文档</string>
-    <string name="library_link_downloads_body">选择设备中的一个文件夹，让资料库也显示你已经存放在那里的文档</string>
     <string name="library_link_downloads_button">关联文件夹</string>
     <string name="library_link_folder_error">无法关联文件夹，请重试。</string>
 

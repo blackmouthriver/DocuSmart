@@ -213,6 +213,10 @@ class TrashViewModel
                             }
                             load()
                         }
+                        TrashRepository.BulkDeleteOutcome.Failed -> {
+                            _uiState.update { it.copy(actionError = context.getString(R.string.general_delete_error)) }
+                            load()
+                        }
                     }
                 } catch (e: CancellationException) {
                     throw e
