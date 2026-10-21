@@ -1,6 +1,6 @@
 # Release 1.1.5 (versionCode 11) — resumen
 
-> **Estado:** versión preparada: `versionCode 11` / `versionName 1.1.5` (PR de bump apilado sobre #150). Falta fusionar #150, generar el `.aab` y subirlo a **todos** los canales donde esté el código 10.
+> **Estado:** **publicada en producción** (verificado por el propietario el 2026-10-21). `versionCode 11` / `versionName 1.1.5`, generada desde `main` 03f4b2b (#150 y bump #153), `DocuSmart-1.1.5-code11.aab`, SHA-256 `4ef0a2fde6e5791a1eb4054d66477643cc8e5688fbd25e9e1c7153e808364196`. Seguimiento posterior en `seguimiento-post-1.1.2.md`.
 
 Sucede a la **1.1.4 (versionCode 10)**, que solo corrigió el requisito de 16 kB de Google Play. Esta versión quita el permiso `READ_MEDIA_IMAGES`, lo reemplaza por el selector de fotos del sistema y suma «Agregar documentos», una papelera que ahora sí restaura documentos agregados y «Vincular carpeta» más discreto.
 
