@@ -1,6 +1,54 @@
 # Seguimiento posterior a la 1.1.2
 
-Trabajo del backlog hecho después de generar el `.aab` 1.1.2 (`versionCode 7`). **Nada de lo de aquí está en ese `.aab`**; todo está incluido en la **1.1.3**, y la **1.1.4 (`versionCode 10`)** solo añade la corrección de 16 kB. Complementa `release-1.1.2-resumen.md`.
+Trabajo del backlog hecho después de generar el `.aab` 1.1.2 (`versionCode 7`). **Nada de lo de aquí está en ese `.aab`**; todo está incluido en la **1.1.3**, la **1.1.4 (`versionCode 10`)** solo añade la corrección de 16 kB y la **1.1.5 (`versionCode 11`)**, ya **publicada en producción**, reemplaza el permiso de fotos por selectores del sistema. Complementa `release-1.1.2-resumen.md`.
+
+## Estado al cierre de la 1.1.5 (2026-10-21)
+
+Versión **1.1.5 (código 11)**, generada desde `main` 03f4b2b (PR #150 y bump #153) y **publicada en producción** (visible en Play Store al 2026-10-21). Detalle técnico y verificación en `release-1.1.5-resumen.md`.
+
+### Qué se resolvió
+
+| Tema | Resultado |
+|---|---|
+| Aviso de fotos y vídeos de Play | El `.aab` ya no declara ningún `READ_MEDIA_*`. La declaración de permisos deja de ser necesaria (`declaracion-permiso-fotos-play.md` queda solo como histórico) |
+| Fotos | «Agregar fotos» con `PickMultipleVisualMedia` + `takePersistableUriPermission`; sobreviven a matar la app y a reiniciar el teléfono |
+| Documentos | «Agregar documentos» con `ACTION_OPEN_DOCUMENT` multi-selección y acceso persistente; resuelve los documentos de otras apps en Descargas (Android 13+) |
+| Papelera | Restaura documentos agregados (antes salía vacía). «Borrar todo» y «Eliminar ahora» ahora borran de verdad lo que DocuSmart guardó (defecto anterior: `createDeleteRequest` rechaza PDF y texto) y avisan si falla |
+| Biblioteca | Tarjeta «Agregar» translúcida con encabezado centrado y botones cuadrados; «Vincular carpeta» pasa a enlace discreto, con eventos de analítica (`library_files_added`, `library_folder_linked`) para decidir si se mantiene |
+| 16 kB | CameraX 1.4.2 (1.1.4) |
+
+### Lecciones
+
+- **El «ignorado para esta versión» de la pantalla de subida no equivale a aceptado**; la fuente de verdad es «Estado según las políticas» y «Ver app bundles».
+- **El selector de fotos sí permite acceso persistente**; la primera lectura de la documentación («es temporal») era errónea y retrasó la decisión.
+- **Las pruebas unitarias no cubrían `moveToTrash` ni «Borrar todo» sobre archivos reales**: los dos defectos de la Papelera solo aparecieron probando en el teléfono. Los casos de borrado se prueban con archivos reales.
+- **Una prueba que depende de la pantalla encendida** falla con «No compose hierarchies found» (Moto E22 con la pantalla bloqueada): desbloquear antes de la suite.
+
+### Backlog #20 a #25 tras la 1.1.5
+
+| # | Ítem | Estado |
+|---|---|---|
+| 20 | Alinear librerías nativas a 16 kB | **Hecho** (#146, #148); publicada en producción (la 1.1.5 mantiene 64 bits en 16 kB) |
+| 21 | Declaración de fotos y vídeos en Play Console | **Ya no aplica** (sin `READ_MEDIA_*`) |
+| 22 | Selector de fotos con acceso persistente, sin `READ_MEDIA_IMAGES` | **Hecho** (#150) |
+| 23 | Texto de la Biblioteca «Fotos y documentos que ya tenías guardados…» (12 idiomas) | **Hecho**: nuevo encabezado «Trae tus documentos y fotos desde tu celular…» |
+| 24 | «Vincular carpeta» y la raíz de Descargas | **Abierto, por verificar**: se mantiene como enlace discreto; «Agregar documentos» cubre Descargas, pero falta medir con la analítica si «Vincular carpeta» aún se usa |
+| 25 | Documentos o fotos movidos o borrados con permiso persistente | **Abierto, por revisar**: el Visor ya avisa en imágenes («No tenemos acceso a esta imagen…»); falta revisar el caso de documentos y su limpieza en el historial |
+| 26 | Papelera: documentos ajenos a la app (p. ej. un PDF de Chrome) | **Límite conocido**: en Android 11+ no se pueden borrar sin acceso a todos los archivos; la pantalla muestra «No se pudo eliminar el archivo» |
+| 27 | Oferta de prueba de 7 días | **Pendiente del propietario en Play Console**, sin cambio de código; se suma al trial automático de 3 días |
+| 28 | R8 (42 %) | **Tarea futura**, ver la sección de R8 más abajo |
+
+### Sin verificar / ideas
+
+- Fotos desde el selector remoto de Google Fotos: sin probar por separado (Google Drive sí se probó).
+- Los nombres de las fotos agregadas salen como el identificador del selector (`1000158199.jpg`): el selector los anonimiza. Idea: nombre en dos líneas en la lista.
+- Vigilar Crashlytics/ANR en «Agregar fotos/documentos», Papelera y Visor durante las primeras 48 h de producción.
+
+### Limpieza de ramas (2026-10-18)
+
+Se borraron las ramas fusionadas (`claude/selector-fotos-1-1-5`, `claude/version-1-1-5` y las del #148), y se cerró #147 (quitar el permiso sin botón de agregar) por superado. Se conserva `claude/mockk-1-14` por la deuda técnica de mockk.
+
+**PR abiertos (2026-10-21):** #152 (esta nota) y los de Dependabot: #157 (`setup-java`, solo falla SonarCloud, que no recibe secretos en esos PR), #156 (kotest 6.2.6), #155 / #136 / #128 / #125 (iText 9, proyecto aparte), #154 (Firebase BOM 35.0.2), #139 (Spotless 8), #137 (fragment 1.9.1), #124 (Kotlin 2.4.21) y #117 (mockk 1.14). Los de Gradle fallan el build por locks y checksums (procedimiento manual en la sección «Dependabot»).
 
 ## Estado al cierre de la 1.1.4 (2026-10-14)
 
@@ -76,6 +124,37 @@ La revisión de producción marcó «Usar selectores de sistema alternativos par
 | #117 | mockk 1.13.13 → 1.14.11 | Bloqueado por el flake de cierre de proceso en pruebas del Visor |
 
 **Producción:** la 1.1.4 (código 10) está aprobada en prueba cerrada y **en revisión en producción** desde 2026-10-15 (junto con los cambios de países). Hasta su resultado se pausa el trabajo del #150. Idea pedida por el propietario para después: botón «Agregar documentos» (selector de archivos con acceso persistente), porque los documentos de otras apps en Descargas no aparecen en Android 13+ y «Vincular carpeta» no admite la raíz de Descargas.
+
+### Recomendación de R8 en Play Console (2026-10-15) — tarea futura, no urgente
+
+Play Console (Panel de control de la versión, 1.1.4) muestra «Mejora la memoria y el rendimiento con la optimización de R8». Es una **acción recomendada**, no un problema de política ni un bloqueo.
+
+| Indicador | Valor |
+|---|---|
+| Tasa de optimización / ofuscación / reducción | 42 % cada una |
+| Reducción optimizada de recursos | No habilitada |
+| Complemento de Gradle | Sugiere AGP 9.0 o posterior (bloqueado: migración mayor, ver «Deuda técnica abierta») |
+
+**Diagnóstico (medido sobre `mapping.txt`/`seeds.txt` del build de release de la 1.1.4):** `release` ya usa `isMinifyEnabled = true`, `isShrinkResources = true` y `proguard-android-optimize.txt`. El 42 % lo causan las reglas `-keep ... { *; }` de `app/proguard-rules.pro`:
+
+| Librería | Clases totales | Conservadas por `-keep` |
+|---|---|---|
+| Apache POI | 4 132 | 3 536 |
+| `org.openxmlformats.schemas` | 2 996 | 2 247 |
+| iText | 1 343 | 1 331 |
+| XmlBeans | 1 217 | 1 033 |
+| Código de DocuSmart (`com.docsmart`) | 1 096 | 31 |
+| Total del bundle | 27 475 | 9 839 |
+
+Las cuatro librerías de documentos son el 83 % de lo conservado; el código propio ya está optimizado. Los `-keep` de POI/XmlBeans/OpenXML existen **a propósito**: XmlBeans carga clases por reflexión y, sin ellos, R8 las elimina en release y fallan las conversiones Word/Excel/PowerPoint.
+
+**Decisión (2026-10-15):** no tocar mientras la 1.1.4 está en revisión de producción. Beneficio moderado (bundle más pequeño, algo menos de memoria); riesgo alto (cierre solo en release, en conversiones).
+
+**Plan si se aborda (PR aparte):**
+1. Empezar por reglas de bajo riesgo: iText y Hilt/`javax.inject`/Timber, midiendo el tamaño del `.aab` antes y después.
+2. Dejar POI/XmlBeans/OpenXML para el final (son los frágiles).
+3. Probar un **build de release instalado** (no el debug) con cada conversión (Word, Excel, PowerPoint, PDF, imagen a PDF) en los dos teléfonos reales.
+4. Probar la reducción optimizada de recursos con AGP 8.13 (compilando; en AGP 9 pasa a ser el valor por defecto).
 
 ## Estado del backlog al cierre de la 1.1.3 (2026-10-14)
 

@@ -3,6 +3,8 @@
 Fecha: 2026-10-14. Permiso declarado: `READ_MEDIA_IMAGES` (solo imágenes; `READ_MEDIA_VIDEO` y `READ_MEDIA_AUDIO` ya se quitaron en la 1.1.3).
 Política: *Photo and Video Permissions* de Google Play. El formulario pide el caso de uso principal y por qué un selector del sistema no basta.
 
+> **Histórico (2026-10-21):** ya no aplica. La 1.1.5 quitó `READ_MEDIA_IMAGES` y usa selectores del sistema; Se conserva por el razonamiento.
+>
 > **Estado:** borrador para que el propietario lo revise y lo pegue en Play Console. No está enviado. La ruta exacta del formulario en Play Console no se pudo confirmar en la documentación de Google: suele aparecer en el aviso del lanzamiento ("Problemas detectados") o en Política y programas → Contenido de la app.
 
 ## 1. Qué hace la app con el permiso (verificado en el código)
