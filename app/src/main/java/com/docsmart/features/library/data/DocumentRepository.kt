@@ -775,8 +775,14 @@ class DocumentRepository
             val documents = mutableListOf<DatedDocument>()
             documentHistoryDao.allEntries().forEach { entry ->
                 try {
-                    documentFromHistoryId(entry.documentId, entry.lastOpenedAt)
-                        ?.let { documents.add(DatedDocument(it, entry.lastOpenedAt)) }
+                    val document = documentFromHistoryId(entry.documentId, entry.lastOpenedAt)
+                    if (document != null) {
+                        documents.add(DatedDocument(document, entry.lastOpenedAt))
+                    } else {
+                        // Backlog #25: si el documento ya no existe (borrado o movido desde otra app)
+                        // se limpia su fila; ante cualquier duda no se toca nada.
+                        HistoryLiveness.pruneIfGone(context, documentHistoryDao, entry.documentId)
+                    }
                 } catch (e: Exception) {
                     Timber.w("Error leyendo documento del historial: ${e.javaClass.simpleName}")
                 }
