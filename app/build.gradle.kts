@@ -562,7 +562,7 @@ dependencies {
     // a diferencia de dibujar un rectángulo negro con PdfCanvas (que deja el
     // texto/vector original intacto y extraíble debajo), este módulo elimina
     // de verdad el contenido del content stream dentro de la región indicada.
-    implementation("com.itextpdf:cleanup:3.0.2")
+    implementation("com.itextpdf:cleanup:5.0.8")
     // Proveedor de seguridad cargado en runtime por iText (firma/cifrado PDF),
     // sin import directo en el código de la app -- ver bcpkix-jdk15on más
     // abajo, que sí queda `implementation` (evaluado, no removido: ver
