@@ -459,7 +459,7 @@ dependencies {
     implementation("androidx.activity:activity:1.13.0")
     implementation("androidx.annotation:annotation:1.11.0")
     implementation("androidx.collection:collection:1.7.0")
-    implementation("androidx.fragment:fragment:1.5.4")
+    implementation("androidx.fragment:fragment:1.9.1")
 
     // ── Compose BOM ───────────────────────────────────────────────────────────
     implementation(platform(libs.androidx.compose.bom))
