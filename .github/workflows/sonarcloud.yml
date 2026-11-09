@@ -67,7 +67,7 @@ jobs:
           java-version: '17'
 
       - name: Gradle
-        uses: gradle/actions/setup-gradle@0b6dd653ba04f4f93bf581ec31e66cbd7dcb644d # v4
+        uses: gradle/actions/setup-gradle@c8a326d85724fce2ae59a38810306f4a058f26a4 # v4
 
       - name: Permiso de ejecución para gradlew
         run: chmod +x ./gradlew
@@ -219,7 +219,7 @@ jobs:
           restore-keys: ${{ runner.os }}-sonar
 
       - name: Gradle
-        uses: gradle/actions/setup-gradle@0b6dd653ba04f4f93bf581ec31e66cbd7dcb644d # v4
+        uses: gradle/actions/setup-gradle@c8a326d85724fce2ae59a38810306f4a058f26a4 # v4
 
       - name: Permiso de ejecución para gradlew
         run: chmod +x ./gradlew
