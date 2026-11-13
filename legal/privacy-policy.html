@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<!-- Copia sincronizada de https://docusmart.online/privacidad (fuente: repo docusmart-web, privacidad.html). Editar allá y copiar aquí. -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Política de Privacidad — DocuSmart</title>
+<meta name="description" content="Qué datos recopila DocuSmart (app Android y docusmart.online), para qué y qué opciones tienes.">
+<link rel="canonical" href="https://docusmart.online/privacidad">
+<link rel="icon" href="https://docusmart.online/img/icon.svg" type="image/svg+xml">
 <style>
   :root {
     --docu-blue: #2563EB;
@@ -51,6 +55,7 @@
   p, li { color: #1E293B; }
   ul { padding-left: 22px; }
   li { margin-bottom: 6px; }
+  li ul { margin-top: 6px; }
   table {
     width: 100%;
     border-collapse: collapse;
@@ -64,6 +69,7 @@
     vertical-align: top;
   }
   th { background: #EFF4FF; color: var(--docu-blue); font-weight: 600; }
+  .table-scroll { overflow-x: auto; }
   .contact {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -72,6 +78,7 @@
     margin-top: 16px;
   }
   a { color: var(--docu-blue); }
+  .back { display: inline-block; margin-bottom: 28px; font-size: 0.9rem; text-decoration: none; }
   footer {
     margin-top: 56px;
     padding-top: 20px;
@@ -83,57 +90,73 @@
 </head>
 <body>
 <div class="wrap">
+  <a class="back" href="https://docusmart.online/">← Volver a DocuSmart</a>
   <header>
     <div class="mark">D</div>
     <h1>Política de Privacidad de DocuSmart</h1>
   </header>
-  <p class="updated">Última actualización: 25 de agosto de 2026</p>
+  <p class="updated">Última actualización: 12 de noviembre de 2026</p>
 
-  <p>Esta política explica qué información recopila la aplicación móvil <strong>DocuSmart</strong>
-  (paquete <code>com.docsmart</code>), cómo se usa, y qué opciones tienes al respecto. Está escrita
+  <p>Esta política explica qué información recopilan la aplicación móvil <strong>DocuSmart</strong>
+  (paquete <code>com.docsmart</code>) y el sitio web <strong>docusmart.online</strong> (incluida la
+  versión web, <em>DocuSmart Web</em>), cómo se usa, y qué opciones tienes al respecto. Está escrita
   en lenguaje simple, sin jerga legal innecesaria.</p>
 
   <h2>1. Resumen</h2>
   <p>DocuSmart es una aplicación para visualizar, convertir, escanear y organizar documentos.
   Está diseñada para funcionar principalmente <strong>de forma local en tu dispositivo</strong>:
-  tus documentos, notas, contraseñas y códigos QR se procesan y almacenan en tu teléfono, no en
-  nuestros servidores — no tenemos servidores propios que reciban el contenido de tus archivos.</p>
+  tus documentos, notas, contraseñas y códigos QR se procesan y almacenan en tu teléfono (o en tu
+  navegador, si usas DocuSmart Web), no en nuestros servidores — no tenemos servidores propios que
+  reciban el contenido de tus archivos.</p>
   <p>Sí usamos un número reducido de servicios de terceros (detallados abajo) para entender el uso
-  general de la app, detectar errores, y mostrar anuncios.</p>
+  general de la app, detectar errores, procesar compras y mostrar anuncios.</p>
 
   <h2>2. Qué datos recopilamos</h2>
+  <div class="table-scroll">
   <table>
-    <tr><th>Categoría</th><th>Qué incluye</th><th>Para qué</th></tr>
-    <tr>
-      <td>Uso de la app (analítica)</td>
-      <td>Qué pantallas visitas, qué funciones usas (por ejemplo: "se inició una conversión de
-      imagen a PDF", "se completó un escaneo de 3 páginas"), y mensajes de error genéricos.
-      <strong>Nunca incluye el contenido de tus documentos, notas o códigos QR</strong> — solo
-      categorías (ej. "tipo: PDF"), nunca el archivo en sí.</td>
-      <td>Entender qué funciones se usan más, priorizar mejoras, detectar fallas.</td>
-    </tr>
-    <tr>
-      <td>Informes de fallas</td>
-      <td>Cuando la app se cierra inesperadamente: el error técnico (stack trace), modelo de
-      dispositivo, versión de Android y de la app.</td>
-      <td>Corregir errores.</td>
-    </tr>
-    <tr>
-      <td>Identificador de publicidad</td>
-      <td>El identificador de publicidad de tu dispositivo (puedes restablecerlo o desactivarlo
-      desde los ajustes de Android/Google).</td>
-      <td>Mostrar anuncios a través de Google AdMob.</td>
-    </tr>
+    <thead><tr><th>Categoría</th><th>Qué incluye</th><th>Para qué</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Uso de la app (analítica)</td>
+        <td>Qué pantallas visitas, qué funciones usas (por ejemplo: "se inició una conversión de
+        imagen a PDF", "se completó un escaneo de 3 páginas"), y mensajes de error genéricos.
+        <strong>Nunca incluye el contenido de tus documentos, notas o códigos QR</strong> — solo
+        categorías, nunca el archivo en sí.</td>
+        <td>Entender qué funciones se usan más, priorizar mejoras, detectar fallas.</td>
+      </tr>
+      <tr>
+        <td>Informes de fallas</td>
+        <td>Cuando la app se cierra inesperadamente: el error técnico (stack trace), modelo de
+        dispositivo, versión de Android y de la app.</td>
+        <td>Corregir errores.</td>
+      </tr>
+      <tr>
+        <td>Identificador de publicidad</td>
+        <td>El identificador de publicidad de tu dispositivo (puedes restablecerlo o desactivarlo
+        desde los ajustes de Android/Google).</td>
+        <td>Mostrar anuncios a través de Google AdMob.</td>
+      </tr>
+      <tr>
+        <td>Información de compras (si usas DocuSmart Premium)</td>
+        <td>Cuando compras o restauras una suscripción, Google Play nos informa el resultado de la
+        compra (qué producto compraste y si tu suscripción sigue activa) a través de Google Play
+        Billing. <strong>Nunca vemos ni guardamos tu número de tarjeta ni tus datos de pago</strong>
+        — eso lo procesa Google Play directamente, no nosotros.</td>
+        <td>Activar las funciones Premium y verificar que tu suscripción sigue vigente.</td>
+      </tr>
+    </tbody>
   </table>
+  </div>
+  <p>Lo que recopila el sitio web se explica aparte, en la <a href="#sitio-web">sección 10</a>.</p>
 
   <h2>3. Qué NO recopilamos</h2>
   <ul>
-    <li>No pedimos que crees una cuenta — no recopilamos tu nombre, correo ni teléfono para usar la app.</li>
+    <li>No pedimos que crees una cuenta — no recopilamos tu nombre, correo ni teléfono para usar la app ni el sitio.</li>
     <li>No leemos ni subimos el contenido de tus documentos (PDF, Word, Excel, imágenes) a ningún
     servidor — las conversiones, la protección con contraseña, y el escaneo se procesan en tu
-    propio dispositivo.</li>
+    propio dispositivo o navegador.</li>
     <li>El contenido de tus notas de Modo Estudio y de los códigos QR que creas o lees permanece
-    en tu dispositivo.</li>
+    en tu dispositivo o navegador.</li>
     <li>El PIN y los datos biométricos (huella/rostro) de la Carpeta Segura nunca salen de tu
     dispositivo ni llegan a nosotros — Android verifica tu huella/rostro internamente y solo nos
     informa "correcto" o "incorrecto", nunca el dato biométrico en sí.</li>
@@ -141,24 +164,32 @@
   </ul>
 
   <h2>4. Permisos que solicita la app</h2>
+  <div class="table-scroll">
   <table>
-    <tr><th>Permiso</th><th>Para qué se usa</th></tr>
-    <tr><td>Cámara</td><td>Escanear documentos y códigos QR. Solo se activa cuando abres el escáner.</td></tr>
-    <tr><td>Fotos, videos y archivos del dispositivo</td><td>Abrir y convertir los documentos e imágenes que tú elijas explícitamente.</td></tr>
-    <tr><td>Internet</td><td>Requerido por Google AdMob (anuncios) y para el envío de analítica/informes de fallas.</td></tr>
+    <thead><tr><th>Permiso</th><th>Para qué se usa</th></tr></thead>
+    <tbody>
+      <tr><td>Cámara</td><td>Escanear documentos y códigos QR. Solo se activa cuando abres el escáner.</td></tr>
+      <tr><td>Fotos, videos y archivos del dispositivo</td><td>Abrir y convertir los documentos e imágenes que tú elijas explícitamente.</td></tr>
+      <tr><td>Internet</td><td>Requerido por Google AdMob (anuncios), Google Play Billing (compras) y para el envío de analítica/informes de fallas.</td></tr>
+    </tbody>
   </table>
+  </div>
 
   <h2>5. Servicios de terceros</h2>
   <p>Usamos los siguientes servicios, cada uno con su propia política de privacidad:</p>
   <ul>
-    <li><strong>Google Firebase Analytics</strong> — analítica de uso de la app.
+    <li><strong>Google Firebase Analytics</strong> — analítica de uso de la app (y del sitio web, solo con tu consentimiento).
       <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Política de privacidad de Google</a></li>
-    <li><strong>Google Firebase Crashlytics</strong> — informes de fallas técnicas.
+    <li><strong>Google Firebase Crashlytics</strong> — informes de fallas técnicas de la app.
       <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Política de privacidad de Google</a></li>
     <li><strong>Google AdMob</strong> — publicidad dentro de la app.
       <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener">Cómo usa Google los datos de publicidad</a></li>
-    <li><strong>Google ML Kit</strong> (escaneo de documentos y códigos QR) — el procesamiento de
-    escaneo ocurre en tu dispositivo, no se envían imágenes a servidores de Google para esta función.</li>
+    <li><strong>Google Play Billing</strong> — procesamiento de compras y suscripciones dentro de la app.
+      <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Política de privacidad de Google</a></li>
+    <li><strong>Google ML Kit</strong> (escaneo de documentos y códigos QR) — el procesamiento
+    ocurre en tu dispositivo, no se envían imágenes a servidores de Google para esta función.</li>
+    <li><strong>Firebase Hosting</strong> — aloja el sitio web docusmart.online (ver sección 10).
+      <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Política de privacidad de Google</a></li>
   </ul>
   <p>Ninguno de estos servicios recibe el contenido de tus documentos, notas o códigos QR.</p>
 
@@ -177,25 +208,59 @@
   <ul>
     <li>Puedes desactivar la personalización de anuncios desde Ajustes de tu dispositivo Android
     (Google → Anuncios → Restablecer/eliminar el identificador de publicidad).</li>
+    <li>Puedes gestionar o cancelar tu suscripción Premium desde Google Play (Play Store → Perfil →
+    Pagos y suscripciones → Suscripciones).</li>
+    <li>En el sitio web puedes aceptar o rechazar la analítica, y cambiar tu decisión cuando quieras
+    (ver sección 10).</li>
     <li>Puedes solicitarnos información sobre qué datos de analítica agregada existen asociados a
-    tu uso de la app, o pedir su eliminación, escribiéndonos (ver contacto abajo).</li>
+    tu uso de la app o del sitio, o pedir su eliminación, escribiéndonos (ver contacto abajo).</li>
   </ul>
 
   <h2>9. Menores de edad</h2>
   <p>DocuSmart no está dirigida específicamente a menores de 13 años y no solicitamos
   intencionalmente datos personales de niños.</p>
 
-  <h2>10. Cambios a esta política</h2>
+  <h2 id="sitio-web">10. Sitio web y DocuSmart Web</h2>
+  <p>El sitio <strong>docusmart.online</strong> incluye una página informativa y <strong>DocuSmart Web</strong>
+  (<code>docusmart.online/app</code>), una versión para el navegador con visor, convertidor,
+  herramientas PDF, códigos QR y Modo Estudio.</p>
+  <ul>
+    <li><strong>Tus archivos no se suben:</strong> todo lo que abres, conviertes, unes o divides se procesa
+    dentro de tu navegador. Ni nosotros ni Google recibimos el archivo ni su contenido.</li>
+    <li><strong>Analítica solo con tu permiso:</strong> al entrar verás un aviso para aceptar o rechazar
+    la analítica. Si aceptas, usamos Google Analytics para Firebase para contar visitas y qué funciones
+    se usan (por ejemplo, "se convirtió una imagen a PDF" o "se abrió la sección de preguntas"), con la IP
+    anonimizada, sin Google Signals y sin personalización de anuncios. Nunca se envían nombres ni
+    contenido de archivos. Si rechazas, no se carga nada de Google Analytics.</li>
+    <li><strong>Cookies y almacenamiento del navegador:</strong>
+      <ul>
+        <li><code>ds-consent</code> (almacenamiento local): recuerda si aceptaste o rechazaste la analítica.</li>
+        <li><code>ds-notes</code> (almacenamiento local): tus notas de Modo Estudio. Solo existen en tu navegador.</li>
+        <li><code>_ga</code> y <code>_ga_*</code> (cookies de Google Analytics): <strong>solo si aceptas</strong> la
+        analítica. Distinguen visitas anónimas y duran hasta 2 años.</li>
+      </ul>
+    </li>
+    <li><strong>Cambiar tu decisión:</strong> en cualquier momento, usa el enlace <em>Preferencias de
+    analítica</em> al pie del sitio o en el menú de DocuSmart Web. Si la desactivas, dejamos de enviar
+    eventos y se borran las cookies <code>_ga</code>.</li>
+    <li><strong>Cámara:</strong> el lector de QR de DocuSmart Web pide permiso a tu navegador para usar la
+    cámara. La imagen se analiza en tu navegador y no se graba ni se envía a ningún lado.</li>
+    <li><strong>Alojamiento:</strong> el sitio está alojado en Firebase Hosting (Google). Como cualquier
+    servidor web, procesa datos técnicos de cada visita (dirección IP, navegador, página pedida) para
+    entregar las páginas y proteger el servicio.</li>
+  </ul>
+
+  <h2>11. Cambios a esta política</h2>
   <p>Si actualizamos esta política, cambiaremos la fecha de "Última actualización" en la parte
   superior. Los cambios significativos se reflejarán también en la ficha de la app en Play Store.</p>
 
-  <h2>11. Contacto</h2>
+  <h2>12. Contacto</h2>
   <div class="contact">
     <p>Para preguntas sobre esta política o sobre tus datos, escríbenos a:</p>
-    <p><strong><a href="mailto:jblackmouthr@gmail.com">jblackmouthr@gmail.com</a></strong></p>
+    <p><a href="mailto:jblackmouthr@gmail.com">jblackmouthr@gmail.com</a></p>
   </div>
 
-  <footer>DocuSmart — com.docsmart</footer>
+  <footer>DocuSmart — com.docsmart · <a href="https://docusmart.online">docusmart.online</a></footer>
 </div>
 </body>
 </html>

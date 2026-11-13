@@ -599,7 +599,13 @@ Basado en inventario real del código, no en suposiciones: se revisó
 de Crashlytics/SDK de consentimiento de Google (UMP) en todo el proyecto, y
 se confirmó cómo funciona el dictado de voz en `StudyScreen.kt`.
 
-- **Publicada:** https://sites.google.com/view/docusmart-privacidad/inicio
+- **Actualización 2026-11-12:** la política vigente ahora vive en
+  **https://docusmart.online/privacidad** (repo aparte `docusmart-web`,
+  archivo `privacidad.html`), con el texto de Google Sites del 2026-09-10
+  (que ya incluía Google Play Billing) más una sección sobre el sitio web y
+  DocuSmart Web. `legal/privacy-policy.html` quedó sincronizado con esa
+  versión; la fuente a editar es `docusmart-web/privacidad.html`.
+- **Publicada originalmente:** https://sites.google.com/view/docusmart-privacidad/inicio
   (Google Sites, no GitHub Pages — GitHub pedía plan pago para activar
   Pages en este repo, así que se optó por la alternativa gratuita). El
   texto original queda en `legal/privacy-policy.html` como fuente/respaldo

@@ -588,8 +588,12 @@ detalle de qué se revisó.
 
 ### 5.1 Política de privacidad
 
-- **Publicada:** https://sites.google.com/view/docusmart-privacidad/inicio
-  — es la URL que va en Play Console.
+- **Actualización 2026-11-12:** versión vigente en
+  **https://docusmart.online/privacidad** (fuente: `privacidad.html` del repo
+  `docusmart-web`; `legal/privacy-policy.html` es copia sincronizada). Para
+  usarla en Play Console: *Contenido de la app → Política de privacidad*.
+- **Publicada originalmente:** https://sites.google.com/view/docusmart-privacidad/inicio
+  — fue la URL de Play Console hasta el cambio anterior.
 - Redactada originalmente en `legal/privacy-policy.html` (queda en el repo
   como fuente/respaldo del texto, en una carpeta separada de `docs/` a
   propósito: `docs/requirements/` tiene specs internas que no deben quedar
