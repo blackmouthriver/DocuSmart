@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.docsmart.core.ads.AdManager
@@ -71,6 +72,11 @@ class MainActivity : AppCompatActivity() {
     // notificación de recordatorio de repaso -- mismo patrón que
     // `pendingAgendaEventId` de arriba.
     private var pendingNoteId by mutableStateOf<String?>(null)
+
+    // W-18 (App Links): ruta de la herramienta a abrir cuando se toca un
+    // enlace de docusmart.online (p.ej. /unir-pdf -> Herramientas PDF ->
+    // Unir) -- mismo patrón que `externalFileUri` de arriba.
+    private var pendingWebRoute by mutableStateOf<String?>(null)
     private var adsInitialized = false
 
     // Guarda de una sola vez para el LaunchedEffect(currentRoute) de más
@@ -106,11 +112,7 @@ class MainActivity : AppCompatActivity() {
         // Solo en un arranque real: tras rotación/cambio de idioma/proceso
         // muerto Android re-entrega el mismo Intent y se reabriría el Visor
         // (o Agenda/Nota) sobre lo que el usuario ya cerró.
-        if (shouldConsumeLaunchIntent(savedInstanceState != null, intent.flags)) {
-            externalFileUri = resolveExternalIntent(intent)
-            pendingAgendaEventId = intent.getStringExtra(EXTRA_OPEN_AGENDA_EVENT_ID)
-            pendingNoteId = intent.getStringExtra(EXTRA_OPEN_NOTE_ID)
-        }
+        if (shouldConsumeLaunchIntent(savedInstanceState != null, intent.flags)) consumeIntent(intent)
         // Hallazgo real de la auditoría general 2026-09-17 (séptima
         // ronda, Media -- O2): antes se pedía acá mismo, sincrónicamente,
         // antes de que se pintara cualquier UI propia -- lo primero que
@@ -225,6 +227,10 @@ class MainActivity : AppCompatActivity() {
                     pendingNoteId = null
                 }
 
+                // W-18 (App Links): mismo mecanismo, para un enlace de una
+                // herramienta de docusmart.online.
+                LaunchedEffect(pendingWebRoute, currentRoute) { openPendingWebRoute(navController, currentRoute) }
+
                 // Hallazgo real de la auditoría general 2026-09-17 (séptima
                 // ronda, Media -- O2): mismo mecanismo que arriba, pero para
                 // el permiso de almacenamiento -- antes se pedía en onCreate()
@@ -305,20 +311,23 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        if (!shouldConsumeLaunchIntent(isRestoringState = false, intentFlags = intent.flags)) return
-        val uri = resolveExternalIntent(intent)
-        if (uri != null) {
-            Timber.d("onNewIntent: URI externa = $uri")
-            externalFileUri = uri
+        if (shouldConsumeLaunchIntent(isRestoringState = false, intentFlags = intent.flags)) consumeIntent(intent)
+    }
+
+    // Lo que trae el Intent de arranque o de onNewIntent(): un enlace de la
+    // web (W-18), un archivo de otra app o el tap de una notificación. Se
+    // asigna solo lo que viene, sin pisar con null lo que ya estaba pendiente.
+    // Extraído de onCreate()/onNewIntent() por complejidad ciclomática (detekt).
+    private fun consumeIntent(intent: Intent) {
+        val webRoute = webLinkRouteOf(intent)
+        if (webRoute != null) {
+            Timber.d("Intent: enlace de la web -> $webRoute")
+            pendingWebRoute = webRoute
+        } else {
+            resolveExternalIntent(intent)?.let { externalFileUri = it }
         }
-        intent.getStringExtra(EXTRA_OPEN_AGENDA_EVENT_ID)?.let { eventId ->
-            Timber.d("onNewIntent: evento de Agenda $eventId")
-            pendingAgendaEventId = eventId
-        }
-        intent.getStringExtra(EXTRA_OPEN_NOTE_ID)?.let { noteId ->
-            Timber.d("onNewIntent: recordatorio de nota $noteId")
-            pendingNoteId = noteId
-        }
+        intent.getStringExtra(EXTRA_OPEN_AGENDA_EVENT_ID)?.let { pendingAgendaEventId = it }
+        intent.getStringExtra(EXTRA_OPEN_NOTE_ID)?.let { pendingNoteId = it }
     }
 
     // Hallazgo real de seguridad (revisión general 2026-09-16): un Intent
@@ -332,6 +341,26 @@ class MainActivity : AppCompatActivity() {
     // Intent que viene de fuera; la navegación interna de la app (abrir un
     // documento generado por ella misma) nunca pasa por acá, usa
     // NavController.navigate() directo con el id ya resuelto.
+    // W-18: abre la herramienta del enlace de la web apenas termina el
+    // splash/onboarding. Fuera de onCreate() por complejidad ciclomática (detekt).
+    private fun openPendingWebRoute(
+        navController: NavController,
+        currentRoute: String?,
+    ) {
+        val route = pendingWebRoute ?: return
+        if (isStillOnSplashOrOnboarding(currentRoute)) return
+        navController.navigate(route) { launchSingleTop = true }
+        pendingWebRoute = null
+    }
+
+    // W-18: un enlace https de una herramienta de docusmart.online (App Links)
+    // no es un archivo -- nunca pasa por resolveExternalIntent() ni llega al
+    // Visor; solo se traduce a una ruta interna conocida (WebToolLinks).
+    private fun webLinkRouteOf(intent: Intent?): String? {
+        val uri = intent?.data ?: return null
+        return webLinkRoute(intent.action, uri.scheme, uri.host, uri.path)
+    }
+
     private fun resolveExternalIntent(intent: Intent?): Uri? {
         if (intent == null) return null
         if (intent.action != Intent.ACTION_VIEW) return null
