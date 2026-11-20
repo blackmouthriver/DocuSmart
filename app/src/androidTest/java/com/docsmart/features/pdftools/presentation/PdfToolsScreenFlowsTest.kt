@@ -620,8 +620,11 @@ class PdfToolsScreenFlowsTest {
         assertEquals(PdfTool.NONE, viewModel.uiState.value.selectedTool)
     }
 
+    // W-18 (App Links): un enlace de la web (p.ej. /ocr-pdf) trae solo la
+    // herramienta -- se abre esa herramienta, sin archivo, para que el
+    // usuario elija el PDF (antes no se seleccionaba nada).
     @Test
-    fun laHerramientaInicialSinArchivoNoSeleccionaNada() {
+    fun laHerramientaInicialSinArchivoAbreLaHerramientaSinArchivo() {
         val viewModel = buildViewModel()
         val libraryPickerViewModel = buildLibraryPickerViewModel()
         composeRule.setContent {
@@ -635,8 +638,9 @@ class PdfToolsScreenFlowsTest {
             }
         }
 
-        waitForText(text(R.string.pdf_rotate))
-        assertEquals(PdfTool.NONE, viewModel.uiState.value.selectedTool)
+        waitForText(text(R.string.pdf_tools_back_to_tools))
+        assertEquals(PdfTool.OCR, viewModel.uiState.value.selectedTool)
+        assertTrue(viewModel.uiState.value.selectedPdfs.isEmpty())
     }
 
     /** Contexto con un ContentResolver propio (para simular MediaStore sin tocar Descargas reales). */

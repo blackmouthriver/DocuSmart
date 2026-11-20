@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -401,11 +402,18 @@ fun PdfToolsScreen(
 
     // HU-42: `initialTool`/`initialFileUri` son argumentos de navegación
     // fijos para esta instancia de la pantalla -- corre una sola vez.
+    // W-18 (App Links): un enlace de la web (p.ej. /unir-pdf) trae solo la
+    // herramienta, sin archivo -- se abre la herramienta y el usuario elige
+    // el PDF como si la hubiera tocado en el menú.
+    // `initialApplied` sobrevive a la rotación: sin él, recrear la Activity
+    // volvía a seleccionar la herramienta y borraba lo que el usuario ya hizo.
+    var initialApplied by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(initialTool, initialFileUri) {
-        if (initialTool == null || initialFileUri == null) return@LaunchedEffect
+        if (initialApplied) return@LaunchedEffect
         val tool = parseInitialPdfTool(initialTool) ?: return@LaunchedEffect
+        initialApplied = true
         viewModel.selectTool(tool)
-        viewModel.onPdfsSelected(listOf(Uri.parse(initialFileUri)))
+        initialFileUri?.let { viewModel.onPdfsSelected(listOf(Uri.parse(it))) }
     }
 
     // ── Dialog de límite diario ────────────────────────

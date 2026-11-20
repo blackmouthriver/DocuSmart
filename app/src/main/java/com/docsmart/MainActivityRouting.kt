@@ -2,6 +2,7 @@ package com.docsmart
 
 import android.content.Intent
 import com.docsmart.core.navegation.NavRoutes
+import com.docsmart.core.navegation.routeForWebLink
 
 // Lógica pura de MainActivity, extraída para poder testearla en JVM sin
 // Robolectric (Intent/Uri/Bundle reales no funcionan en tests unitarios). Solo
@@ -50,3 +51,14 @@ internal fun isSplashOrOnboardingRoute(route: String?): Boolean =
         route == NavRoutes.SplashMouthBlack.route ||
         route == NavRoutes.SplashDocuSmart.route ||
         route == NavRoutes.Onboarding.route
+
+/**
+ * W-18 (App Links): ruta interna para un `ACTION_VIEW` de un enlace de herramienta de
+ * docusmart.online, o null si el Intent no es eso (archivos, notificaciones, otros sitios).
+ */
+internal fun webLinkRoute(
+    action: String?,
+    scheme: String?,
+    host: String?,
+    path: String?,
+): String? = if (action == Intent.ACTION_VIEW) routeForWebLink(scheme, host, path) else null
