@@ -695,7 +695,7 @@ dependencies {
     // buildHealth: motor de specs de Kotest (kotest-framework-engine) y las
     // DSL de mockk (every/coEvery/slot, kotest-runner-junit5→mockk-dsl) usadas
     // directo desde los tests, no solo vía los paraguas mockk/kotest-runner.
-    testImplementation("io.kotest:kotest-framework-engine:6.2.5")
+    testImplementation("io.kotest:kotest-framework-engine:6.2.6")
     testImplementation("io.mockk:mockk-dsl:1.13.13")
     // ArchUnit core (ArchRule/JavaClasses/ClassFileImporter) -- ver
     // ArchitectureTest.kt, que NO usa el runner de archunit-junit5 (removido
