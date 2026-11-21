@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "estados": {
+    "si": "La app Android tiene la herramienta y la enlaza (App Links).",
+    "planeada": "Aprobada para la app; aun no esta.",
+    "evaluar": "Falta decidir (licencia, peso del APK o privacidad) antes de llevarla a la app.",
+    "solo-web": "No tiene sentido en la app; queda solo en la web."
+  },
+  "herramientas": {
+    "unir-pdf": {
+      "app": "si"
+    },
+    "dividir-pdf": {
+      "app": "si"
+    },
+    "rotar-pdf": {
+      "app": "si"
+    },
+    "escanear-documento": {
+      "app": "si"
+    },
+    "llenar-formulario-pdf": {
+      "app": "si"
+    },
+    "editar-pdf": {
+      "app": "si"
+    },
+    "extraer-imagenes-pdf": {
+      "app": "si"
+    },
+    "comparar-pdf": {
+      "app": "si"
+    },
+    "censurar-pdf": {
+      "app": "si"
+    },
+    "firmar-pdf": {
+      "app": "si"
+    },
+    "recortar-pdf": {
+      "app": "si"
+    },
+    "comprimir-pdf": {
+      "app": "si"
+    },
+    "proteger-pdf": {
+      "app": "si"
+    },
+    "desbloquear-pdf": {
+      "app": "si"
+    },
+    "reparar-pdf": {
+      "app": "evaluar"
+    },
+    "calcular-hash": {
+      "app": "planeada"
+    },
+    "pdf-a-pdfa": {
+      "app": "evaluar"
+    },
+    "comprimir-imagen": {
+      "app": "planeada"
+    },
+    "redimensionar-imagen": {
+      "app": "planeada"
+    },
+    "recortar-imagen": {
+      "app": "planeada"
+    },
+    "rotar-imagen": {
+      "app": "planeada"
+    },
+    "quitar-fondo": {
+      "app": "evaluar"
+    },
+    "foto-tamano-documento": {
+      "app": "planeada"
+    },
+    "marca-de-agua-imagen": {
+      "app": "planeada"
+    },
+    "ajustar-imagen": {
+      "app": "planeada"
+    },
+    "comprimir-archivos": {
+      "app": "evaluar"
+    },
+    "descomprimir-archivos": {
+      "app": "evaluar"
+    },
+    "ocr-pdf": {
+      "app": "si"
+    },
+    "imagen-a-pdf": {
+      "app": "si"
+    },
+    "pdf-a-jpg": {
+      "app": "si"
+    },
+    "pdf-a-word": {
+      "app": "si"
+    },
+    "pdf-a-excel": {
+      "app": "planeada"
+    },
+    "word-a-pdf": {
+      "app": "si"
+    },
+    "excel-a-pdf": {
+      "app": "si"
+    },
+    "pdf-a-texto": {
+      "app": "si"
+    },
+    "crear-codigo-qr": {
+      "app": "si"
+    },
+    "ordenar-paginas-pdf": {
+      "app": "si"
+    },
+    "numerar-paginas-pdf": {
+      "app": "si"
+    },
+    "marca-de-agua-pdf": {
+      "app": "si"
+    },
+    "jpg-a-png": {
+      "app": "si"
+    },
+    "heic-a-jpg": {
+      "app": "planeada"
+    },
+    "imagen-a-gif": {
+      "app": "planeada"
+    },
+    "imagen-a-avif": {
+      "app": "evaluar"
+    },
+    "png-a-ico": {
+      "app": "planeada"
+    },
+    "svg-a-png": {
+      "app": "evaluar"
+    },
+    "tiff-a-jpg": {
+      "app": "evaluar"
+    },
+    "png-a-jpg": {
+      "app": "si"
+    },
+    "imagen-a-webp": {
+      "app": "si"
+    }
+  }
+}
