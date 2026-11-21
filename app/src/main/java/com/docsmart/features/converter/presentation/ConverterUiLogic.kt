@@ -47,6 +47,8 @@ internal fun ConversionType.getCategoryForUi(): String =
         ConversionType.IMAGE_TO_PNG,
         ConversionType.IMAGE_TO_WEBP,
         ConversionType.IMAGE_TO_BMP,
+        ConversionType.IMAGE_TO_GIF,
+        ConversionType.IMAGE_TO_ICO,
         -> "Imagen"
         ConversionType.PDF_TO_IMAGE,
         ConversionType.PDF_TO_TXT,
@@ -73,6 +75,8 @@ internal fun getMimeForType(type: ConversionType): String =
         ConversionType.IMAGE_TO_PNG,
         ConversionType.IMAGE_TO_WEBP,
         ConversionType.IMAGE_TO_BMP,
+        ConversionType.IMAGE_TO_GIF,
+        ConversionType.IMAGE_TO_ICO,
         -> "image/*"
         ConversionType.PDF_TO_IMAGE,
         ConversionType.PDF_TO_TXT,

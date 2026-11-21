@@ -800,7 +800,7 @@ private fun getFormatStyle(format: String): Pair<Color, ImageVector> =
     when (format.lowercase()) {
         "pdf" -> Pair(ColorPdf, Icons.Rounded.PictureAsPdf)
         "imagen", "image", "jpg", "png",
-        "webp", "bmp",
+        "webp", "bmp", "gif", "ico",
         -> Pair(ColorImage, Icons.Rounded.Image)
         "word", "docx" -> Pair(ColorWord, Icons.Rounded.Description)
         "excel" -> Pair(ColorExcel, Icons.Rounded.TableChart)

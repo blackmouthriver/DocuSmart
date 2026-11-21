@@ -24,13 +24,19 @@ import javax.inject.Inject
 // 2026-09-16, cuarta pasada) -- agrupa qué formato/extensión usar y si hace
 // falta componer sobre blanco antes de escribir, para que invoke() no tenga
 // que repetir esa lógica.
+private enum class OutputEncoder { BITMAP, BMP, GIF, ICO }
+
 private data class TargetFormat(
-    val isBmp: Boolean,
+    val encoder: OutputEncoder,
     val compressFormat: Bitmap.CompressFormat,
     val extension: String,
     val quality: Int,
 ) {
-    val needsWhiteBackground: Boolean get() = isBmp || compressFormat == Bitmap.CompressFormat.JPEG
+    val isBmp: Boolean get() = encoder == OutputEncoder.BMP
+
+    // GIF e ICO conservan la transparencia (indice transparente / PNG con alfa).
+    val needsWhiteBackground: Boolean
+        get() = isBmp || (encoder == OutputEncoder.BITMAP && compressFormat == Bitmap.CompressFormat.JPEG)
 }
 
 class ImageFormatUseCase
@@ -43,6 +49,10 @@ class ImageFormatUseCase
             private const val BMP_INFO_HEADER_SIZE = 40
             private const val BMP_HEADER_SIZE = BMP_FILE_HEADER_SIZE + BMP_INFO_HEADER_SIZE
             private const val BMP_BYTES_PER_PIXEL = 3
+
+            // Un GIF de mas de ~16 MP necesitaria cientos de MB (pixeles + indices + tabla LZW): se reduce.
+            private const val GIF_MAX_SIDE = 4096
+            private const val ICO_PNG_QUALITY = 100
         }
 
         suspend operator fun invoke(
@@ -228,9 +238,12 @@ class ImageFormatUseCase
 
         private fun resolveTargetFormat(targetType: ConversionType): TargetFormat =
             when (targetType) {
-                ConversionType.IMAGE_TO_JPG -> TargetFormat(false, Bitmap.CompressFormat.JPEG, "jpg", 90)
-                ConversionType.IMAGE_TO_PNG -> TargetFormat(false, Bitmap.CompressFormat.PNG, "png", 100)
-                ConversionType.IMAGE_TO_WEBP -> TargetFormat(false, webpFormat(), "webp", 90)
+                ConversionType.IMAGE_TO_JPG -> TargetFormat(OutputEncoder.BITMAP, Bitmap.CompressFormat.JPEG, "jpg", 90)
+                ConversionType.IMAGE_TO_PNG -> TargetFormat(OutputEncoder.BITMAP, Bitmap.CompressFormat.PNG, "png", 100)
+                ConversionType.IMAGE_TO_WEBP -> TargetFormat(OutputEncoder.BITMAP, webpFormat(), "webp", 90)
+                // Android no trae codificador GIF ni ICO: se escriben a mano (GifEncoder, IcoEncoder).
+                ConversionType.IMAGE_TO_GIF -> TargetFormat(OutputEncoder.GIF, Bitmap.CompressFormat.PNG, "gif", 100)
+                ConversionType.IMAGE_TO_ICO -> TargetFormat(OutputEncoder.ICO, Bitmap.CompressFormat.PNG, "ico", 100)
                 // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada):
                 // Android no tiene codificador BMP real (Bitmap.CompressFormat no
                 // lo incluye) -- esto antes escribía bytes PNG con extensión
@@ -238,8 +251,8 @@ class ImageFormatUseCase
                 // contenido real (no por extensión) no reconoce como BMP válido.
                 // compressFormat/quality quedan sin uso real para BMP (ver
                 // writeImage(), que llama a bitmapToBmp() en su lugar).
-                ConversionType.IMAGE_TO_BMP -> TargetFormat(true, Bitmap.CompressFormat.PNG, "bmp", 100)
-                else -> TargetFormat(false, Bitmap.CompressFormat.JPEG, "jpg", 90)
+                ConversionType.IMAGE_TO_BMP -> TargetFormat(OutputEncoder.BMP, Bitmap.CompressFormat.PNG, "bmp", 100)
+                else -> TargetFormat(OutputEncoder.BITMAP, Bitmap.CompressFormat.JPEG, "jpg", 90)
             }
 
         private fun writeImage(
@@ -247,12 +260,82 @@ class ImageFormatUseCase
             bitmap: Bitmap,
             target: TargetFormat,
         ): Boolean =
-            if (target.isBmp) {
-                out.write(bitmapToBmp(bitmap))
-                true
-            } else {
-                bitmap.compress(target.compressFormat, target.quality, out)
+            when (target.encoder) {
+                OutputEncoder.BMP -> {
+                    out.write(bitmapToBmp(bitmap))
+                    true
+                }
+                OutputEncoder.GIF -> {
+                    out.write(bitmapToGif(bitmap))
+                    true
+                }
+                OutputEncoder.ICO -> {
+                    out.write(bitmapToIco(bitmap))
+                    true
+                }
+                OutputEncoder.BITMAP -> bitmap.compress(target.compressFormat, target.quality, out)
             }
+
+        // GIF de un solo cuadro; las imagenes muy grandes se reducen antes (ver GIF_MAX_SIDE).
+        private fun bitmapToGif(bitmap: Bitmap): ByteArray {
+            val longest = maxOf(bitmap.width, bitmap.height)
+            val scaled =
+                if (longest > GIF_MAX_SIDE) {
+                    val factor = GIF_MAX_SIDE.toDouble() / longest
+                    val w = (bitmap.width * factor).toInt().coerceAtLeast(1)
+                    val h = (bitmap.height * factor).toInt().coerceAtLeast(1)
+                    Bitmap.createScaledBitmap(bitmap, w, h, true)
+                } else {
+                    bitmap
+                }
+            try {
+                val pixels = IntArray(scaled.width * scaled.height)
+                scaled.getPixels(pixels, 0, scaled.width, 0, 0, scaled.width, scaled.height)
+                return GifEncoder.encode(scaled.width, scaled.height, pixels)
+            } finally {
+                if (scaled !== bitmap) scaled.recycle()
+            }
+        }
+
+        // Favicon con los 6 tamanos de la web: cada uno es la imagen entera ajustada a un cuadrado
+        // transparente (sin recortar ni deformar), codificada como PNG dentro del .ico.
+        private fun bitmapToIco(bitmap: Bitmap): ByteArray =
+            IcoEncoder.encode(
+                IcoEncoder.SIZES.map { side ->
+                    val square = containInSquare(bitmap, side)
+                    try {
+                        val png = java.io.ByteArrayOutputStream()
+                        square.compress(Bitmap.CompressFormat.PNG, ICO_PNG_QUALITY, png)
+                        IcoEncoder.Entry(side, png.toByteArray())
+                    } finally {
+                        square.recycle()
+                    }
+                },
+            )
+
+        private fun containInSquare(
+            source: Bitmap,
+            side: Int,
+        ): Bitmap {
+            val scale = minOf(side.toFloat() / source.width, side.toFloat() / source.height)
+            val w = (source.width * scale).toInt().coerceIn(1, side)
+            val h = (source.height * scale).toInt().coerceIn(1, side)
+            // Una sola pasada bilineal deja dientes al bajar mucho; se reduce a la mitad hasta quedar cerca.
+            var smooth = source
+            while (smooth.width / 2 >= w && smooth.height / 2 >= h) {
+                val half = Bitmap.createScaledBitmap(smooth, smooth.width / 2, smooth.height / 2, true)
+                if (smooth !== source) smooth.recycle()
+                smooth = half
+            }
+            val result = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
+            val canvas = android.graphics.Canvas(result)
+            val paint = android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG)
+            val left = (side - w) / 2
+            val top = (side - h) / 2
+            canvas.drawBitmap(smooth, null, android.graphics.Rect(left, top, left + w, top + h), paint)
+            if (smooth !== source) smooth.recycle()
+            return result
+        }
 
         private fun flattenOnWhite(source: Bitmap): Bitmap {
             val flattened = Bitmap.createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)

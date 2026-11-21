@@ -222,4 +222,75 @@ class ImageFormatInstrumentedTest {
         assertTrue(result is ConversionResult.Error)
         assertTrue(ctx.outputDir("converted").walkTopDown().none { it.isFile })
     }
+
+    // ── GIF e ICO (F2a): Android no los codifica, se escriben a mano ───────────
+
+    private fun solidPng(
+        name: String,
+        width: Int,
+        height: Int,
+        color: Int,
+    ): File {
+        val file = ctx.inputFile(name)
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        bitmap.eraseColor(color)
+        file.parentFile?.mkdirs()
+        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        bitmap.recycle()
+        return file
+    }
+
+    @Test
+    fun conversionAGifEscribeUnGifQueAndroidPuedeDecodificar() {
+        val source = solidPng("rojo.png", 40, 30, Color.rgb(200, 30, 30))
+
+        val result = success(convert(source, ConversionType.IMAGE_TO_GIF))
+
+        assertEquals("salida.gif", result.outputFile.name)
+        val bytes = result.outputFile.readBytes()
+        assertEquals("GIF89a", String(bytes, 0, 6, Charsets.US_ASCII))
+        val decoded = decode(result.outputFile)
+        assertEquals(40 to 30, decoded.width to decoded.height)
+        val pixel = decoded.getPixel(20, 15)
+        assertTrue(Color.red(pixel) in 190..210 && Color.green(pixel) < 45 && Color.blue(pixel) < 45)
+        decoded.recycle()
+    }
+
+    @Test
+    fun gifConservaLaTransparencia() {
+        val result = success(convert(transparentPng("t.png"), ConversionType.IMAGE_TO_GIF))
+
+        val decoded = decode(result.outputFile)
+        assertEquals(0, Color.alpha(decoded.getPixel(1, 1)))
+        decoded.recycle()
+    }
+
+    @Test
+    fun conversionAIcoEscribeLosSeisTamanosComoPng() {
+        val source = solidPng("azul.png", 120, 60, Color.rgb(20, 40, 200))
+
+        val result = success(convert(source, ConversionType.IMAGE_TO_ICO))
+
+        assertEquals("salida.ico", result.outputFile.name)
+        val bytes = result.outputFile.readBytes()
+        val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
+        assertEquals(0, buffer.getShort(0).toInt())
+        assertEquals(1, buffer.getShort(2).toInt())
+        assertEquals(6, buffer.getShort(4).toInt())
+        IcoEncoder.SIZES.forEachIndexed { i, side ->
+            val entry = 6 + 16 * i
+            val length = buffer.getInt(entry + 8)
+            val offset = buffer.getInt(entry + 12)
+            val png = BitmapFactory.decodeByteArray(bytes, offset, length)
+            assertNotNull("la entrada de $side px no es un PNG valido", png)
+            assertEquals(side to side, png.width to png.height)
+            // La imagen apaisada se ajusta sin deformar: el centro es azul y la esquina superior queda transparente.
+            if (side >= 32) {
+                val center = png.getPixel(side / 2, side / 2)
+                assertTrue(Color.blue(center) > 150 && Color.alpha(center) == 255)
+                assertEquals(0, Color.alpha(png.getPixel(0, 0)))
+            }
+            png.recycle()
+        }
+    }
 }

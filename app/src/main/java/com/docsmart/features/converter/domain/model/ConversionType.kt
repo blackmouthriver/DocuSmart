@@ -17,7 +17,7 @@ enum class ConversionType(
     IMAGE_TO_JPG(
         fromFormat = "Imagen",
         toFormat = "JPG",
-        fromExtensions = listOf("png", "webp", "bmp"),
+        fromExtensions = listOf("png", "webp", "bmp", "heic", "heif"),
         outputExtension = "jpg",
     ),
     IMAGE_TO_PNG(
@@ -37,6 +37,18 @@ enum class ConversionType(
         toFormat = "BMP",
         fromExtensions = listOf("jpg", "jpeg", "png", "webp"),
         outputExtension = "bmp",
+    ),
+    IMAGE_TO_GIF(
+        fromFormat = "Imagen",
+        toFormat = "GIF",
+        fromExtensions = listOf("jpg", "jpeg", "png", "webp", "bmp", "heic", "heif"),
+        outputExtension = "gif",
+    ),
+    IMAGE_TO_ICO(
+        fromFormat = "Imagen",
+        toFormat = "ICO",
+        fromExtensions = listOf("jpg", "jpeg", "png", "webp", "bmp", "heic", "heif"),
+        outputExtension = "ico",
     ),
 
     // ── PDF ───────────────────────────────────────────

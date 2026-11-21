@@ -380,6 +380,8 @@ class ConverterViewModel
                 ConversionType.IMAGE_TO_PNG,
                 ConversionType.IMAGE_TO_WEBP,
                 ConversionType.IMAGE_TO_BMP,
+                ConversionType.IMAGE_TO_GIF,
+                ConversionType.IMAGE_TO_ICO,
                 -> imageFormat(uri, type, fileName)
                 ConversionType.PDF_TO_IMAGE -> pdfToImage(uri, fileName)
                 ConversionType.PDF_TO_TXT -> pdfToText(uri, fileName)

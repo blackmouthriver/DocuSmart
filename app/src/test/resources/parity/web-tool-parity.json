@@ -128,16 +128,16 @@
       "app": "si"
     },
     "heic-a-jpg": {
-      "app": "planeada"
+      "app": "si"
     },
     "imagen-a-gif": {
-      "app": "planeada"
+      "app": "si"
     },
     "imagen-a-avif": {
       "app": "evaluar"
     },
     "png-a-ico": {
-      "app": "planeada"
+      "app": "si"
     },
     "svg-a-png": {
       "app": "evaluar"
