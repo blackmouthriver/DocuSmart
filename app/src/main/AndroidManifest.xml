@@ -42,6 +42,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <!-- La actividad del escáner de ML Kit fuerza orientación vertical y eso añade
+         screen.portrait como obligatorio, lo que excluye tablets, Chromebooks y
+         Android XR solo-horizontal (aviso de Play Console al subir la 1.1.6). La app
+         funciona en horizontal, así que se declara opcional. -->
+    <uses-feature android:name="android.hardware.screen.portrait" android:required="false" />
 
     <!-- ── Pomodoro en segundo plano (RF-STU-10) ─────── -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
