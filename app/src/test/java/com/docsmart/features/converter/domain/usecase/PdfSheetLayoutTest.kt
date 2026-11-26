@@ -19,6 +19,12 @@ class PdfSheetLayoutTest {
         return PdfSheetLayout.pageRows(lines)
     }
 
+    /** Como la hoja real: el umbral fino de columnas (`buildSheets` de la web usa 0,6 y no el 2 de Word). */
+    private fun spreadsheetRows(vararg fragments: TextFragment): List<List<SheetCell>> {
+        val lines = PdfSheetLayout.buildLines(fragments.toList(), PdfSheetLayout.SPREADSHEET_SPLIT_GAP)
+        return PdfSheetLayout.pageRows(lines)
+    }
+
     private fun values(row: List<SheetCell>): List<Any> = row.map { it.number ?: it.text }
 
     @Test
@@ -90,7 +96,7 @@ class PdfSheetLayoutTest {
     @Test
     fun `estilo extracto de Word - filas altas sin filas vacias y celdas en dos lineas`() {
         val result =
-            rows(
+            spreadsheetRows(
                 t("Fecha", 72f, 100f, true),
                 t("Descripción", 150f, 100f, true),
                 t("Débito", 300f, 100f, true),
