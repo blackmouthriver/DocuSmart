@@ -1,17 +1,24 @@
 # Auditoría y plan de paridad: app Android, web y Desktop
 
-Fecha: 2026-11-26. Estado: **propuesta para aprobación del propietario**. No cambia código; sirve para decidir.
+Fecha: 2026-11-26. Estado: **decisiones 1 y 3 tomadas el 2026-11-26** (arquitectura híbrida; la web adoptará los límites de la app al final). El resto sigue pendiente. No cambia código; sirve para decidir y planear.
 
 Fuentes (todo leído de `main`, sin mi trabajo en curso): app Android `main` en `732c62f` (versión 1.1.6, código 12, en producción); web `docusmart-web` en `main`/`preproduccion` (`8bad35e0`), con `src/features/tools/core/catalog.ts`, `toolParity.json`, `docs/BACKLOG.md` (205 ítems: 118 hechos y 70 pendientes) y `.github/workflows/ci.yml`.
 
 > **Orden de prioridades vigente (2026-11-25):** primero la web sin errores y su backlog, después tus pendientes (👤) y **solo al final la app**. Este documento prepara ese momento; no propone empezar la app ahora.
+
+## 0. Decisiones tomadas
+
+| # | Decisión | Fecha | Qué implica |
+|---|---|---|---|
+| 1 | **Arquitectura híbrida (opción B)** para las herramientas que faltan en la app: nativo para lo pequeño y lo que Android hace mejor; la misma herramienta de la web embebida para las medianas y grandes | 2026-11-26 | Hay que construir el anfitrión web de la app con las condiciones de la sección 7 |
+| 3 | **La web adopta los límites diarios de la app**, pero **no ahora**: hoy la web sigue sin límites y se implementan cuando todo esté nivelado | 2026-11-26 | Sección 10: prerrequisitos, qué cuenta en cada herramienta y qué textos cambian |
 
 ## 1. Resumen
 
 - La web tiene **71 herramientas** en su catálogo (66 con página propia en 12 idiomas). La app ofrece **27** a un usuario hoy.
 - Las otras **44** se reparten así: **5 están programadas pero ocultas** en la app desde el primer lanzamiento, **4 ya tienen código en mis ramas** (sin fusionar y sin probar en teléfono), **2 son parciales** y **33 no existen**.
 - Para llegar a la paridad hay que **construir 35 herramientas** (esfuerzo nativo: 12 pequeñas, 14 medianas, 9 grandes) y además revisar y mostrar las 5 ocultas y terminar y probar las 4 en rama.
-- Hacerlo todo en Kotlin son unas **27 semanas** de trabajo asistido (estimación gruesa) y duplica el mantenimiento para siempre. Un enfoque **híbrido** (nativo para lo pequeño y lo que Android hace mejor; la misma herramienta de la web embebida para las medianas y grandes) baja a unas **9 a 10 semanas** y hace que esas herramientas se actualicen solas junto con la web. Es la decisión más importante de este documento (sección 7).
+- Hacerlo todo en Kotlin son unas **27 semanas** de trabajo asistido (estimación gruesa) y duplica el mantenimiento para siempre. Un enfoque **híbrido** (nativo para lo pequeño y lo que Android hace mejor; la misma herramienta de la web embebida para las medianas y grandes) baja a unas **9 a 10 semanas** y hace que esas herramientas se actualicen solas junto con la web. Esa fue la decisión más importante y ya está tomada: **híbrido** (sección 7).
 - Ya hoy **web y Desktop se actualizan a la vez** (Desktop es la web instalada). Lo que no se actualiza a la vez son las tiendas. La sección 9 propone cómo acercar el resto: un tren de versiones, un manifiesto de herramientas publicado por la web, funciones que se encienden por Remote Config y pruebas cruzadas en el CI.
 
 ## 2. Qué tiene la app hoy (1.1.6)
@@ -154,7 +161,24 @@ Hoy el código de las herramientas está escrito dos veces (Kotlin en la app, Ty
 | **B. Híbrido (recomendada)** | Nativo para las S y para lo que Android hace mejor; el resto se abre **dentro de la app** con la misma herramienta de la web (un `WebView` con el build de la web empaquetado en la app, funciona sin conexión) | ~9 a 10 semanas; las herramientas embebidas **se actualizan con la web**; menos código propio | Las herramientas embebidas se sienten un poco menos nativas; el APK crece (wasm de qpdf, 7-Zip, OCR y modelos que se descargan al usarlos); hay que puentear archivos, descargas y compartir; memoria del WebView en teléfonos de poca RAM |
 | **C. App como envoltorio de la web** | Reemplazar la app por Capacitor (como iOS) | Un solo código en todo | Se pierde lo nativo que hoy es mejor (escáner de ML Kit, Carpeta Segura, Biblioteca, visor con anotaciones) o se reescribe como plugins; es una reescritura |
 
-**Recomendación: B.** Mantiene lo que la app hace mejor, cierra la brecha rápido y, sobre todo, es lo único que acerca de verdad el «todo a la vez» sin reescribir la app. A verificar antes de decidir: la política de Google Play sobre contenido web dentro de una app (una app que **solo** envuelve un sitio se rechaza por funcionalidad mínima; DocuSmart tiene mucha funcionalidad nativa, pero conviene confirmarlo), y el límite de memoria con el OCR y los modelos en el Edge y el E22.
+**Decisión: B (2026-11-26).** Mantiene lo que la app hace mejor, cierra la brecha rápido y es lo único que acerca de verdad el «todo a la vez» sin reescribir la app.
+
+### Verificación de la política de Google Play (2026-11-26)
+
+- **Permitido, con condiciones.** Google Play no prohíbe las apps con WebView; marca como *funcionalidad mínima* y spam a las que son **solo** una página web empaquetada ([guía de Android Developers, 2020](https://android-developers.googleblog.com/2020/10/developer-tips-and-guides-common-policy.html?hl=es)). DocuSmart tiene mucha funcionalidad nativa (escáner, Biblioteca, Visor, Carpeta Segura, Estudio), así que no entra en ese caso, siempre que las herramientas embebidas sean un complemento y no la app.
+- **El código web dentro de la app no es «código ejecutable descargado».** La política de [Dispositivo y abuso de red](https://support.google.com/googleplay/android-developer/answer/9888379?hl=en) prohíbe descargar código ejecutable (dex, JAR, `.so`) fuera de Google Play, pero exceptúa el que corre en una máquina virtual o intérprete con acceso solo indirecto a las API de Android, con «JavaScript en un WebView» como ejemplo. El código interpretado cargado en ejecución no puede permitir violaciones de otras políticas.
+- **Límites de esa excepción:** un WebView que expone una interfaz de JavaScript a contenido web no confiable es un riesgo de incumplimiento; conviene cargar solo contenido propio y con URL acotadas.
+- Esto sale de la documentación oficial y de resúmenes de terceros; antes de publicar la primera versión con el anfitrión hay que releer la política vigente y probarlo en un envío a prueba cerrada.
+
+### Condiciones del anfitrión web de la app
+
+1. **Solo contenido propio:** cargar el build de la web empaquetado en la app (`WebViewAssetLoader`) o `docusmart.online`, nunca URL ajenas; la navegación fuera de ese origen se abre en el navegador (`shouldOverrideUrlLoading` con lista de permitidos).
+2. **Puente mínimo:** una sola interfaz de JavaScript, solo para el origen propio, con las funciones indispensables (recibir un archivo de la app, entregar el resultado, compartir, guardar).
+3. **Sin acceso a archivos locales del WebView** (`setAllowFileAccess(false)`, sin contenido mixto) y sin depurar WebView en producción.
+4. **Publicidad:** el build embebido **no carga AdSense** (la publicidad de la app es AdMob y las políticas de AdSense no se pensaron para apps); se apaga por un parámetro del anfitrión. Verificarlo con las políticas de AdSense. Tampoco muestra el banner de analítica propio: el consentimiento lo gestiona la app.
+5. **Privacidad intacta:** igual que en la web, el archivo no sale del dispositivo. Actualizar la política de privacidad y la ficha de Seguridad de los datos de Play si cambia algo.
+6. **Memoria:** probar OCR, PDF grandes y modelos (quitar fondo, Whisper) en el Edge y el E22 antes de ofrecerlos; si el WebView no aguanta, esa herramienta pasa a nativo o se queda solo en la web.
+7. **Actualización del build web:** empaquetado y renovado con cada versión de la app como base; la actualización en caliente desde el sitio es opcional y se decide después (sección 9.3).
 
 ### Reparto sugerido con la opción B
 
@@ -167,7 +191,7 @@ Se ejecuta **después** de que la web esté sin errores y de que cierres tus pen
 
 | Fase | Contenido | Duración orientativa |
 |---|---|---|
-| **A. Cimientos** | Decidir la opción de la sección 7; arreglar el desfase del contrato (`leer-codigo-qr`, `powerpoint-a-pdf`); definir la política de límites; publicar el manifiesto de herramientas (sección 9); si se elige B, construir el anfitrión web de la app (WebView con el build empaquetado, puente de archivos, descargas y compartir) | 2 a 3 semanas |
+| **A. Cimientos** | ~~Decidir la opción de la sección 7~~ (decidida: híbrido); arreglar el desfase del contrato (`leer-codigo-qr`, `powerpoint-a-pdf`); definir la política de límites; publicar el manifiesto de herramientas (sección 9); si se elige B, construir el anfitrión web de la app (WebView con el build empaquetado, puente de archivos, descargas y compartir) | 2 a 3 semanas |
 | **B. Rápidas nativas** | Terminar y probar las 4 en rama; mostrar las 5 ocultas tras revisarlas; las S nativas de la sección 7 | 3 a 4 semanas |
 | **C. Medianas** | Quitar metadatos, reparar PDF, recortar imagen, quitar fondo, foto tamaño documento, cuenta de cobro, comparar textos, SVG, audio y video básico (por Media3 o embebidas) | 3 a 4 semanas |
 | **D. Grandes** | Hoja de vida, PDF/A, PDF a PowerPoint, 7Z y RAR, TIFF, AVIF, audio a texto, convertir video | 2 a 3 semanas en B (embebidas); 10 o más en A |
@@ -199,25 +223,51 @@ Cada herramienta nueva sale con pruebas unitarias, prueba en los dos teléfonos 
 6. **Matriz de estado automática.** Un `docs/MATRIZ.md` generado a partir del manifiesto: cada herramienta en filas y Web, Android, iPhone, Desktop en columnas, con la versión en que llegó. Es la lista de control de cada lanzamiento y responde «¿qué le falta a cada plataforma?» sin auditorías manuales como esta.
 7. **Observabilidad.** Las mismas claves de eventos en web y app y la versión en cada evento, para ver adopción por plataforma, y un aviso cuando una versión de la app lleva más de 30 días sin recibir la función de la web.
 
-### 9.3 Si se elige la opción B (embebido)
+### 9.3 Con la opción B (embebido, decidida)
 
-Las herramientas embebidas **sí** se actualizan a la vez que la web si el WebView carga el build desde `docusmart.online` con caché de service worker (misma lógica que Desktop), y funcionan sin conexión cuando ya se visitaron. La contrapartida es que dependen de la red la primera vez; la alternativa es empaquetar el build en la app y actualizarlo con cada versión (más predecible, no instantáneo). Se puede combinar: empaquetado como base y actualización en caliente del build web desde el sitio, dentro de lo que permiten las políticas de Google. Esto hay que verificarlo contra la política vigente antes de implementarlo.
+Las herramientas embebidas **sí** se actualizan a la vez que la web si el WebView carga el build desde `docusmart.online` con caché de service worker (misma lógica que Desktop), y funcionan sin conexión cuando ya se visitaron. La contrapartida es que dependen de la red la primera vez; la alternativa es empaquetar el build en la app y actualizarlo con cada versión (más predecible, no instantáneo). Se puede combinar: empaquetado como base y actualización en caliente del build web desde el sitio, dentro de lo que permiten las políticas de Google. La política de Google Play lo permite con las condiciones de la sección 7; la actualización en caliente se decide después, con la política vigente a la vista.
 
 ### 9.4 Lo que no se puede prometer
 
 - **Instantáneo en las tiendas:** Google y Apple revisan. Con banderas y tren de versiones se llega a «la función aparece el mismo día», no a «el mismo minuto».
 - **Cero trabajo duplicado:** sin la opción B o C, las herramientas nativas siguen existiendo dos veces; las pruebas compartidas reducen el riesgo de que diverjan, no lo eliminan.
 
-## 10. Decisiones que necesito de ti
+## 10. Límites diarios: la web adopta los de la app (decisión 2026-11-26)
 
-1. **Arquitectura de las herramientas que faltan:** A (todo nativo), **B (híbrido, recomendada)** o C (envoltorio). Es la que más cambia el plan.
+**Decisión:** la web adoptará los límites de la app, pero **cuando todo esté nivelado**. Hoy la web sigue **sin límites** y no se toca.
+
+**Los límites de la app hoy** (1.1.6, `DailyLimitManager`), para usuarios gratuitos; Premium no tiene límite:
+
+| Contador | Límite diario | Qué cuenta |
+|---|---:|---|
+| Conversiones | 5 | Cada archivo convertido en el Convertidor |
+| Herramientas PDF | 3 por herramienta | Cada uso de unir, dividir, comprimir, rotar, numerar, marca de agua, reordenar, comparar, censurar… (un contador por herramienta) |
+| Escaneos guardados | 8 | Cada escaneo que se guarda |
+| Extras | +1 por anuncio | Cada anuncio recompensado visto suma un uso al contador correspondiente |
+
+El conteo se reinicia cada día con una hora de confianza (`trustedNowMillis`), que resiste cambios del reloj del teléfono.
+
+**Qué hay que tener antes de ponerlos en la web:**
+
+1. **Cuenta y Premium compartido (W-94 y W-98).** Sin ellos, quien paga Premium en Google Play toparía con los límites en la web. Sin cuenta el límite sería por navegador (se salta borrando datos o cambiando de navegador): sirve como límite «blando»; con cuenta de Google se puede atar a la cuenta.
+2. **Qué pasa con los extras.** La app los da con un anuncio recompensado. En la web AdSense no ofrece anuncios recompensados (haría falta Google Ad Manager): decidir entre anuncios recompensados con Ad Manager, solo Premium, o ningún extra.
+3. **Qué cuenta en las herramientas que la app no tiene.** Propuesta para decidir: imagen y conversiones de imagen suman a «Conversiones»; audio y video, un contador propio más bajo porque son pesadas; texto, hash, QR, renombrar y generador de contraseñas, sin límite; hoja de vida y cuenta de cobro, sin límite o a decidir.
+4. **Textos que hoy prometen «sin límites»:** portada, páginas de herramientas, comparativas y guías en 12 idiomas, base del asistente, política de privacidad (los contadores se guardan en el navegador) y fichas. Se cambian el mismo día.
+5. **Riesgo de tráfico y SEO.** «Sin límites» es parte de la propuesta de valor y de las comparativas con la competencia (W-146). Medir antes y después con GA4 y Search Console, y desplegarlo detrás de una bandera para poder revertir.
+6. **Una sola política en dos lugares.** Las cifras viven en Remote Config para la app y en la configuración de la web (idealmente el mismo manifiesto de la sección 9), para que no vuelvan a divergir.
+
+**Orden en el tiempo:** 1) web sin errores, 2) backlog de la web, 3) tus pendientes (👤), 4) paridad de la app, 5) cuenta y Premium compartido, 6) **límites en la web**.
+
+## 11. Decisiones que necesito de ti
+
+1. ✅ **Decidido (2026-11-26): arquitectura híbrida.** Queda la verificación de la sección 7 y la prueba en un envío a prueba cerrada.
 2. **Mostrar las 5 conversiones ocultas** (PDF a Word, Word, Excel y PowerPoint) cuando se revisen: ¿sí? Hoy la web las promociona.
-3. **Límites diarios:** ¿la app mantiene sus contadores para usuarios gratuitos, la web adopta límites, o se quitan en la app? (Hoy no coinciden.)
+3. ✅ **Decidido (2026-11-26): la web adoptará los límites de la app al final** (sección 10). Falta decidir los puntos 2 y 3 de esa sección (extras y qué cuenta en las herramientas nuevas) cuando se acerque el momento.
 4. **Audio y video en la app:** ¿se ofrecen (embebido o Media3), o se quedan solo en la web?
 5. **Manifiesto de herramientas, banderas de Remote Config y tren de versiones cada 2 semanas:** ¿se aprueban como mecanismo?
 6. **Cuándo arrancar la app:** confirmo que sigue **después** de web sin errores, backlog web y tus pendientes. Si cambia el orden, dímelo.
 
-## 11. Cómo sabremos que está hecho
+## 12. Cómo sabremos que está hecho
 
 - La matriz `docs/MATRIZ.md` sin filas «No» salvo las que decidas dejar solo en la web.
 - El CI de la web **falla** si una herramienta nueva no declara su estado en la app.
