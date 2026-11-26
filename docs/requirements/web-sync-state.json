@@ -1,0 +1,968 @@
+{
+ "ref": "preproduccion",
+ "sha": "5cbf8e8153e5440a36ad37b47160b8c42d069222",
+ "fecha": "2026-11-26T18:51:07Z",
+ "herramientas": [
+  "archivos/crear",
+  "archivos/extraer",
+  "archivos/renombrar",
+  "convertir/csv-excel",
+  "convertir/excel-csv",
+  "convertir/excel-pdf",
+  "convertir/heic-jpg",
+  "convertir/img-avif",
+  "convertir/img-bmp",
+  "convertir/img-gif",
+  "convertir/img-ico",
+  "convertir/img-jpg",
+  "convertir/img-pdf",
+  "convertir/img-png",
+  "convertir/img-webp",
+  "convertir/pdf-excel",
+  "convertir/pdf-img",
+  "convertir/pdf-ppt",
+  "convertir/pdf-txt",
+  "convertir/pdf-word",
+  "convertir/ppt-pdf",
+  "convertir/svg-png",
+  "convertir/tiff-jpg",
+  "convertir/word-pdf",
+  "documentos/cobro",
+  "documentos/cv",
+  "hash/calcular",
+  "imagen/ajustar",
+  "imagen/comprimir",
+  "imagen/documento",
+  "imagen/fondo",
+  "imagen/marca",
+  "imagen/recortar",
+  "imagen/redimensionar",
+  "imagen/rotar",
+  "imagen/texto",
+  "metadatos/quitar",
+  "multimedia/audio",
+  "multimedia/comprimir",
+  "multimedia/convertir",
+  "multimedia/gif",
+  "multimedia/girar",
+  "multimedia/recortar",
+  "multimedia/texto",
+  "multimedia/unir",
+  "pdf/censurar",
+  "pdf/comparar",
+  "pdf/comprimir",
+  "pdf/desbloquear",
+  "pdf/dividir",
+  "pdf/editar",
+  "pdf/escanear",
+  "pdf/firmar",
+  "pdf/formulario",
+  "pdf/imagenes",
+  "pdf/marca",
+  "pdf/numerar",
+  "pdf/ocr",
+  "pdf/pdfa",
+  "pdf/proteger",
+  "pdf/recortar",
+  "pdf/reordenar",
+  "pdf/reparar",
+  "pdf/rotar",
+  "pdf/unir",
+  "qr/crear",
+  "qr/leer",
+  "texto/comparar",
+  "texto/contar",
+  "texto/contrasena",
+  "texto/resumir"
+ ],
+ "contrato": {
+  "unir-pdf": "si",
+  "dividir-pdf": "si",
+  "rotar-pdf": "si",
+  "escanear-documento": "si",
+  "llenar-formulario-pdf": "si",
+  "editar-pdf": "si",
+  "extraer-imagenes-pdf": "si",
+  "comparar-pdf": "si",
+  "censurar-pdf": "si",
+  "firmar-pdf": "si",
+  "recortar-pdf": "si",
+  "comprimir-pdf": "si",
+  "proteger-pdf": "si",
+  "desbloquear-pdf": "si",
+  "reparar-pdf": "evaluar",
+  "calcular-hash": "planeada",
+  "pdf-a-pdfa": "evaluar",
+  "comprimir-imagen": "planeada",
+  "redimensionar-imagen": "planeada",
+  "recortar-imagen": "planeada",
+  "rotar-imagen": "planeada",
+  "quitar-fondo": "evaluar",
+  "foto-tamano-documento": "planeada",
+  "marca-de-agua-imagen": "planeada",
+  "ajustar-imagen": "planeada",
+  "comprimir-archivos": "evaluar",
+  "descomprimir-archivos": "evaluar",
+  "ocr-pdf": "si",
+  "imagen-a-pdf": "si",
+  "pdf-a-jpg": "si",
+  "pdf-a-word": "si",
+  "pdf-a-excel": "planeada",
+  "word-a-pdf": "si",
+  "excel-a-pdf": "si",
+  "pdf-a-texto": "si",
+  "crear-codigo-qr": "si",
+  "ordenar-paginas-pdf": "si",
+  "numerar-paginas-pdf": "si",
+  "marca-de-agua-pdf": "si",
+  "jpg-a-png": "si",
+  "heic-a-jpg": "planeada",
+  "imagen-a-gif": "planeada",
+  "imagen-a-avif": "evaluar",
+  "png-a-ico": "planeada",
+  "svg-a-png": "evaluar",
+  "tiff-a-jpg": "evaluar",
+  "png-a-jpg": "si",
+  "imagen-a-webp": "si",
+  "cuenta-de-cobro": "evaluar",
+  "hoja-de-vida": "evaluar",
+  "video-a-mp3": "evaluar",
+  "convertir-video": "evaluar",
+  "recortar-audio-video": "evaluar",
+  "comprimir-video": "evaluar",
+  "quitar-metadatos": "evaluar",
+  "imagen-a-texto": "evaluar",
+  "leer-codigo-qr": "si",
+  "contador-de-palabras": "evaluar",
+  "comparar-textos": "evaluar",
+  "generador-de-contrasenas": "evaluar",
+  "powerpoint-a-pdf": "si",
+  "pdf-a-powerpoint": "evaluar",
+  "csv-a-excel": "evaluar",
+  "excel-a-csv": "evaluar",
+  "audio-a-texto": "evaluar",
+  "resumir-pdf": "evaluar"
+ },
+ "backlog": {
+  "W-05": {
+   "titulo": "Google Search Console: verificar el dominio (TXT en Hostinger) y enviar `sitemap.xml`",
+   "hecho": false
+  },
+  "W-06": {
+   "titulo": "Restringir la API key web de Firebase a `docusmart.online`, `www` y `docusmart-8904e.web.app` (sin tocar las c",
+   "hecho": false
+  },
+  "W-07": {
+   "titulo": "Borrar la cuenta de servicio sobrante `github-action-…` (la que dice \"Sin claves\") del primer `firebase init` ",
+   "hecho": false
+  },
+  "W-08": {
+   "titulo": "Hostinger: verificación en dos pasos, bloqueo de transferencia del dominio y DNSSEC",
+   "hecho": false
+  },
+  "W-09": {
+   "titulo": "Play Console → Sitio web = `https://docusmart.online`, y en AdMob confirmar `app-ads.txt` \"Autorizado\" (24-48 ",
+   "hecho": false
+  },
+  "W-10": {
+   "titulo": "QA visual de la app web en celular: revisar a 375 px las pantallas de `/app/` (Inicio, Visor, Convertidor, PDF",
+   "hecho": false
+  },
+  "W-11": {
+   "titulo": "Pruebas de punta a punta automáticas (Playwright) en el CI contra `vite preview` con las cabeceras de producci",
+   "hecho": false
+  },
+  "W-12": {
+   "titulo": "Imagen para compartir 1200×630 (`og:image`, `twitter:card=summary_large_image`) para la landing y cada herrami",
+   "hecho": true
+  },
+  "W-13": {
+   "titulo": "Más páginas de herramientas: numerar páginas, marca de agua, ordenar páginas, JPG→PNG, PNG→JPG, imagen→WebP. S",
+   "hecho": true
+  },
+  "W-14": {
+   "titulo": "Versión en inglés de la landing y las herramientas, con `hreflang` (la app ya está en 12 idiomas)",
+   "hecho": true
+  },
+  "W-15": {
+   "titulo": "Eventos clave en GA4: marcar `landing_cta_click` (destino `play_store`) y `conversion_success` como conversion",
+   "hecho": false
+  },
+  "W-16": {
+   "titulo": "PWA: manifest y service worker para instalar DocuSmart Web y usarla sin conexión. Encaja con la promesa de \"na",
+   "hecho": true
+  },
+  "W-17": {
+   "titulo": "Lighthouse ≥ 95 en rendimiento, accesibilidad, buenas prácticas y SEO; prueba con lector de pantalla (NVDA/Tal",
+   "hecho": true
+  },
+  "W-18": {
+   "titulo": "Android App Links (`/.well-known/assetlinks.json`): que los enlaces a docusmart.online abran la app si está in",
+   "hecho": true
+  },
+  "W-19": {
+   "titulo": "Contenido: guías breves (\"cómo unir PDF en el celular sin subirlos\", \"cómo pasar fotos a PDF\") que enlacen a l",
+   "hecho": false
+  },
+  "W-40": {
+   "titulo": "Piloto en Comprimir PDF: antes y después lado a lado con título propio de la herramienta (\"Así quedó tu PDF co",
+   "hecho": true
+  },
+  "W-41": {
+   "titulo": "Extender a las herramientas PDF de un archivo → un PDF: dividir (extraer páginas), rotar, reordenar, numerar, ",
+   "hecho": true
+  },
+  "W-42": {
+   "titulo": "Herramientas con varios archivos: Unir (miniaturas de los PDF de entrada y el PDF unido), Dividir cada página ",
+   "hecho": true
+  },
+  "W-43": {
+   "titulo": "Convertidor: antes y después en las 12 conversiones; la vista previa muestra PDF, imágenes, texto y también Wo",
+   "hecho": true
+  },
+  "W-44": {
+   "titulo": "Imagen, escáner, archivos y QR: antes y después en comprimir, redimensionar, rotar y recortar imagen (una en g",
+   "hecho": true
+  },
+  "W-45": {
+   "titulo": "Guardar en Google Drive directo: OAuth en ventana emergente (sin SDK, compatible con la CSP) y subida con el p",
+   "hecho": true
+  },
+  "W-46": {
+   "titulo": "Guardar en Dropbox directo: OAuth con PKCE en ventana emergente y subida a Aplicaciones/DocuSmart",
+   "hecho": true
+  },
+  "W-47": {
+   "titulo": "Enlace y código QR para abrir el resultado en otro dispositivo",
+   "hecho": false
+  },
+  "W-48": {
+   "titulo": "WhatsApp en computador: la web no puede adjuntar un archivo a WhatsApp Web; solo se puede mandar un enlace",
+   "hecho": false
+  },
+  "W-50": {
+   "titulo": "Infraestructura de idiomas: detección (guardado → idioma del navegador → zona horaria → español), diccionarios",
+   "hecho": true
+  },
+  "W-51": {
+   "titulo": "Panel de Ajustes (botón en la cabecera de cada pantalla y en la barra lateral): idioma con banderas como en la",
+   "hecho": true
+  },
+  "W-52": {
+   "titulo": "Traducir la navegación, Inicio y avisos generales a los 12 idiomas",
+   "hecho": true
+  },
+  "W-54": {
+   "titulo": "Traducir Convertidor, imagen, archivos, QR, escáner y Modo Estudio + visor y mensajes de error",
+   "hecho": true
+  },
+  "W-56": {
+   "titulo": "Textos que van dentro de los archivos generados (numeración \"Página N\", informes) en el idioma elegido",
+   "hecho": true
+  },
+  "W-57": {
+   "titulo": "Los enlaces de compartir/recomendar (`toolShareUrl`) apuntan a la página en español; que lleven a la del idiom",
+   "hecho": true
+  },
+  "W-148": {
+   "titulo": "Más apariencia (pedido del usuario 2026-11-23): botón de buscar de la barra plegada con el tema; 16 degradados",
+   "hecho": true
+  },
+  "W-58": {
+   "titulo": "Personajes de voz: los 10 personajes de la app (mismo nombre, ilustración y color de anillo) en vez de nombres",
+   "hecho": true
+  },
+  "W-59": {
+   "titulo": "Menú del Modo Estudio con tarjetas (Lectura, Notas, Pomodoro, Resumen) como en la app, en vez de pestañas: cad",
+   "hecho": true
+  },
+  "W-60": {
+   "titulo": "Lector por párrafos: barra de reproducción con anterior/siguiente párrafo, tocar un párrafo para leer desde ah",
+   "hecho": true
+  },
+  "W-80": {
+   "titulo": "Editar el documento que se lee sin perder su formato: en Lectura, \"Editar texto\" pasa a \"Editar texto a leer\" ",
+   "hecho": true
+  },
+  "W-81": {
+   "titulo": "Reemplazar texto en Editar PDF: tocar una línea del PDF la tapa con blanco y escribe el cambio en el mismo lug",
+   "hecho": true
+  },
+  "W-61": {
+   "titulo": "Abrir más documentos para leer: Word (`.docx`) además de PDF y TXT; PDF escaneado → ofrecer OCR (ya existe en ",
+   "hecho": true
+  },
+  "W-62": {
+   "titulo": "Retomar lectura: lista de documentos recientes con su progreso (\"Página 3 de 12 · Continuar leyendo\"), guardad",
+   "hecho": true
+  },
+  "W-63": {
+   "titulo": "Resaltar párrafos mientras se escucha (\"Marcar párrafo actual\") y pasarlos a Notas",
+   "hecho": true
+  },
+  "W-64": {
+   "titulo": "Resumen local (extractivo, port de `TextSummarizer` de la app): elige las oraciones más relevantes, sin IA en ",
+   "hecho": true
+  },
+  "W-65": {
+   "titulo": "Notas completas: título, editar, exportar todas o una (TXT y PDF) e imágenes adjuntas (guardadas en IndexedDB)",
+   "hecho": true
+  },
+  "W-66": {
+   "titulo": "Estadísticas de estudio: tiempo total escuchado, pomodoros de la semana con barras por día y total",
+   "hecho": true
+  },
+  "W-67": {
+   "titulo": "Mejoras propias de la web: atajos de teclado (espacio = leer/pausar, flechas = párrafo), controles desde auric",
+   "hecho": true
+  },
+  "W-68": {
+   "titulo": "Agenda y recordatorios (en la app: agenda/calendario y \"recordarme repasar\"). En la web solo avisaría con la p",
+   "hecho": true
+  },
+  "W-69": {
+   "titulo": "Revisar y refinar la creación de códigos QR frente a la app (tipos de contenido, diseño, QR protegido, leer) y",
+   "hecho": true
+  },
+  "W-82": {
+   "titulo": "Menú de QR con vistas *Crear*, *Leer* e *Historial* (`#/qr/crear`, `/leer`, `/historial`) y submenú lateral, i",
+   "hecho": true
+  },
+  "W-83": {
+   "titulo": "Tipos de contenido al crear, con los mismos formatos estándar de la app para que cualquier lector los entienda",
+   "hecho": true
+  },
+  "W-84": {
+   "titulo": "Lector inteligente: reconoce el tipo y ofrece la acción que corresponde (abrir enlace mostrando el dominio ant",
+   "hecho": true
+  },
+  "W-85": {
+   "titulo": "Diseño del QR: los 8 colores de la app con el aviso de contraste (no deja generar uno que la cámara no leería)",
+   "hecho": true
+  },
+  "W-86": {
+   "titulo": "Guardar y compartir: PNG en alta resolución, SVG (vector para imprimir sin perder calidad), copiar la imagen, ",
+   "hecho": true
+  },
+  "W-87": {
+   "titulo": "Historial local de QR creados y leídos (como la app), solo en este navegador: la vista previa oculta el conten",
+   "hecho": true
+  },
+  "W-88": {
+   "titulo": "QR de una imagen o un documento (en la app apunta a un archivo del propio celular y solo funciona ahí). En la ",
+   "hecho": false
+  },
+  "W-70": {
+   "titulo": "Aprobar la propuesta de `docs/CHATBOT.md` (opción A local; B con la IA del navegador como fase 2)",
+   "hecho": true
+  },
+  "W-151.1": {
+   "titulo": "Medir el chatbot actual: armar un conjunto de preguntas de prueba por idioma, con las de `tests/unit/features/",
+   "hecho": false
+  },
+  "W-151.2": {
+   "titulo": "Llenar los huecos de la base: agregar respuestas para las preguntas que hoy no encuentra nada, empezando por t",
+   "hecho": false
+  },
+  "W-151.3": {
+   "titulo": "Catálogo de acciones (`src/features/assistant/core/actions.ts`): un tipo por acción, con sus parámetros y la v",
+   "hecho": false
+  },
+  "W-151.4": {
+   "titulo": "Analizador de pedidos por reglas: reconocer verbos y herramientas («comprime», «une», «pasa a Word») y datos (",
+   "hecho": false
+  },
+  "W-151.5": {
+   "titulo": "Confirmar y ejecutar: en el panel, una tarjeta con lo que se va a hacer y los botones «Hacer» y «Cambiar». «Ha",
+   "hecho": false
+  },
+  "W-151.6": {
+   "titulo": "Contexto de la pantalla: el panel sabe qué herramienta está abierta, qué archivo hay (solo nombre, tipo, tamañ",
+   "hecho": false
+  },
+  "W-151.7": {
+   "titulo": "Siguiente paso sugerido: al terminar una herramienta, el asistente propone lo que suele venir después: unir → ",
+   "hecho": false
+  },
+  "W-151.8": {
+   "titulo": "Encadenar pasos: «escanea, une y firma» arma un plan de varios pasos, lo muestra como lista y lo ejecuta uno p",
+   "hecho": false
+  },
+  "W-151.9": {
+   "titulo": "Datos de entrenamiento (`ml/assistant/data/`): para cada intención (las respuestas de la base y las acciones d",
+   "hecho": false
+  },
+  "W-151.10": {
+   "titulo": "Entrenamiento en Python (`ml/assistant/train.py`, con `requirements.txt` y versiones fijas). Se prueba primero",
+   "hecho": false
+  },
+  "W-151.11": {
+   "titulo": "Evaluación y control en el CI: un job de Python reentrena y mide el acierto por idioma con la parte de evaluac",
+   "hecho": false
+  },
+  "W-151.12": {
+   "titulo": "Usarlo en el navegador con `onnxruntime-web`, que ya está en el proyecto para Whisper (W-133). Corre en un wor",
+   "hecho": false
+  },
+  "W-151.13": {
+   "titulo": "Mejora continua: cada mes, las preguntas que llegan por «Enviar esta pregunta» se revisan a mano, se agregan a",
+   "hecho": false
+  },
+  "W-151.14": {
+   "titulo": "Pedidos complejos con salida estructurada: cuando las capas 2 y 3 no están seguras, se le pide a Gemini Nano (",
+   "hecho": false
+  },
+  "W-151.15": {
+   "titulo": "Otros motores del navegador: revisar la Prompt API de Edge (Phi-4-mini) y la de otros navegadores cuando salga",
+   "hecho": false
+  },
+  "W-151.16": {
+   "titulo": "Aviso honesto en el panel: mostrar qué capa respondió («Respuesta de la base», «Entendí tu pedido», «Redactada",
+   "hecho": false
+  },
+  "W-151.17": {
+   "titulo": "Accesibilidad y celular: las tarjetas de acción y los planes de varios pasos se usan con teclado y lector de p",
+   "hecho": false
+  },
+  "W-151.18": {
+   "titulo": "Analítica con consentimiento (solo IDs): qué capa respondió, qué acción se propuso, si se confirmó y si termin",
+   "hecho": false
+  },
+  "W-151.19": {
+   "titulo": "Llevarlo a la app Android cuando llegue la paridad: el catálogo de acciones y el modelo de la capa 3 (ONNX cor",
+   "hecho": false
+  },
+  "W-71": {
+   "titulo": "Política de privacidad con diseño propio: encabezado con degradado e ícono como la portada; resumen \"en 30 seg",
+   "hecho": true
+  },
+  "W-72": {
+   "titulo": "Sistema de movimiento común: duraciones y curvas compartidas, utilidad de aparición al desplazar (Intersection",
+   "hecho": true
+  },
+  "W-73": {
+   "titulo": "Páginas de herramientas (372): encabezado animado, pasos ilustrados, FAQ con apertura animada y herramienta co",
+   "hecho": true
+  },
+  "W-74": {
+   "titulo": "App web: transiciones entre pantallas, estados de carga con esqueletos, animación al terminar un proceso (éxit",
+   "hecho": true
+  },
+  "W-75": {
+   "titulo": "Portada: revisión con el usuario de lo que ya tiene y ajustes de coherencia con lo nuevo",
+   "hecho": true
+  },
+  "W-89": {
+   "titulo": "Fondo animado como la app (pedido del usuario 2026-11-17): formas geométricas con el degradado del color de ac",
+   "hecho": true
+  },
+  "W-90": {
+   "titulo": "Banners de publicidad en la web (pedido del usuario 2026-11-18), no invasivos y bien ubicados. Sí: páginas de ",
+   "hecho": true
+  },
+  "W-91": {
+   "titulo": "Palabras clave y posicionamiento en buscadores (SEO) (pedido del usuario 2026-11-18). Ya existe: 31 páginas po",
+   "hecho": false
+  },
+  "W-152": {
+   "titulo": "IndexNow (pedido del usuario 2026-11-23): después de cada despliegue, avisar a Bing, Yandex, Seznam, Naver y l",
+   "hecho": true
+  },
+  "W-92": {
+   "titulo": "Barra lateral plegable en la app web (pedido del usuario 2026-11-18): botón junto al logo para plegarla (solo ",
+   "hecho": true
+  },
+  "W-93": {
+   "titulo": "Arreglos de PageSpeed en la portada (2026-11-18): fuentes de reserva ajustadas a Bricolage y Plus Jakarta (CLS",
+   "hecho": true
+  },
+  "W-76": {
+   "titulo": "Catálogo único de herramientas (fuente de verdad compartida por portada, páginas y app): id, categoría, ícono,",
+   "hecho": true
+  },
+  "W-77": {
+   "titulo": "Portada: la sección de herramientas deja de listar las 31 y muestra un resumen claro (\"31 herramientas gratis\"",
+   "hecho": true
+  },
+  "W-78": {
+   "titulo": "Página \"Todas las herramientas\" (`/herramientas`, `/en/tools`… en los 12 idiomas, indexable y en el sitemap): ",
+   "hecho": true
+  },
+  "W-79": {
+   "titulo": "App web: la pantalla de herramientas usa las mismas categorías y el mismo orden alfabético, con buscador; el i",
+   "hecho": true
+  },
+  "W-103": {
+   "titulo": "Actualizar la portada (`site/index.html` y sus 11 traducciones en `tools/locales/*.mjs`): mencionar las noveda",
+   "hecho": true
+  },
+  "W-104": {
+   "titulo": "Actualizar la base de conocimiento del asistente (`tools/assistant/<idioma>.mjs`, 12 idiomas): entradas nuevas",
+   "hecho": true
+  },
+  "W-105": {
+   "titulo": "Hash e integridad de documentos (idea del usuario): calcular SHA-256 (y SHA-1/MD5 por compatibilidad) de uno o",
+   "hecho": true
+  },
+  "W-106": {
+   "titulo": "Quitar metadatos de PDF (autor, programa, fechas), fotos (EXIF y GPS) y Office: mostrar qué datos tiene el arc",
+   "hecho": true
+  },
+  "W-107": {
+   "titulo": "HEIC a JPG (fotos de iPhone), por lotes y con calidad ajustable",
+   "hecho": true
+  },
+  "W-108": {
+   "titulo": "Imagen a texto (OCR) reutilizando el motor del OCR de PDF; copiar o descargar .txt",
+   "hecho": true
+  },
+  "W-109": {
+   "titulo": "Lector de QR desde una imagen o la cámara: ya existe en la app web (`#/qr/leer`) y comparte página con el gene",
+   "hecho": true
+  },
+  "W-110": {
+   "titulo": "Flujos encadenados: al terminar una herramienta, \"¿Y ahora?\" con 3 sugerencias que reciben el resultado sin vo",
+   "hecho": true
+  },
+  "W-111": {
+   "titulo": "Procesamiento por lotes visible: aplicar comprimir, convertir o renombrar a varios archivos y descargar un ZIP",
+   "hecho": true
+  },
+  "W-112": {
+   "titulo": "Comunicar la privacidad en cada herramienta: sello \"Tu archivo no sale de tu dispositivo\" y aviso de que funci",
+   "hecho": true
+  },
+  "W-113": {
+   "titulo": "Herramientas de texto: contador de palabras y caracteres, comparar dos textos (diff) y generador de contraseña",
+   "hecho": true
+  },
+  "W-114": {
+   "titulo": "Más Office: PowerPoint a PDF, PDF a PowerPoint y CSV ↔ Excel",
+   "hecho": true
+  },
+  "W-115": {
+   "titulo": "Imagen avanzada: quitar fondo (modelo local) y foto tamaño documento (cédula, pasaporte, visa)",
+   "hecho": true
+  },
+  "W-116": {
+   "titulo": "Audio y video con ffmpeg.wasm: comprimir video, video a GIF y extraer audio (MP3). Cargar el motor (~30 MB) so",
+   "hecho": true
+  },
+  "W-117": {
+   "titulo": "Firma con certificado digital (.p12/.pfx) con validez, para empresas",
+   "hecho": true
+  },
+  "W-118": {
+   "titulo": "SEO de nicho en español: páginas para búsquedas concretas (reducir PDF para SECOP, unir PDF para la DIAN, foto",
+   "hecho": false
+  },
+  "W-119": {
+   "titulo": "Conversiones de imagen también en Imágenes: mostrar JPG↔PNG, a WebP y a BMP en la categoría Imagen (app, `/her",
+   "hecho": true
+  },
+  "W-120": {
+   "titulo": "Voltear y espejo dentro de Rotar imagen (horizontal y vertical)",
+   "hecho": true
+  },
+  "W-121": {
+   "titulo": "Quitar fondo (idea del usuario) con un modelo de segmentación en el navegador (ONNX/WebGPU, ~40-80 MB que se d",
+   "hecho": true
+  },
+  "W-122": {
+   "titulo": "Foto tamaño documento (cédula, pasaporte, visa): recorte a medida + fondo blanco (usa W-121); reemplaza esa pa",
+   "hecho": true
+  },
+  "W-123": {
+   "titulo": "Marca de agua en imágenes (texto o logo, posición, opacidad), por lotes",
+   "hecho": true
+  },
+  "W-124": {
+   "titulo": "Más formatos: salida AVIF, ICO (favicon con varios tamaños) y GIF; entrada SVG→PNG y TIFF. HEIC→JPG sigue en W",
+   "hecho": true
+  },
+  "W-125": {
+   "titulo": "Ajustes básicos: brillo, contraste, saturación, blanco y negro y enderezar",
+   "hecho": true
+  },
+  "W-126": {
+   "titulo": "Agenda local en Modo Estudio (junto a Notas): eventos y recordatorios guardados en el navegador; exportar e im",
+   "hecho": true
+  },
+  "W-127": {
+   "titulo": "Conectar con Outlook (Microsoft Graph): registrar la app en Microsoft Entra ID (👤 crea el registro y comparte ",
+   "hecho": false
+  },
+  "W-128": {
+   "titulo": "Google Calendar con el mismo flujo que Drive (scope de calendario mínimo; requiere revisar la pantalla de cons",
+   "hecho": false
+  },
+  "W-129": {
+   "titulo": "Trámites y documentos oficiales (LatAm): guías y plantillas para los papeles que más se piden (cédula por amba",
+   "hecho": false
+  },
+  "W-130": {
+   "titulo": "Cuentas de cobro, cotizaciones y recibos: formulario con numeración, datos del emisor guardados en el navegado",
+   "hecho": true
+  },
+  "W-131": {
+   "titulo": "Hoja de vida (CV): plantilla clásica compatible con ATS o con foto (recorte 3 × 4), experiencia, estudios, hab",
+   "hecho": true
+  },
+  "W-132": {
+   "titulo": "Audio y video: convertir (MP4↔MP3, extraer audio), recortar y comprimir en el navegador",
+   "hecho": true
+  },
+  "W-133": {
+   "titulo": "Audio a texto y dictado: transcribir notas de voz y reuniones con Whisper en el navegador (modelo que se desca",
+   "hecho": true
+  },
+  "W-134": {
+   "titulo": "Educación: ampliar Modo Estudio con tarjetas de repaso y cuestionarios a partir de un PDF o de las notas, y fo",
+   "hecho": false
+  },
+  "W-135": {
+   "titulo": "Seguridad: mejoras menores de la prueba de intrusión (2026-11-20). Visor: los SVG se muestran como `data:` y e",
+   "hecho": true
+  },
+  "W-136": {
+   "titulo": "Fuentes Unicode en los PDF generados (brecha 1 del análisis de mercado, 2026-11-21): los PDF que crea la web s",
+   "hecho": true
+  },
+  "W-137": {
+   "titulo": "Fidelidad de Word a PDF (brecha 2 del análisis de mercado, 2026-11-21)",
+   "hecho": true
+  },
+  "W-138": {
+   "titulo": "PDF a Word con diseño (seguimiento de W-137, prueba con una hoja de vida real de Canva, 2026-11-21)",
+   "hecho": true
+  },
+  "W-139": {
+   "titulo": "OCR en los 12 idiomas del sitio (brecha 3 del análisis de mercado, 2026-11-21)",
+   "hecho": true
+  },
+  "W-140": {
+   "titulo": "Editar el texto que ya tiene el PDF (brecha 4 del análisis de mercado, 2026-11-21)",
+   "hecho": true
+  },
+  "W-141": {
+   "titulo": "Firma digital con certificado (brecha 5 del análisis de mercado, 2026-11-21)",
+   "hecho": true
+  },
+  "W-142": {
+   "titulo": "Resumir PDF con IA local (brecha 6 del análisis de mercado, 2026-11-21)",
+   "hecho": true
+  },
+  "W-143": {
+   "titulo": "SEO técnico: auditoría de todo el sitio y más liviano (brecha 8, parte técnica, 2026-11-21)",
+   "hecho": true
+  },
+  "W-144": {
+   "titulo": "Abrir archivos desde Google Drive y Dropbox (brecha 7)",
+   "hecho": false
+  },
+  "W-145": {
+   "titulo": "Barra lateral por categorías, más intuitiva (pedido del usuario 2026-11-22). Hoy la barra lista secciones de l",
+   "hecho": true
+  },
+  "W-146": {
+   "titulo": "Auditoría de cada herramienta frente a la competencia, por categorías (pedido del usuario 2026-11-22). Método ",
+   "hecho": true
+  },
+  "W-146.1": {
+   "titulo": "Auditoría Organizar (5): Unir, Dividir, Rotar, Reordenar, Numerar páginas. Comparar con iLovePDF, Smallpdf, PD",
+   "hecho": true
+  },
+  "W-146.2": {
+   "titulo": "Auditoría Editar (6): Editar PDF, Firmar, Llenar formulario, Marca de agua, Recortar, Censurar. Comparar con A",
+   "hecho": true
+  },
+  "W-146.3": {
+   "titulo": "Auditoría Seguridad (5): Proteger, Desbloquear, Reparar, Quitar metadatos, Hash e integridad. Comparar con iLo",
+   "hecho": true
+  },
+  "W-146.4": {
+   "titulo": "Auditoría Documentos (2): Hoja de vida, Cuenta de cobro y cotización. Comparar con Canva, Zety y Novorésumé (C",
+   "hecho": true
+  },
+  "W-146.5": {
+   "titulo": "Auditoría Optimizar (4): Comprimir PDF, PDF a PDF/A, Comparar PDF, Extraer imágenes. Comparar con iLovePDF, Sm",
+   "hecho": true
+  },
+  "W-146.6": {
+   "titulo": "Auditoría Escanear (3): Escanear documento, OCR, Imagen a texto. Comparar con Adobe Scan, Microsoft Lens, CamS",
+   "hecho": true
+  },
+  "W-146.7": {
+   "titulo": "Auditoría Convertir (21): imagen a PDF/JPG/PNG/WebP/BMP/GIF/AVIF/ICO, HEIC, SVG y TIFF; PDF a imagen, texto, W",
+   "hecho": true
+  },
+  "W-146.8": {
+   "titulo": "Auditoría Imagen (8): Comprimir, Redimensionar, Recortar, Rotar y voltear, Quitar fondo, Foto tamaño documento",
+   "hecho": true
+  },
+  "W-146.9": {
+   "titulo": "Auditoría Audio y video (5): Video a MP3, Convertir video, Recortar, Comprimir video, Audio a texto. Comparar ",
+   "hecho": true
+  },
+  "W-146.10": {
+   "titulo": "Auditoría Archivos (3): Comprimir (ZIP y 7Z), Descomprimir (RAR, ZIP y 7Z), Renombrar. Comparar con ezyZip, Ar",
+   "hecho": true
+  },
+  "W-146.11": {
+   "titulo": "Auditoría QR (2): Crear y Leer QR. Comparar con QR Code Monkey, QR Code Generator y los lectores de la cámara ",
+   "hecho": true
+  },
+  "W-146.12": {
+   "titulo": "Auditoría Texto (4): Contador de palabras, Comparar textos, Generador de contraseñas, Resumir PDF. Comparar co",
+   "hecho": true
+  },
+  "W-147.1": {
+   "titulo": "Escanear con la cámara en vivo: detectar la hoja antes de tomar la foto (como CamScanner y Adobe Scan). Priori",
+   "hecho": true
+  },
+  "W-147.2": {
+   "titulo": "Editar PDF: dibujo a mano alzada, líneas, flechas y enlaces; guardar las respuestas de un formulario y crear c",
+   "hecho": true
+  },
+  "W-147.3": {
+   "titulo": "Convertir: OCR en el mismo paso en PDF a Word y a Excel (como ya hace Resumir PDF); resolución en PDF a imagen",
+   "hecho": true
+  },
+  "W-147.4": {
+   "titulo": "Audio y video: varios archivos a la vez y unir videos; distinguir quién habla en Audio a texto. Prioridad alta",
+   "hecho": true
+  },
+  "W-147.5": {
+   "titulo": "Imagen: pincel para corregir Quitar fondo (y fondo difuminado o de imagen); encuadre automático de la foto tam",
+   "hecho": true
+  },
+  "W-147.6": {
+   "titulo": "Organizar: al unir, elegir páginas de cada archivo; miniaturas que se cargan solo al verse (PDF largos); divid",
+   "hecho": true
+  },
+  "W-147.7": {
+   "titulo": "Optimizar: comparar PDF también en imágenes y diseño (página por página); PDF/A-1b y PDF/A-3b",
+   "hecho": true
+  },
+  "W-147.8": {
+   "titulo": "QR: color a elección, fondo y descarga en PDF; crear varios QR desde una lista (CSV)",
+   "hecho": true
+  },
+  "W-147.9": {
+   "titulo": "Seguridad: reparar PDF cortados (rescatar las páginas que llegaron); quitar metadatos de HEIC, TIFF y video; h",
+   "hecho": true
+  },
+  "W-147.10": {
+   "titulo": "Documentos: comparar la hoja de vida con una oferta (palabras clave que faltan); carta de presentación con los",
+   "hecho": true
+  },
+  "W-99": {
+   "titulo": "Capturas automáticas de cada herramienta: script de Playwright (`scripts/screenshots.mjs`) que abre cada una d",
+   "hecho": true
+  },
+  "W-100": {
+   "titulo": "Imágenes en las guías existentes: nuevo bloque `{ img: '<herramienta>/<paso>', alt: '…' }` en `tools/guides*.m",
+   "hecho": true
+  },
+  "W-101": {
+   "titulo": "Una guía ilustrada por herramienta: completar las guías para las 24 herramientas que aún no tienen (dividir, r",
+   "hecho": false
+  },
+  "W-102": {
+   "titulo": "Imágenes en buscadores y redes: usar la mejor captura de cada guía como `og:image` y en el `Article` de los da",
+   "hecho": false
+  },
+  "W-94": {
+   "titulo": "Base de la sincronización: inicio de sesión con Google en la app y en la web (la misma cuenta identifica al us",
+   "hecho": false
+  },
+  "W-95": {
+   "titulo": "Etapa 1 — Ajustes e historial: tema, acento, idioma, tamaño de letra, favoritos y el historial de conversiones",
+   "hecho": false
+  },
+  "W-96": {
+   "titulo": "Etapa 2 — Notas, estudio y agenda: notas, tarjetas de repaso, progreso y eventos con sus recordatorios (cada p",
+   "hecho": false
+  },
+  "W-97": {
+   "titulo": "Etapa 3 — Biblioteca de documentos: archivos más pesados; subida solo de lo que cambió, sincronización opciona",
+   "hecho": false
+  },
+  "W-98": {
+   "titulo": "Etapa 4 — Premium compartido: que la suscripción comprada en Play valga en la web y Desktop para la misma cuen",
+   "hecho": false
+  },
+  "W-149.1": {
+   "titulo": "Cuenta de Apple Developer (99 USD al año). Si es como empresa (Mountblack), hace falta el número D-U-N-S, que ",
+   "hecho": false
+  },
+  "W-149.2": {
+   "titulo": "Dónde se compila: Xcode solo corre en Mac. Opciones: (a) Codemagic o los equipos macOS de GitHub Actions, que ",
+   "hecho": false
+  },
+  "W-149.3": {
+   "titulo": "iPhone de prueba: hace falta un iPhone real (idealmente uno de 3 o 4 años, para medir memoria), además de los ",
+   "hecho": false
+  },
+  "W-149.4": {
+   "titulo": "Modelo de ingresos en iOS: AdSense no se puede usar dentro de una app; en iOS sería AdMob, que ya está en la a",
+   "hecho": false
+  },
+  "W-149.5": {
+   "titulo": "Capacitor en el repo: `@capacitor/core`, `@capacitor/ios` y la carpeta `ios/` (proyecto de Xcode) en git. Una ",
+   "hecho": false
+  },
+  "W-149.6": {
+   "titulo": "Capa de plataforma `src/shared/platform/native/`: `isNative()` y adaptadores con la misma interfaz que la vers",
+   "hecho": false
+  },
+  "W-149.7": {
+   "titulo": "Guardar y compartir: `download()` (`src/shared/files/files.ts`) usa `<a download>`, que no funciona dentro de ",
+   "hecho": false
+  },
+  "W-149.8": {
+   "titulo": "Sin service worker en iOS: WKWebView no lo soporta en una app de Capacitor, y tampoco hace falta, porque todo ",
+   "hecho": false
+  },
+  "W-149.9": {
+   "titulo": "Seguridad dentro de la app: las cabeceras de `firebase.json` (CSP con Trusted Types) no se aplican dentro de l",
+   "hecho": false
+  },
+  "W-149.10": {
+   "titulo": "Memoria: en iPhone, WKWebView cierra la página si usa demasiada memoria. Medir las herramientas pesadas (video",
+   "hecho": false
+  },
+  "W-149.11": {
+   "titulo": "Escáner del sistema (VisionKit, `VNDocumentCameraViewController`): detecta la hoja, endereza y recorta, igual ",
+   "hecho": false
+  },
+  "W-149.12": {
+   "titulo": "Abrir archivos con DocuSmart: declarar los tipos de archivo (PDF, imágenes, Office, ZIP) para que aparezcan en",
+   "hecho": false
+  },
+  "W-149.13": {
+   "titulo": "Recordatorios de Agenda y Estudio con notificaciones locales (`@capacitor/local-notifications`), que suenan co",
+   "hecho": false
+  },
+  "W-149.14": {
+   "titulo": "Universal Links: `/.well-known/apple-app-site-association` en docusmart.online, para que los enlaces de herram",
+   "hecho": false
+  },
+  "W-149.15": {
+   "titulo": "Detalles nativos: barra de estado y zonas seguras (notch, Dynamic Island), teclado que no tape los campos, ges",
+   "hecho": false
+  },
+  "W-149.16": {
+   "titulo": "AdMob en iOS (si se aprueba en W-149.4): plugin de AdMob, consentimiento con UMP (como en la web) y el aviso d",
+   "hecho": false
+  },
+  "W-149.17": {
+   "titulo": "Manifiesto de privacidad (`PrivacyInfo.xcprivacy`), obligatorio para las apps y SDK que usan ciertas APIs (Fir",
+   "hecho": false
+  },
+  "W-149.18": {
+   "titulo": "Política de privacidad (`/privacidad` y `legal/` de la app): agregar la app de iOS, AdMob y ATT. Mantener la p",
+   "hecho": false
+  },
+  "W-149.19": {
+   "titulo": "CI de iOS: job en macOS (Codemagic o GitHub Actions) que compila, firma (certificados y clave de la API de App",
+   "hecho": false
+  },
+  "W-149.20": {
+   "titulo": "Pruebas: (a) los tests unitarios y de Playwright de siempre, más pruebas de la capa nativa con los plugins sim",
+   "hecho": false
+  },
+  "W-149.21": {
+   "titulo": "Beta en TestFlight: primero pruebas internas (hasta 100 personas, sin revisión de Apple) y luego un grupo exte",
+   "hecho": false
+  },
+  "W-149.22": {
+   "titulo": "Ficha de la App Store: nombre (30 caracteres), subtítulo (30), palabras clave (100), descripción y capturas de",
+   "hecho": false
+  },
+  "W-149.23": {
+   "titulo": "Envío a revisión y publicación: notas para el revisor de Apple que expliquen qué hace la app sin conexión y la",
+   "hecho": false
+  },
+  "W-149.24": {
+   "titulo": "Rutina de versiones: como el código va dentro de la app, cada mejora de la web llega a iOS solo con una versió",
+   "hecho": false
+  },
+  "W-149.25": {
+   "titulo": "Premium en iPhone: compras con StoreKit (p. ej. con RevenueCat, que también unifica Play) y Premium compartido",
+   "hecho": false
+  },
+  "W-150.1": {
+   "titulo": "Detectar el sistema, además del navegador: `desktopOS()` en `src/shared/platform/pwa.ts` (`windows`, `mac`, `l",
+   "hecho": true
+  },
+  "W-150.2": {
+   "titulo": "Ayuda de instalación por sistema (`desk.*` en los 12 idiomas): en Mac, «Agregar al Dock» en Safari, y en Chrom",
+   "hecho": true
+  },
+  "W-150.3": {
+   "titulo": "Probar en cada sistema: macOS (Safari, Chrome y Edge) y Linux (Ubuntu con Chrome y Chromium): instalar, abrir ",
+   "hecho": false
+  },
+  "W-150.4": {
+   "titulo": "Abrir archivos con DocuSmart Desktop: `file_handlers` en el manifest (PDF, imágenes, Office, ZIP), para que ap",
+   "hecho": true
+  },
+  "W-150.5": {
+   "titulo": "Diferencias de Safari en Mac: Safari no tiene `beforeinstallprompt`, y la voz, el micrófono (Audio a texto) y ",
+   "hecho": true
+  },
+  "W-150.6": {
+   "titulo": "Contarlo: en la portada, en /app/ y en el asistente, decir que DocuSmart Desktop es «para Windows, Mac y Linux",
+   "hecho": true
+  },
+  "W-150.7": {
+   "titulo": "Decidir si vale la pena: medir en GA4 cuántos visitantes llegan desde Mac y Linux y cuántos instalan la PWA. S",
+   "hecho": false
+  },
+  "W-150.8": {
+   "titulo": "Envoltorio con Tauri 2: un solo proyecto que genera instaladores para macOS (`.dmg`), Linux (`.AppImage`, `.de",
+   "hecho": false
+  },
+  "W-150.9": {
+   "titulo": "Riesgos del visor del sistema: Tauri usa WKWebView en Mac (las mismas limitaciones que en iPhone) y WebKitGTK ",
+   "hecho": false
+  },
+  "W-150.10": {
+   "titulo": "Mac: firmar y notarizar el `.dmg` con la misma cuenta de Apple Developer de W-149.1 (sin notarizar, macOS bloq",
+   "hecho": false
+  },
+  "W-150.11": {
+   "titulo": "Linux: publicar en Flathub (la tienda que usan la mayoría de las distribuciones) y opcionalmente en Snap Store",
+   "hecho": false
+  },
+  "W-150.12": {
+   "titulo": "Windows en la Microsoft Store: se puede publicar la PWA tal cual con PWABuilder, sin Tauri, en una cuenta de d",
+   "hecho": false
+  },
+  "W-150.13": {
+   "titulo": "Compilación y actualizaciones: job del CI que compila los tres sistemas (Linux y Windows en sus equipos de Git",
+   "hecho": false
+  },
+  "W-29": {
+   "titulo": "Arquitectura de la web por dominio y capas: `src/features/<dominio>/{ui,core,infra}`, `src/shared/`, `src/entr",
+   "hecho": true
+  },
+  "W-25": {
+   "titulo": "Limpiar el repo de la app: carpeta `website/`, rama local `claude/sitio-web` y `docusmart-web.zip` (copias vie",
+   "hecho": false
+  },
+  "W-26": {
+   "titulo": "Seguimiento de HSTS preload: de *pending* a *preloaded* en hstspreload.org. Nunca quitar la cabecera HSTS de `",
+   "hecho": false
+  },
+  "W-27": {
+   "titulo": "Renovar `public/.well-known/security.txt` (campo `Expires`)",
+   "hecho": false
+  },
+  "W-28": {
+   "titulo": "Certificados de Firebase (vencen el 2027-02-11): se renuevan solos; confirmar que siguen válidos. Los CAA ya p",
+   "hecho": false
+  }
+ }
+}

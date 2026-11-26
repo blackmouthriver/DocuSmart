@@ -1,0 +1,641 @@
+[
+ {
+  "key": "pdf/unir",
+  "nombre": "Unir PDF",
+  "categoria": "Organizar",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "pdf/dividir",
+  "nombre": "Dividir PDF",
+  "categoria": "Organizar",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "pdf/rotar",
+  "nombre": "Rotar páginas",
+  "categoria": "Organizar",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "pdf/reordenar",
+  "nombre": "Reordenar páginas",
+  "categoria": "Organizar",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "pdf/numerar",
+  "nombre": "Numerar páginas",
+  "categoria": "Organizar",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "pdf/editar",
+  "nombre": "Editar PDF",
+  "categoria": "Editar",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": "La web también edita el texto que ya tiene el PDF y la app solo agrega texto (W-140)"
+ },
+ {
+  "key": "pdf/firmar",
+  "nombre": "Firmar PDF",
+  "categoria": "Editar",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": "La web suma firma con certificado .p12 (W-141); la app no"
+ },
+ {
+  "key": "pdf/formulario",
+  "nombre": "Llenar formulario",
+  "categoria": "Editar",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "pdf/marca",
+  "nombre": "Marca de agua",
+  "categoria": "Editar",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "pdf/recortar",
+  "nombre": "Recortar PDF",
+  "categoria": "Editar",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "pdf/censurar",
+  "nombre": "Censurar PDF",
+  "categoria": "Editar",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "pdf/proteger",
+  "nombre": "Proteger con contraseña",
+  "categoria": "Seguridad",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "pdf/desbloquear",
+  "nombre": "Desbloquear PDF",
+  "categoria": "Seguridad",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "pdf/reparar",
+  "nombre": "Reparar PDF",
+  "categoria": "Seguridad",
+  "estado": "NO",
+  "esfuerzo": "M",
+  "enfoque": "N",
+  "nota": "Reconstruir el PDF con iText; la web usa pdf-lib porque la recuperación de qpdf no sirve en wasm"
+ },
+ {
+  "key": "metadatos/quitar",
+  "nombre": "Quitar metadatos",
+  "categoria": "Seguridad",
+  "estado": "NO",
+  "esfuerzo": "M",
+  "enfoque": "N",
+  "nota": "ExifInterface (fotos), iText (PDF) y reescritura del ZIP de Office"
+ },
+ {
+  "key": "hash/calcular",
+  "nombre": "Hash e integridad",
+  "categoria": "Seguridad",
+  "estado": "NO",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": "`MessageDigest` (SHA-256, SHA-1, MD5)"
+ },
+ {
+  "key": "texto/contrasena",
+  "nombre": "Generador de contraseñas",
+  "categoria": "Seguridad",
+  "estado": "NO",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": "`SecureRandom`"
+ },
+ {
+  "key": "documentos/cv",
+  "nombre": "Hoja de vida",
+  "categoria": "Documentos",
+  "estado": "NO",
+  "esfuerzo": "L",
+  "enfoque": "N/E",
+  "nota": "Plantillas, foto 3×4 y salida PDF y DOCX; es mucho diseño de pantalla"
+ },
+ {
+  "key": "documentos/cobro",
+  "nombre": "Cuenta de cobro, cotización y recibo",
+  "categoria": "Documentos",
+  "estado": "NO",
+  "esfuerzo": "M",
+  "enfoque": "N/E",
+  "nota": "Formulario, numeración y PDF"
+ },
+ {
+  "key": "pdf/comprimir",
+  "nombre": "Comprimir PDF",
+  "categoria": "Optimizar",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": "La web ya comprime varios PDF a la vez (W-111)"
+ },
+ {
+  "key": "pdf/pdfa",
+  "nombre": "PDF a PDF/A",
+  "categoria": "Optimizar",
+  "estado": "NO",
+  "esfuerzo": "L",
+  "enfoque": "E",
+  "nota": "Módulo PDF/A de iText y validar con veraPDF; la web ya lo valida"
+ },
+ {
+  "key": "pdf/comparar",
+  "nombre": "Comparar PDF",
+  "categoria": "Optimizar",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "pdf/imagenes",
+  "nombre": "Extraer imágenes",
+  "categoria": "Optimizar",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "pdf/escanear",
+  "nombre": "Escanear documento",
+  "categoria": "Escanear",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": "La app es mejor: escáner de ML Kit con bordes, filtros y recorte"
+ },
+ {
+  "key": "pdf/ocr",
+  "nombre": "OCR de PDF",
+  "categoria": "Escanear",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": "La app solo reconoce alfabeto latino (ML Kit); la web reconoce los 12 idiomas (W-139)"
+ },
+ {
+  "key": "imagen/texto",
+  "nombre": "Imagen a texto (OCR)",
+  "categoria": "Escanear",
+  "estado": "PARCIAL",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": "El motor existe (OCR de PDF y de Estudio); falta aceptar una imagen suelta como herramienta"
+ },
+ {
+  "key": "convertir/img-pdf",
+  "nombre": "Imagen a PDF",
+  "categoria": "Convertir",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "convertir/img-jpg",
+  "nombre": "Imagen a JPG",
+  "categoria": "Convertir",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "convertir/img-png",
+  "nombre": "Imagen a PNG",
+  "categoria": "Convertir",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "convertir/img-webp",
+  "nombre": "Imagen a WebP",
+  "categoria": "Convertir",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "convertir/img-bmp",
+  "nombre": "Imagen a BMP",
+  "categoria": "Convertir",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "convertir/img-gif",
+  "nombre": "Imagen a GIF",
+  "categoria": "Convertir",
+  "estado": "RAMA",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": "Codificador propio ya escrito y probado (rama `claude/paridad-formatos`)"
+ },
+ {
+  "key": "convertir/img-avif",
+  "nombre": "Imagen a AVIF",
+  "categoria": "Convertir",
+  "estado": "NO",
+  "esfuerzo": "L",
+  "enfoque": "E",
+  "nota": "Android no trae codificador AVIF: haría falta una librería nativa"
+ },
+ {
+  "key": "convertir/img-ico",
+  "nombre": "Imagen a ICO",
+  "categoria": "Convertir",
+  "estado": "RAMA",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": "Ya escrito y probado (rama `claude/paridad-formatos`)"
+ },
+ {
+  "key": "convertir/heic-jpg",
+  "nombre": "HEIC a JPG",
+  "categoria": "Convertir",
+  "estado": "RAMA",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": "Decodificación nativa desde Android 9 (rama `claude/paridad-formatos`)"
+ },
+ {
+  "key": "convertir/svg-png",
+  "nombre": "SVG a PNG",
+  "categoria": "Convertir",
+  "estado": "NO",
+  "esfuerzo": "M",
+  "enfoque": "N",
+  "nota": "Librería AndroidSVG (revisar licencia y peso)"
+ },
+ {
+  "key": "convertir/tiff-jpg",
+  "nombre": "TIFF a JPG",
+  "categoria": "Convertir",
+  "estado": "NO",
+  "esfuerzo": "L",
+  "enfoque": "E",
+  "nota": "Android no decodifica TIFF: librería nativa"
+ },
+ {
+  "key": "convertir/pdf-img",
+  "nombre": "PDF a imagen",
+  "categoria": "Convertir",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "convertir/pdf-txt",
+  "nombre": "PDF a texto",
+  "categoria": "Convertir",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "convertir/pdf-word",
+  "nombre": "PDF a Word",
+  "categoria": "Convertir",
+  "estado": "OCULTA",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": "Está programada y la app la oculta desde el primer lanzamiento; revisar y mostrar. La web la hace con diseño (W-138)"
+ },
+ {
+  "key": "convertir/pdf-excel",
+  "nombre": "PDF a Excel",
+  "categoria": "Convertir",
+  "estado": "RAMA",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": "Mismo algoritmo de columnas que la web; 1 prueba falla (rama `claude/paridad-excel-hash`)"
+ },
+ {
+  "key": "convertir/word-pdf",
+  "nombre": "Word a PDF",
+  "categoria": "Convertir",
+  "estado": "OCULTA",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": "Programada y oculta; la web ganó fidelidad y fuentes Unicode (W-136, W-137)"
+ },
+ {
+  "key": "convertir/excel-pdf",
+  "nombre": "Excel a PDF",
+  "categoria": "Convertir",
+  "estado": "OCULTA",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": "Programada y oculta"
+ },
+ {
+  "key": "convertir/ppt-pdf",
+  "nombre": "PowerPoint a PDF",
+  "categoria": "Convertir",
+  "estado": "OCULTA",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": "Programada y oculta"
+ },
+ {
+  "key": "convertir/pdf-ppt",
+  "nombre": "PDF a PowerPoint",
+  "categoria": "Convertir",
+  "estado": "NO",
+  "esfuerzo": "L",
+  "enfoque": "E",
+  "nota": "Páginas como imágenes dentro de diapositivas con POI"
+ },
+ {
+  "key": "convertir/csv-excel",
+  "nombre": "CSV a Excel",
+  "categoria": "Convertir",
+  "estado": "NO",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": "Apache POI"
+ },
+ {
+  "key": "convertir/excel-csv",
+  "nombre": "Excel a CSV",
+  "categoria": "Convertir",
+  "estado": "OCULTA",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": "Programada y oculta"
+ },
+ {
+  "key": "imagen/comprimir",
+  "nombre": "Comprimir imagen",
+  "categoria": "Imagen",
+  "estado": "NO",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": "`Bitmap` y `Canvas`; por lotes"
+ },
+ {
+  "key": "imagen/redimensionar",
+  "nombre": "Redimensionar",
+  "categoria": "Imagen",
+  "estado": "NO",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": ""
+ },
+ {
+  "key": "imagen/recortar",
+  "nombre": "Recortar imagen",
+  "categoria": "Imagen",
+  "estado": "NO",
+  "esfuerzo": "M",
+  "enfoque": "N",
+  "nota": "Hay que construir la pantalla de recorte (la de PDF recorta márgenes, no libre)"
+ },
+ {
+  "key": "imagen/rotar",
+  "nombre": "Rotar y voltear",
+  "categoria": "Imagen",
+  "estado": "NO",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": ""
+ },
+ {
+  "key": "imagen/fondo",
+  "nombre": "Quitar fondo",
+  "categoria": "Imagen",
+  "estado": "NO",
+  "esfuerzo": "M",
+  "enfoque": "N/E",
+  "nota": "Segmentación de sujeto de ML Kit en el dispositivo (modelo vía Google Play Services)"
+ },
+ {
+  "key": "imagen/documento",
+  "nombre": "Foto tamaño documento",
+  "categoria": "Imagen",
+  "estado": "NO",
+  "esfuerzo": "M",
+  "enfoque": "N/E",
+  "nota": "Depende de quitar fondo y de recorte a medida"
+ },
+ {
+  "key": "imagen/marca",
+  "nombre": "Marca de agua en imagen",
+  "categoria": "Imagen",
+  "estado": "NO",
+  "esfuerzo": "M",
+  "enfoque": "N",
+  "nota": "Texto o logo, posición y opacidad"
+ },
+ {
+  "key": "imagen/ajustar",
+  "nombre": "Ajustar imagen",
+  "categoria": "Imagen",
+  "estado": "NO",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": "`ColorMatrix`: brillo, contraste, saturación, blanco y negro, enderezar"
+ },
+ {
+  "key": "multimedia/audio",
+  "nombre": "Video a MP3 / extraer audio",
+  "categoria": "Multimedia",
+  "estado": "NO",
+  "esfuerzo": "M",
+  "enfoque": "N/E",
+  "nota": "Media3 Transformer. Android no trae codificador MP3 (sí AAC/M4A)"
+ },
+ {
+  "key": "multimedia/convertir",
+  "nombre": "Convertir video",
+  "categoria": "Multimedia",
+  "estado": "NO",
+  "esfuerzo": "L",
+  "enfoque": "E",
+  "nota": "Media3 Transformer cubre MP4; el resto de formatos pide librería"
+ },
+ {
+  "key": "multimedia/recortar",
+  "nombre": "Recortar audio y video",
+  "categoria": "Multimedia",
+  "estado": "NO",
+  "esfuerzo": "M",
+  "enfoque": "N",
+  "nota": "Media3 Transformer (recorte)"
+ },
+ {
+  "key": "multimedia/comprimir",
+  "nombre": "Comprimir video",
+  "categoria": "Multimedia",
+  "estado": "NO",
+  "esfuerzo": "M",
+  "enfoque": "N",
+  "nota": "Media3 Transformer con menor bitrate"
+ },
+ {
+  "key": "multimedia/girar",
+  "nombre": "Girar video",
+  "categoria": "Multimedia",
+  "estado": "NO",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": "Media3 Transformer (rotación)"
+ },
+ {
+  "key": "multimedia/gif",
+  "nombre": "Video a GIF",
+  "categoria": "Multimedia",
+  "estado": "NO",
+  "esfuerzo": "M",
+  "enfoque": "N",
+  "nota": "Cuadros del video + el codificador GIF ya escrito"
+ },
+ {
+  "key": "multimedia/unir",
+  "nombre": "Unir videos",
+  "categoria": "Multimedia",
+  "estado": "NO",
+  "esfuerzo": "M",
+  "enfoque": "N",
+  "nota": "Media3 Transformer (secuencia)"
+ },
+ {
+  "key": "multimedia/texto",
+  "nombre": "Audio a texto",
+  "categoria": "Multimedia",
+  "estado": "NO",
+  "esfuerzo": "L",
+  "enfoque": "E",
+  "nota": "Whisper en el dispositivo (ONNX o whisper.cpp) y modelo que se descarga"
+ },
+ {
+  "key": "archivos/crear",
+  "nombre": "Comprimir en ZIP y 7Z",
+  "categoria": "Archivos",
+  "estado": "NO",
+  "esfuerzo": "L",
+  "enfoque": "N/E",
+  "nota": "ZIP con `java.util.zip` (S); 7Z con commons-compress y XZ (L); contraseña ZIP (M)"
+ },
+ {
+  "key": "archivos/extraer",
+  "nombre": "Descomprimir ZIP, RAR, 7Z",
+  "categoria": "Archivos",
+  "estado": "NO",
+  "esfuerzo": "L",
+  "enfoque": "N/E",
+  "nota": "ZIP, TAR y GZ nativos (S); 7Z y RAR con librerías (L, revisar licencia)"
+ },
+ {
+  "key": "archivos/renombrar",
+  "nombre": "Renombrar archivos",
+  "categoria": "Archivos",
+  "estado": "NO",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": "Lógica pura ya escrita en la web (`renameBatch.ts`), portar a Kotlin"
+ },
+ {
+  "key": "qr/crear",
+  "nombre": "Crear QR",
+  "categoria": "QR",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "qr/leer",
+  "nombre": "Leer QR",
+  "categoria": "QR",
+  "estado": "SI",
+  "esfuerzo": "",
+  "enfoque": "",
+  "nota": ""
+ },
+ {
+  "key": "texto/contar",
+  "nombre": "Contador de palabras",
+  "categoria": "Texto",
+  "estado": "NO",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": ""
+ },
+ {
+  "key": "texto/comparar",
+  "nombre": "Comparar textos",
+  "categoria": "Texto",
+  "estado": "NO",
+  "esfuerzo": "M",
+  "enfoque": "N",
+  "nota": "Algoritmo de diferencias (Myers); la web ya lo tiene"
+ },
+ {
+  "key": "texto/resumir",
+  "nombre": "Resumir PDF",
+  "categoria": "Texto",
+  "estado": "PARCIAL",
+  "esfuerzo": "S",
+  "enfoque": "N",
+  "nota": "El resumen extractivo ya existe en Modo Estudio (`TextSummarizer`); falta como herramienta de PDF"
+ }
+]
