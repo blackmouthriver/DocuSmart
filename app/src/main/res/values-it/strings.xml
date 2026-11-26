@@ -337,6 +337,7 @@
     <string name="converter_txt_page_label">=== Pagina %1$d ===</string>
     <string name="converter_html_title_word">Documento Word</string>
     <string name="converter_html_title_excel">Foglio di calcolo</string>
+    <string name="converter_excel_sheet_page">Pagina %1$d</string>
     <string name="converter_pdf_slide_label">=== Diapositiva %1$d ===</string>
     <string name="converter_error_unknown">Errore sconosciuto</string>
 

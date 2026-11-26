@@ -81,6 +81,7 @@ class ConverterScreenTest {
             pdfToText = mockk(relaxed = true),
             pdfToWord = mockk(relaxed = true),
             pdfToHtml = mockk(relaxed = true),
+            pdfToExcel = mockk(relaxed = true),
             // real, no mock
             imageFormat = ImageFormatUseCase(appContext),
             wordToPdf = mockk(relaxed = true),

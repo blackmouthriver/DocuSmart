@@ -109,6 +109,7 @@ class ConverterScreenFlowsTest {
             pdfToText = mockk(relaxed = true),
             pdfToWord = mockk(relaxed = true),
             pdfToHtml = mockk(relaxed = true),
+            pdfToExcel = mockk(relaxed = true),
             imageFormat = ImageFormatUseCase(files),
             wordToPdf = mockk(relaxed = true),
             wordToText = wordToText,

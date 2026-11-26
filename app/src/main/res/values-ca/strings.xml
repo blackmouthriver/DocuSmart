@@ -357,6 +357,7 @@
     <string name="converter_txt_page_label">=== Pàgina %1$d ===</string>
     <string name="converter_html_title_word">Document Word</string>
     <string name="converter_html_title_excel">Full de càlcul</string>
+    <string name="converter_excel_sheet_page">Pàgina %1$d</string>
     <string name="converter_pdf_slide_label">=== Diapositiva %1$d ===</string>
     <string name="converter_error_unknown">Error desconegut</string>
 

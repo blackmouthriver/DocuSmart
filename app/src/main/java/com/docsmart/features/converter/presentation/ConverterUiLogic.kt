@@ -54,6 +54,7 @@ internal fun ConversionType.getCategoryForUi(): String =
         ConversionType.PDF_TO_TXT,
         ConversionType.PDF_TO_WORD,
         ConversionType.PDF_TO_HTML,
+        ConversionType.PDF_TO_EXCEL,
         -> "PDF"
         ConversionType.WORD_TO_PDF,
         ConversionType.WORD_TO_TXT,
@@ -82,6 +83,7 @@ internal fun getMimeForType(type: ConversionType): String =
         ConversionType.PDF_TO_TXT,
         ConversionType.PDF_TO_WORD,
         ConversionType.PDF_TO_HTML,
+        ConversionType.PDF_TO_EXCEL,
         -> "application/pdf"
         // Hallazgo real de la revisión general 2026-09-16 (cuarta pasada, #25,
         // latente -- WORD_TO_* está oculto de la grilla hoy): "application/

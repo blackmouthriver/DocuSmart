@@ -343,6 +343,7 @@
     <string name="converter_txt_page_label">=== Page %1$d ===</string>
     <string name="converter_html_title_word">Document Word</string>
     <string name="converter_html_title_excel">Feuille de calcul</string>
+    <string name="converter_excel_sheet_page">Page %1$d</string>
     <string name="converter_pdf_slide_label">=== Diapositive %1$d ===</string>
     <string name="converter_error_unknown">Erreur inconnue</string>
 

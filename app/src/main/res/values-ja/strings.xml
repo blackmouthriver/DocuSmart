@@ -334,6 +334,7 @@
     <string name="converter_txt_page_label">=== %1$dページ ===</string>
     <string name="converter_html_title_word">Wordドキュメント</string>
     <string name="converter_html_title_excel">スプレッドシート</string>
+    <string name="converter_excel_sheet_page">ページ %1$d</string>
     <string name="converter_pdf_slide_label">=== スライド %1$d ===</string>
     <string name="converter_error_unknown">不明なエラー</string>
 

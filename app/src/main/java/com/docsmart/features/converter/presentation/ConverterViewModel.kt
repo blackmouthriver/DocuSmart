@@ -64,6 +64,7 @@ class ConverterViewModel
         private val pdfToText: PdfToTextUseCase,
         private val pdfToWord: PdfToWordUseCase,
         private val pdfToHtml: PdfToHtmlUseCase,
+        private val pdfToExcel: PdfToExcelUseCase,
         private val imageFormat: ImageFormatUseCase,
         private val wordToPdf: WordToPdfUseCase,
         private val wordToText: WordToTextUseCase,
@@ -387,6 +388,7 @@ class ConverterViewModel
                 ConversionType.PDF_TO_TXT -> pdfToText(uri, fileName)
                 ConversionType.PDF_TO_WORD -> pdfToWord(uri, fileName)
                 ConversionType.PDF_TO_HTML -> pdfToHtml(uri, fileName)
+                ConversionType.PDF_TO_EXCEL -> pdfToExcel(uri, fileName)
                 ConversionType.WORD_TO_PDF -> wordToPdf(uri, fileName)
                 ConversionType.WORD_TO_TXT -> wordToText(uri, fileName)
                 ConversionType.WORD_TO_HTML -> wordToHtml(uri, fileName)

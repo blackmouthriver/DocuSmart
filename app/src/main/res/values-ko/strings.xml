@@ -334,6 +334,7 @@
     <string name="converter_txt_page_label">=== %1$d페이지 ===</string>
     <string name="converter_html_title_word">Word 문서</string>
     <string name="converter_html_title_excel">스프레드시트</string>
+    <string name="converter_excel_sheet_page">페이지 %1$d</string>
     <string name="converter_pdf_slide_label">=== 슬라이드 %1$d ===</string>
     <string name="converter_error_unknown">알 수 없는 오류</string>
 

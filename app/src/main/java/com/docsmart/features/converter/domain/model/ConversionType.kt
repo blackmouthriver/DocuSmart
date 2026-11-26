@@ -76,6 +76,12 @@ enum class ConversionType(
         fromExtensions = listOf("pdf"),
         outputExtension = "html",
     ),
+    PDF_TO_EXCEL(
+        fromFormat = "PDF",
+        toFormat = "Excel",
+        fromExtensions = listOf("pdf"),
+        outputExtension = "xlsx",
+    ),
 
     // ── Word ──────────────────────────────────────────
     WORD_TO_PDF(

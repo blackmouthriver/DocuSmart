@@ -337,6 +337,7 @@
     <string name="converter_txt_page_label">=== Страница %1$d ===</string>
     <string name="converter_html_title_word">Документ Word</string>
     <string name="converter_html_title_excel">Таблица</string>
+    <string name="converter_excel_sheet_page">Страница %1$d</string>
     <string name="converter_pdf_slide_label">=== Слайд %1$d ===</string>
     <string name="converter_error_unknown">Неизвестная ошибка</string>
 

@@ -93,6 +93,7 @@ class ConverterViewModelTest {
                 pdfToText = mockk(),
                 pdfToWord = mockk(),
                 pdfToHtml = mockk(),
+                pdfToExcel = mockk(),
                 imageFormat = imageFormat,
                 wordToPdf = mockk(),
                 wordToText = wordToText,

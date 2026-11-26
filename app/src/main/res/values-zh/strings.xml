@@ -334,6 +334,7 @@
     <string name="converter_txt_page_label">=== 第 %1$d 页 ===</string>
     <string name="converter_html_title_word">Word 文档</string>
     <string name="converter_html_title_excel">电子表格</string>
+    <string name="converter_excel_sheet_page">第 %1$d 页</string>
     <string name="converter_pdf_slide_label">=== 幻灯片 %1$d ===</string>
     <string name="converter_error_unknown">未知错误</string>
 
