@@ -71,6 +71,17 @@ sealed class NavRoutes(
 
     data object Settings : NavRoutes("settings")
 
+    // Utilidades rápidas (paquete 3 del plan de actualización): menú y una pantalla por herramienta.
+    data object Utilities : NavRoutes("utilities")
+
+    data object UtilityHash : NavRoutes("util_hash")
+
+    data object UtilityPassword : NavRoutes("util_password")
+
+    data object UtilityCounter : NavRoutes("util_counter")
+
+    data object UtilityRename : NavRoutes("util_rename")
+
     data object Premium : NavRoutes("premium")
 
     data object Scanner : NavRoutes("scanner")

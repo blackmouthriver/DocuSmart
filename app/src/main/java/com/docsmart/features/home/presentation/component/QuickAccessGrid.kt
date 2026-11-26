@@ -54,6 +54,8 @@ fun QuickAccessGrid(
     onAgendaClick: () -> Unit = {},
     // ← NUEVO: papelera de Biblioteca
     onTrashClick: () -> Unit = {},
+    // ← NUEVO: utilidades rápidas (hash, contraseñas, contador, renombrar)
+    onUtilitiesClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var showScannerSheet by remember { mutableStateOf(false) }
@@ -102,6 +104,12 @@ fun QuickAccessGrid(
                         label = stringResource(R.string.home_qr_create),
                         color = MaterialTheme.colorScheme.primary,
                         onClick = onQrCreatorClick,
+                    ),
+                    QuickAccessItem(
+                        icon = Icons.Rounded.Build,
+                        label = stringResource(R.string.util_title),
+                        color = ColorZip,
+                        onClick = onUtilitiesClick,
                     ),
                 ),
             R.string.home_section_study to

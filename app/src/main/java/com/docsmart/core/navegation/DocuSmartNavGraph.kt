@@ -53,6 +53,11 @@ import com.docsmart.features.settings.presentation.SettingsScreen
 import com.docsmart.features.splash.presentation.SplashDocuSmartScreen
 import com.docsmart.features.splash.presentation.SplashMouthBlackScreen
 import com.docsmart.features.study.presentation.StudyScreen
+import com.docsmart.features.utilities.presentation.HashScreen
+import com.docsmart.features.utilities.presentation.PasswordScreen
+import com.docsmart.features.utilities.presentation.RenameFilesScreen
+import com.docsmart.features.utilities.presentation.UtilitiesMenuScreen
+import com.docsmart.features.utilities.presentation.WordCounterScreen
 import com.docsmart.features.viewer.presentation.ViewerScreen
 import timber.log.Timber
 import java.io.File
@@ -172,6 +177,30 @@ fun DocuSmartNavGraph(
 
         scannerComposable(navController)
         scanResultComposable(navController)
+
+        // ── Utilidades rápidas ────────────────────────────────────────────────
+        composable(NavRoutes.Utilities.route) {
+            UtilitiesMenuScreen(
+                onBack = { navController.popBackStack() },
+                onHome = { navController.goHome() },
+                onHash = { navController.navigate(NavRoutes.UtilityHash.route) { launchSingleTop = true } },
+                onPassword = { navController.navigate(NavRoutes.UtilityPassword.route) { launchSingleTop = true } },
+                onCounter = { navController.navigate(NavRoutes.UtilityCounter.route) { launchSingleTop = true } },
+                onRename = { navController.navigate(NavRoutes.UtilityRename.route) { launchSingleTop = true } },
+            )
+        }
+        composable(NavRoutes.UtilityHash.route) {
+            HashScreen(onBack = { navController.popBackStack() }, onHome = { navController.goHome() })
+        }
+        composable(NavRoutes.UtilityPassword.route) {
+            PasswordScreen(onBack = { navController.popBackStack() }, onHome = { navController.goHome() })
+        }
+        composable(NavRoutes.UtilityCounter.route) {
+            WordCounterScreen(onBack = { navController.popBackStack() }, onHome = { navController.goHome() })
+        }
+        composable(NavRoutes.UtilityRename.route) {
+            RenameFilesScreen(onBack = { navController.popBackStack() }, onHome = { navController.goHome() })
+        }
 
         // ── Security Menu ─────────────────────────────────────────────────────
         composable(NavRoutes.Security.route) {
@@ -362,6 +391,11 @@ internal val SCREEN_NAMES_BY_ROUTE =
         "qr_creator" to "QrCreator",
         "qr_history" to "QrHistory",
         "trash" to "Trash",
+        "utilities" to "Utilities",
+        "util_hash" to "UtilityHash",
+        "util_password" to "UtilityPassword",
+        "util_counter" to "UtilityCounter",
+        "util_rename" to "UtilityRename",
     )
 
 internal fun screenNameForRoute(route: String): String {
@@ -681,6 +715,7 @@ private fun NavGraphBuilder.homeComposable(navController: NavHostController) {
             // texto "{initialFileName}" en la pantalla en vez de un campo vacío).
             onQrCreator = { navController.navigate(NavRoutes.QrCreator.createRoute()) { launchSingleTop = true } },
             onTrash = { navController.navigate(NavRoutes.Trash.route) { launchSingleTop = true } },
+            onUtilities = { navController.navigate(NavRoutes.Utilities.route) { launchSingleTop = true } },
             // Sin launchSingleTop: `documentId` varía según qué tarjeta de
             // Recientes se toque.
             onDocumentClick = { documentId ->

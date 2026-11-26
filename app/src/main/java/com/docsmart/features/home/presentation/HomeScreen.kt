@@ -39,6 +39,8 @@ fun HomeScreen(
     onQrCreator: () -> Unit = {},
     // ← NUEVO: acceso rápido a la papelera
     onTrash: () -> Unit = {},
+    // Utilidades rápidas (hash, contraseñas, contador de palabras, renombrar archivos)
+    onUtilities: () -> Unit = {},
     // Atajos desde el menú "⋮" de un documento en Recientes (backlog UX
     // 2026-08-30, HU-UX-01/02) -- por defecto caen al CTA genérico existente
     // si la pantalla llamante no pasa una versión que preseleccione el
@@ -159,6 +161,7 @@ fun HomeScreen(
                 onQrReaderClick = onQrReader,
                 onQrCreatorClick = onQrCreator,
                 onTrashClick = onTrash,
+                onUtilitiesClick = onUtilities,
                 modifier = Modifier.padding(horizontal = 20.dp),
             )
         }

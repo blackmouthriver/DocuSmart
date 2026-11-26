@@ -34,6 +34,11 @@ class NavigationLogicTest {
             NavRoutes.QrCreator.route,
             NavRoutes.QrHistory.route,
             NavRoutes.Trash.route,
+            NavRoutes.Utilities.route,
+            NavRoutes.UtilityHash.route,
+            NavRoutes.UtilityPassword.route,
+            NavRoutes.UtilityCounter.route,
+            NavRoutes.UtilityRename.route,
         )
 
     @Test
