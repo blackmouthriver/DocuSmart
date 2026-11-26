@@ -9,5 +9,11 @@
         android:allowBackup="false"
         android:largeHeap="true"
         android:usesCleartextTraffic="false"
-        tools:replace="android:largeHeap" />
+        tools:replace="android:largeHeap">
+        <!-- Spike del anfitrion web (WP2). Solo debug; se abre con `adb shell am start`. -->
+        <activity
+            android:name="com.docsmart.spike.WebSpikeActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+    </application>
 </manifest>

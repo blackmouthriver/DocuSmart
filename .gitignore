@@ -17,3 +17,6 @@ local.properties
 # Firma de release — NUNCA versionar el keystore ni sus contraseñas.
 /keystore/
 keystore.properties
+
+# Build de la web copiado solo para el spike del WebView (WP2); no se commitea
+app/src/debug/assets/web/

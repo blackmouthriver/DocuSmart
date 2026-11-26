@@ -760,6 +760,8 @@ dependencies {
     androidTestRuntimeOnly("io.mockk:mockk-agent-android:1.13.13")
     androidTestRuntimeOnly("io.mockk:mockk-agent:1.13.13")
     debugImplementation(libs.androidx.compose.ui.tooling)
+    // Spike del anfitrion web (WP2): solo debug, para servir el build de la web desde assets.
+    debugImplementation("androidx.webkit:webkit:1.11.0-alpha02")
     // El manifest de la actividad de test (ComposeTestActivity) se consume
     // vía manifest merge, no por código Kotlin compilado contra esta librería.
     debugRuntimeOnly(libs.androidx.compose.ui.test.manifest)

@@ -46,7 +46,7 @@ Estado: ⬜ pendiente · 🔄 en curso · ✅ hecho.
 |---|---|---|---|
 | **0** | **Estabilizar la rama** | Prueba de PDF a Excel corregida; convertidor + navegación: 226 pruebas verdes, ktlint y detekt en verde. Falta: suite unitaria completa, lint y revisar el manifiesto fusionado | 🔄 |
 | **1** | **Cumplimiento (políticas)** | Revisión hecha (`revision-politicas-hibrido.md`). Falta: pasar el texto de la política al chat de la web, revisar «Seguridad de los datos» y releer las políticas el día del envío | 🔄 |
-| **2** | **Spike del anfitrión web** | Un WebView en una pantalla de prueba que sirva un build de la web empaquetado. Medir en el Edge y el E22: carga y cabeceras (COOP/COEP), selector de archivos, descarga y compartir, Comprimir PDF (qpdf wasm), OCR, 7-Zip, memoria, peso del APK y funcionamiento sin conexión. **Decisión de seguir o no** con la opción híbrida | ⬜ (necesita un teléfono conectado) |
+| **2** | **Spike del anfitrión web** | Un WebView en una pantalla de prueba que sirva un build de la web empaquetado. Primera ronda en el Edge hecha (carga, selector de archivos, Comprimir PDF, OCR, descarga): **funciona**. Resultados y hallazgos en `spike-anfitrion-web.md`. Falta: E22, 7-Zip, modelos de IA, modo avión, peso del AAB. Decisión preliminar: ir, condicionada | 🔄 |
 | **3** | **Rápidas nativas (S)** | Hash, generador de contraseñas, contador de palabras, renombrar archivos, imagen a texto, comprimir, redimensionar, rotar y ajustar imagen, CSV ↔ Excel, comprimir y extraer ZIP/TAR/GZ, resumir PDF como herramienta | ⬜ |
 | **4** | **Mostrar las conversiones ocultas** | Revisar la calidad de PDF a Word, Word, Excel y PowerPoint frente a la web (fuentes Unicode, fidelidad) y mostrarlas. Decisión del propietario pendiente | ⬜ |
 | **5** | **Anfitrión web de producción** | Si el spike pasa: build web empaquetado, puente mínimo, lista de navegación permitida, sin AdSense ni pagos, manifiesto `herramientas.json` y banderas de Remote Config | ⬜ |
@@ -73,4 +73,4 @@ El paquete 2 va temprano a propósito: es el que decide si el plan híbrido sigu
 | Fecha | Web (`preproduccion`) | Qué se vio | Qué se hizo aquí |
 |---|---|---|---|
 | 2026-11-26 | `5cbf8e81` | Base inicial: 71 herramientas en el catálogo, la matriz de la app las cubre todas | Se creó la matriz y el informe |
-| 2026-11-26 (tarde) | `5cbf8e81` | Sin cambios en la web | Se corrigió la prueba de PDF a Excel (`55a6823`) |
+| 2026-11-26 (tarde) | `5cbf8e81` | Sin cambios en la web | Se corrigió la prueba de PDF a Excel (`55a6823`); spike del WebView en el Edge |
