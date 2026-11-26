@@ -16,7 +16,7 @@ Documento vivo. Empezado el 2026-11-26. La web se trabaja en **otro chat** y la 
 |---|---|
 | Contrato de paridad (F1): `web-tool-parity.json` y `ToolParityContractTest` | En la rama, pruebas verdes |
 | HEIC a JPG, imagen a GIF, imagen a ICO (codificadores propios) | En la rama, 206 pruebas verdes; **sin probar en teléfono** |
-| PDF a Excel local | En la rama; **1 prueba falla** (`PdfSheetLayoutTest`, «estilo extracto de Word»); sin probar en teléfono |
+| PDF a Excel local | En la rama; pruebas verdes (la que fallaba era un error de la prueba, corregido); **sin probar en teléfono** |
 | `screen.portrait` opcional (advertencia de Play de la 1.1.6) | En la rama |
 | `scripts/generate_web_links.py` (regenera App Links desde la web) | En la rama |
 | `scripts/web_sync_report.py`, `herramientas-matriz.json`, `web-sync-state.json` | En la rama |
@@ -44,7 +44,7 @@ Estado: ⬜ pendiente · 🔄 en curso · ✅ hecho.
 
 | # | Paquete | Qué incluye | Estado |
 |---|---|---|---|
-| **0** | **Estabilizar la rama** | Corregir la prueba que falla de PDF a Excel; ktlint, detekt, lint y las pruebas unitarias completas en verde; revisar que el manifiesto fusionado sea correcto | 🔄 |
+| **0** | **Estabilizar la rama** | Prueba de PDF a Excel corregida; convertidor + navegación: 226 pruebas verdes, ktlint y detekt en verde. Falta: suite unitaria completa, lint y revisar el manifiesto fusionado | 🔄 |
 | **1** | **Cumplimiento (políticas)** | Revisión hecha (`revision-politicas-hibrido.md`). Falta: pasar el texto de la política al chat de la web, revisar «Seguridad de los datos» y releer las políticas el día del envío | 🔄 |
 | **2** | **Spike del anfitrión web** | Un WebView en una pantalla de prueba que sirva un build de la web empaquetado. Medir en el Edge y el E22: carga y cabeceras (COOP/COEP), selector de archivos, descarga y compartir, Comprimir PDF (qpdf wasm), OCR, 7-Zip, memoria, peso del APK y funcionamiento sin conexión. **Decisión de seguir o no** con la opción híbrida | ⬜ (necesita un teléfono conectado) |
 | **3** | **Rápidas nativas (S)** | Hash, generador de contraseñas, contador de palabras, renombrar archivos, imagen a texto, comprimir, redimensionar, rotar y ajustar imagen, CSV ↔ Excel, comprimir y extraer ZIP/TAR/GZ, resumir PDF como herramienta | ⬜ |
@@ -73,3 +73,4 @@ El paquete 2 va temprano a propósito: es el que decide si el plan híbrido sigu
 | Fecha | Web (`preproduccion`) | Qué se vio | Qué se hizo aquí |
 |---|---|---|---|
 | 2026-11-26 | `5cbf8e81` | Base inicial: 71 herramientas en el catálogo, la matriz de la app las cubre todas | Se creó la matriz y el informe |
+| 2026-11-26 (tarde) | `5cbf8e81` | Sin cambios en la web | Se corrigió la prueba de PDF a Excel (`55a6823`) |
